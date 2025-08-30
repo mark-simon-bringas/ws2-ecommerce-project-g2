@@ -1,0 +1,52 @@
+/* table.css */
+.user-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 1.5rem;
+}
+
+.user-table th, .user-table td {
+    padding: 12px 15px;
+    text-align: left;
+    border-bottom: 1px solid #dddfe2;
+}
+
+.user-table th {
+    background-color: #F5F6F7;
+    font-weight: 600;
+}
+
+.user-table tr:hover {
+    background-color: #F0F2F5;
+}
+
+.action-links a, .action-links button {
+    text-decoration: none;
+    color: #1877F2;
+    font-weight: 500;
+    margin-right: 15px;
+    cursor: pointer;
+    background: none;
+    border: none;
+    padding: 0;
+    font-size: 1em; /* inherit font size */
+    font-family: inherit; /* inherit font family */
+}
+
+.action-links form {
+    display: inline;
+}
+
+.action-links button {
+    color: #e74c3c;
+}
+
+.action-links a:hover, .action-links button:hover {
+    text-decoration: underline;
+}
+
+.no-users-message {
+    text-align: center;
+    padding: 2rem;
+    color: #606770;
+}

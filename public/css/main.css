@@ -1,0 +1,82 @@
+/* main.css */
+body {
+    font-family: 'Roboto', sans-serif;
+    background-color: #F0F2F5;
+    margin: 0;
+    padding-top: 80px; /* Space for the fixed navbar */
+    color: #1c1e21;
+}
+
+.page-container {
+    display: flex;
+    justify-content: center;
+    padding: 2rem;
+}
+
+.card {
+    background-color: #fff;
+    padding: 2rem;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    max-width: 800px;
+    box-sizing: border-box;
+}
+
+.card-title {
+    font-size: 24px;
+    font-weight: 700;
+    text-align: center;
+    margin-top: 0;
+    margin-bottom: 1.5rem;
+    color: #1c1e21;
+}
+
+/* Navbar */
+.navbar {
+    background-color: #ffffff;
+    border-bottom: 1px solid #dddfe2;
+    padding: 0 2rem;
+    position: fixed;
+    top: 0;
+    width: 100%;
+    z-index: 1000;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.nav-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    max-width: 1200px;
+    margin: 0 auto;
+    height: 60px;
+}
+
+.nav-logo {
+    color: #1877F2;
+    font-size: 24px;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.nav-menu {
+    list-style: none;
+    display: flex;
+    gap: 1rem;
+    margin: 0;
+    padding: 0;
+}
+
+.nav-link {
+    color: #606770;
+    text-decoration: none;
+    font-weight: 500;
+    padding: 8px 16px;
+    border-radius: 6px;
+    transition: background-color 0.2s;
+}
+
+.nav-link:hover {
+    background-color: #F0F2F5;
+}

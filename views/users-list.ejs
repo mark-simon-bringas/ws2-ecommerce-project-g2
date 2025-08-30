@@ -1,38 +1,32 @@
-<!DOCTYPE html>
-<html>
-    <head>
-        <title><%= title %></title>
-    </head>
-    <body>
-        <h1><%= title %></h1>
-        <% if (users.length > 0) { %>
-            <table border="1" cellpadding="8">
-                <!-- Labels -->
+<%- include('partials/header') %>
+<div class="card">
+    <h1 class="card-title"><%= title %></h1>
+    <% if (users.length > 0) { %>
+        <table class="user-table">
+            <thead>
                 <tr>
                     <th>Name</th>
                     <th>Email</th>
                     <th>Actions</th>
                 </tr>
-
-                <!-- Data -->
+            </thead>
+            <tbody>
                 <% users.forEach(user => { %>
                     <tr>
                         <td><%= user.name %></td>
                         <td><%= user.email %></td>
-                        <td>
-                        <!-- Edit -->
-                        <a href="/users/edit/<%= user._id %>">Edit</a>
-                        <!-- Delete -->
-                        <form action="/users/delete/<%= user._id %>" method="POST" style="display:inline;">
-                            <button type="submit">Delete</button>
-                        </form>
+                        <td class="action-links">
+                            <a href="/users/edit/<%= user._id %>">Edit</a>
+                            <form action="/users/delete/<%= user._id %>" method="POST">
+                                <button type="submit">Delete</button>
+                            </form>
                         </td>
                     </tr>
                 <% }) %>
-            </table>
-        <% } else { %>
-            <p>No users registered yet.</p>
-        <% } %>
-        <p><a href="/users/register">Register another user</a></p>
-    </body>
-</html>
+            </tbody>
+        </table>
+    <% } else { %>
+        <p class="no-users-message">No users registered yet.</p>
+    <% } %>
+</div>
+<%- include('partials/footer') %>
