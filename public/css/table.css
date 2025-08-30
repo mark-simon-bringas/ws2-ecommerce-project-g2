@@ -1,4 +1,4 @@
-/* table.css */
+
 .user-table {
     width: 100%;
     border-collapse: collapse;
@@ -29,8 +29,8 @@
     background: none;
     border: none;
     padding: 0;
-    font-size: 1em; /* inherit font size */
-    font-family: inherit; /* inherit font family */
+    font-size: 1em; 
+    font-family: inherit; 
 }
 
 .action-links form {
