@@ -1,0 +1,39 @@
+<%- include('partials/header') %>
+
+<div class="card" style="max-width: 500px; text-align: center;">
+    <h1 class="card-title">Registration Successful! 🎉</h1>
+    <p style="color: #606770; margin-bottom: 1.5rem;">
+        Your account has been created. You can now view it in the user list.
+    </p>
+    <a href="/users/list" class="btn">Go to User List</a>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+
+<script>
+ 
+    window.onload = function() {
+        const duration = 5 * 1000; 
+        const animationEnd = Date.now() + duration;
+        const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
+
+        function randomInRange(min, max) {
+            return Math.random() * (max - min) + min;
+        }
+
+        const interval = setInterval(function() {
+            const timeLeft = animationEnd - Date.now();
+
+            if (timeLeft <= 0) {
+                return clearInterval(interval);
+            }
+
+            const particleCount = 50 * (timeLeft / duration);
+         
+            confetti(Object.assign({}, defaults, { particleCount, origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 } }));
+            confetti(Object.assign({}, defaults, { particleCount, origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 } }));
+        }, 250);
+    };
+</script>
+
+<%- include('partials/footer') %>

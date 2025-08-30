@@ -18,7 +18,10 @@ router.post('/register', async (req, res) => {
             password: req.body.password // Note: In a real app, always hash passwords!
         };
         await usersCollection.insertOne(newUser);
-        res.send("User registered successfully!");
+        
+        // Redirect to the success page with fireworks
+        res.render('registration-success', { title: "Success!" });
+
     } catch (err) {
         console.error("Error saving user:", err);
         res.status(500).send("Something went wrong.");
