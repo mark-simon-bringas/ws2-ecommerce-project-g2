@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/main.css">
+    <link rel="stylesheet" href="/css/form.css">
+    <link rel="stylesheet" href="/css/table.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="/" class="nav-logo">E-Commerce</a>
+            <ul class="nav-menu">
+                <li class="nav-item"><a href="/users/login" class="nav-link">Login</a></li>
+                <li class="nav-item"><a href="/users/register" class="nav-link">Register</a></li>
+            </ul>
+        </div>
+    </nav>
+    <div class="page-container">
+    <div class="card">
+    <h1 class="card-title"><%= title %></h1>
+    <p>Welcome, <strong><%= currentUser.firstName %></strong>! You are viewing this page as an admin.</p>
+
+    <table class="user-table">
+        <thead>
+            <tr>
+                <th>User ID</th>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Role</th>
+                <th>Status</th>
+                <th>Created At</th>
+            </tr>
+        </thead>
+        <tbody>
+            <% users.forEach(user => { %>
+                <tr>
+                    <td><small><%= user.userId %></small></td>
+                    <td><%= user.firstName %> <%= user.lastName %></td>
+                    <td><%= user.email %></td>
+                    <td><%= user.role %></td>
+                    <td><%= user.accountStatus %></td>
+                    <td><%= new Date(user.createdAt).toLocaleDateString() %></td>
+                </tr>
+            <% }) %>
+        </tbody>
+    </table>
+    <br>
+    <a href="/users/dashboard" class="btn btn-secondary">Back to Dashboard</a>
+</div>
+</body>
+

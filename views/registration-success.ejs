@@ -1,39 +1,61 @@
-<%- include('partials/header') %>
-
-<div class="card" style="max-width: 500px; text-align: center;">
-    <h1 class="card-title">Registration Successful! 🎉</h1>
-    <p style="color: #606770; margin-bottom: 1.5rem;">
-        Your account has been created. You can now view it in the user list.
-    </p>
-    <a href="/users/list" class="btn">Go to User List</a>
-</div>
-
-<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
-
-<script>
- 
-    window.onload = function() {
-        const duration = 5 * 1000; 
-        const animationEnd = Date.now() + duration;
-        const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
-
-        function randomInRange(min, max) {
-            return Math.random() * (max - min) + min;
-        }
-
-        const interval = setInterval(function() {
-            const timeLeft = animationEnd - Date.now();
-
-            if (timeLeft <= 0) {
-                return clearInterval(interval);
-            }
-
-            const particleCount = 50 * (timeLeft / duration);
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/main.css">
+    <link rel="stylesheet" href="/css/form.css">
+    <link rel="stylesheet" href="/css/table.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="/" class="nav-logo">E-Commerce</a>
+            <ul class="nav-menu">
+                <li class="nav-item"><a href="/users/login" class="nav-link">Login</a></li>
+                <li class="nav-item"><a href="/users/register" class="nav-link">Register</a></li>
+            </ul>
+        </div>
+    </nav>
+    <div class="page-container">
+        <div class="card" style="max-width: 500px; text-align: center;">
+            <h1 class="card-title">Registration Successful! 🎉</h1>
+            <p style="color: #606770; margin-bottom: 1.5rem;">
+                Your account has been created. You can now view it in the user list.
+            </p>
+            <a href="/users/list" class="btn">Go to User List</a>
+        </div>
+        
+        <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+        
+        <script>
          
-            confetti(Object.assign({}, defaults, { particleCount, origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 } }));
-            confetti(Object.assign({}, defaults, { particleCount, origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 } }));
-        }, 250);
-    };
-</script>
+            window.onload = function() {
+                const duration = 5 * 1000; 
+                const animationEnd = Date.now() + duration;
+                const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
+        
+                function randomInRange(min, max) {
+                    return Math.random() * (max - min) + min;
+                }
+        
+                const interval = setInterval(function() {
+                    const timeLeft = animationEnd - Date.now();
+        
+                    if (timeLeft <= 0) {
+                        return clearInterval(interval);
+                    }
+        
+                    const particleCount = 50 * (timeLeft / duration);
+                 
+                    confetti(Object.assign({}, defaults, { particleCount, origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 } }));
+                    confetti(Object.assign({}, defaults, { particleCount, origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 } }));
+                }, 250);
+            };
+        </script>
+</body>
 
-<%- include('partials/footer') %>

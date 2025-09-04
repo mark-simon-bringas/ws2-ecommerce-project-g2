@@ -22,4 +22,18 @@
         </div>
     </nav>
     <div class="page-container">
+        <div class="card">
+            <h1 class="card-title">Welcome, <%= user.firstName %>!</h1>
+            <p><strong>User ID:</strong> <%= user.userId %></p>
+            <p><strong>Email:</strong> <%= user.email %></p>
+            <p><strong>Role:</strong> <%= user.role %></p>
+            <hr style="margin: 20px 0;">
+        
+            <% if (user.role === 'admin') { %>
+                
+                <center><a href="/users/admin" class="btn" style="margin-bottom: 5px; ">Admin Dashboard</a></center>
+                
+            <% } %>
+                <center><a href="/users/logout" class="btn btn-secondary">Logout</a></center>
+        </div>
 </body>

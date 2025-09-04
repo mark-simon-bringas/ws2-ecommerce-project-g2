@@ -1,5 +1,28 @@
-<%- include('partials/header') %>
-<div class="card" style="max-width: 500px;">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/main.css">
+    <link rel="stylesheet" href="/css/form.css">
+    <link rel="stylesheet" href="/css/table.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="/" class="nav-logo">E-Commerce</a>
+            <ul class="nav-menu">
+                <li class="nav-item"><a href="/users/login" class="nav-link">Login</a></li>
+                <li class="nav-item"><a href="/users/register" class="nav-link">Register</a></li>
+            </ul>
+        </div>
+    </nav>
+    <div class="page-container">
+    <div class="card" style="max-width: 500px;">
     <h1 class="card-title">Edit User Profile</h1>
     <form action="/users/edit/<%= user._id %>" method="POST">
         <div class="form-group">
@@ -13,4 +36,5 @@
         <button type="submit" class="btn">Update Information</button>
     </form>
 </div>
-<%- include('partials/footer') %>
+</body>
+
