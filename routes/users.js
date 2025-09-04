@@ -73,6 +73,11 @@ router.post('/login', async (req, res) => {
             return res.status(404).send("User not found.");
         }
 
+        //Check if user email is verified
+        if (!user.isEmailVerified) {
+            return res.send("Please verify your email before logging in.");
+        }
+
         // Check if account is active
         if (user.accountStatus !== 'active') {
             return res.status(403).send("Account is not active.");
@@ -87,7 +92,8 @@ router.post('/login', async (req, res) => {
                 firstName: user.firstName,
                 lastName: user.lastName,
                 email: user.email,
-                role: user.role
+                role: user.role,
+                isEmailVerified: user.isEmailVerified
             };
             res.redirect('/users/dashboard');
         } else {
@@ -98,6 +104,36 @@ router.post('/login', async (req, res) => {
         res.status(500).send("Something went wrong during login.");
     }
 });
+
+// Email Verification Route
+router.get('/verify/:token', async (req, res) => {
+    try {
+        const db = req.app.locals.client.db(req.app.locals.dbName);
+        const usersCollection = db.collection('users');
+        // Find user by token
+            const user = await usersCollection.findOne({ verificationToken: req.params.token });
+        // Check if token exists
+        if (!user) {
+            return res.send("Invalid or expired verification link.");
+        
+        }
+    // Check if token is still valid
+        if (user.tokenExpiry < new Date()) {
+            return res.send("Verification link has expired. Please register again.");
+        }
+    // Update user as verified
+    await usersCollection.updateOne(
+        { verificationToken: req.params.token },
+        { $set: { isEmailVerified: true }, $unset: { verificationToken: "", tokenExpiry: "" } }
+    );
+
+    res.render('user-verified', { title: "Email Verified!" });
+
+    } catch (err) {
+        console.error("Error verifying user:", err);
+        res.send("Something went wrong during verification.");
+    }
+    });
 
 // Dashboard route (requires login)
 router.get('/dashboard', (req, res) => {

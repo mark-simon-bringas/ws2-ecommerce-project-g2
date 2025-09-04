@@ -34,6 +34,7 @@
                 <th>Email</th>
                 <th>Role</th>
                 <th>Status</th>
+                <th>Verified</th>
                 <th>Created At</th>
             </tr>
         </thead>
@@ -45,6 +46,7 @@
                     <td><%= user.email %></td>
                     <td><%= user.role %></td>
                     <td><%= user.accountStatus %></td>
+                    <td><%= user.isEmailVerified%></td>
                     <td><%= new Date(user.createdAt).toLocaleDateString() %></td>
                 </tr>
             <% }) %>

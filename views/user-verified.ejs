@@ -22,19 +22,14 @@
         </div>
     </nav>
     <div class="page-container">
-        <div class="card">
-            <h1 class="card-title">Welcome, <%= user.firstName %>!</h1>
-            <p><strong>User ID:</strong> <%= user.userId %></p>
-            <p><strong>Email:</strong> <%= user.email %></p>
-            <p><strong>Role:</strong> <%= user.role %></p>
-            <p><strong>Email Verified:</strong> <%= user.isEmailVerified ? 'Yes' : 'No' %></p>
-            <hr style="margin: 20px 0;">
-        
-            <% if (user.role === 'admin') { %>
-                
-                <center><a href="/users/admin" class="btn" style="margin-bottom: 5px; ">Admin Dashboard</a></center>
-                
-            <% } %>
-                <center><a href="/users/logout" class="btn btn-secondary">Logout</a></center>
+        <div class="card" style="max-width: 500px; text-align: center;">
+            <h1 class="card-title">Registration Successful! 🎉</h1>
+            <p style="color: #606770; margin-bottom: 1.5rem;">
+                Your account Email has been verified.
+            </p>
+            <a href="/users/login" class="btn">Go to Login</a>
         </div>
+        
+        <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
 </body>
+
