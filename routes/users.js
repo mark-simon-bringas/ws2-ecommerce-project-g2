@@ -25,6 +25,9 @@ router.post('/register', async (req, res) => {
         const hashedPassword = await bcrypt.hash(req.body.password, saltRounds);
         const currentDate = new Date();
 
+        // Create verification token
+        const token = uuidv4();
+
         // Build new user object
         const newUser = {
             userId: uuidv4(),
@@ -35,6 +38,8 @@ router.post('/register', async (req, res) => {
             role: 'customer', // default role
             accountStatus: 'active',
             isEmailVerified: false,
+            verificationToken: token,
+            tokenExpiry: new Date(Date.now() + 3600000),
             createdAt: currentDate,
             updatedAt: currentDate
         };
