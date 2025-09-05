@@ -17,7 +17,10 @@ app.use(session({
     secret: process.env.SESSION_SECRET || 'dev-secret',
     resave: false,
     saveUninitialized: false,
-    cookie: { secure: false } 
+    cookie: { 
+        secure: false,
+        maxAge: 15 * 60 * 1000
+    } 
 }));
 
 // MongoDB Setup
