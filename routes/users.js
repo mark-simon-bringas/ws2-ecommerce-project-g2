@@ -25,10 +25,11 @@ router.post('/register', async (req, res) => {
             return res.status(400).send("User already exists with this email.");
         }
 
-        // Password strength checker
+        // Normalize inputs and password strength checker
         let pwdStrength = [];
-        const userPassword = req.body.password
-        
+        const userPassword = (req.body.password || '').toString().trim();
+        const confirmPassword = (req.body.confirmPassword || '').toString().trim();
+
         if (userPassword.length < 8) {
             pwdStrength.push("Password length should be greater than 8.")
         }
@@ -41,8 +42,11 @@ router.post('/register', async (req, res) => {
         if (!/[0-9]/.test(userPassword)) {
             pwdStrength.push("Password must contain at least one number.");
         }
-        if (!/[!@#$%^&*()_\+\-=\[\]{};':"\\|,.<>\/?`~]/.test(userPassword)) {
+        if (!/[!@#$%^&*()_\+\-=\[\]{};':\"\\|,.<>\/?`~]/.test(userPassword)) {
             pwdStrength.push("Password must contain at least one special character.");
+        }
+        if (userPassword !== confirmPassword) {
+            pwdStrength.push("Passwords do not match.");
         }
 
         // If password contains error(s)
@@ -50,11 +54,11 @@ router.post('/register', async (req, res) => {
             return res.status(400).render('register', {
                 title: "Register",
                 errors: pwdStrength
-            })
+            });
         }
 
         // Hash password
-        const hashedPassword = await bcrypt.hash(req.body.password, saltRounds);
+        const hashedPassword = await bcrypt.hash(userPassword, saltRounds);
         const currentDate = new Date();
 
         // Create verification token
