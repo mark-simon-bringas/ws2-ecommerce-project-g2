@@ -2,11 +2,15 @@ const express = require('express');
 const router = express.Router();
 const { v4: uuidv4 } = require('uuid');
 const bcrypt = require('bcrypt');
+const { title } = require('process');
 const saltRounds = 12;
 
 // Show registration form
 router.get('/register', (req, res) => {
-    res.render('register', { title: "Register" });
+    res.render('register', { 
+        title: "Register",
+        errors: []
+    });
 });
 
 // Handle registration form submission
@@ -19,6 +23,34 @@ router.post('/register', async (req, res) => {
         const existingUser = await usersCollection.findOne({ email: req.body.email });
         if (existingUser) {
             return res.status(400).send("User already exists with this email.");
+        }
+
+        // Password strength checker
+        let pwdStrength = [];
+        const userPassword = req.body.password
+        
+        if (userPassword.length < 8) {
+            pwdStrength.push("Password length should be greater than 8.")
+        }
+        if (!/[A-Z]/.test(userPassword)) {
+            pwdStrength.push("Password must contain at least one uppercase letter.");
+        }
+        if (!/[a-z]/.test(userPassword)) {
+            pwdStrength.push("Password must contain at least one lowercase letter.");
+        }
+        if (!/[0-9]/.test(userPassword)) {
+            pwdStrength.push("Password must contain at least one number.");
+        }
+        if (!/[!@#$%^&*()_\+\-=\[\]{};':"\\|,.<>\/?`~]/.test(userPassword)) {
+            pwdStrength.push("Password must contain at least one special character.");
+        }
+
+        // If password contains error(s)
+        if (pwdStrength.length > 0) {
+            return res.status(400).render('register', {
+                title: "Register",
+                errors: pwdStrength
+            })
         }
 
         // Hash password
@@ -166,7 +198,8 @@ router.get('/admin', async (req, res) => {
 router.get('/logout', (req, res) => {
     req.session.destroy(err => {
         if (err) {
-            return res.redirect('/users/dashboard');
+            console.error("Error destroying session:", err);
+            return res.send("Something went wrong during logout.");
         }
         res.clearCookie('connect.sid');
         res.redirect('/users/login');
