@@ -112,7 +112,15 @@ router.post('/register', async (req, res) => {
 
 // Show login form
 router.get('/login', (req, res) => {
-    res.render('login', { title: "Login" });
+    let message = '';
+    // Check if there's a status query parameter indicating a successful logout
+    if (req.query.status === 'loggedout') {
+        message = 'You have been logged out.';
+    }
+    res.render('login', { 
+        title: "Login",
+        message: message // Pass the message to the view
+    });
 });
 
 // Handle login form submission
@@ -224,7 +232,8 @@ router.get('/logout', (req, res) => {
             return res.send("Something went wrong during logout.");
         }
         res.clearCookie('connect.sid');
-        res.redirect('/users/login');
+     
+        res.redirect('/users/login?status=loggedout');
     });
 });
 

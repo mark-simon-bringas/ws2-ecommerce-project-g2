@@ -33,6 +33,14 @@
       
       <div class="card" style="max-width: 500px">
         <h1 class="card-title">Login to Your Account</h1>
+
+        <%# eto yung logout notif %>
+        <% if (typeof message !== 'undefined' && message) { %>
+          <div class="notification">
+            <p><%= message %></p>
+          </div>
+        <% } %>
+        
         <form action="/users/login" method="POST">
           <div class="form-group">
             <label for="email">Email:</label>
@@ -61,5 +69,6 @@
         </p>
       </div>
 
-    </div> </body>
+    </div> 
+  </body>
 </html>

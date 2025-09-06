@@ -18,8 +18,8 @@ app.use(session({
     resave: false,
     saveUninitialized: false,
     cookie: { 
-        secure: false,
-        maxAge: 15 * 60 * 1000
+        secure: false, // change mamaya
+        maxAge: 15 * 60 * 1000 //
     } 
 }));
 
