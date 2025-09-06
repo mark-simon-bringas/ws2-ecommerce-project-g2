@@ -4,6 +4,8 @@ const { v4: uuidv4 } = require('uuid');
 const bcrypt = require('bcrypt');
 const { title } = require('process');
 const saltRounds = 12;
+const { Resend } = require('resend');
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 // Show registration form
 router.get('/register', (req, res) => {
@@ -83,6 +85,22 @@ router.post('/register', async (req, res) => {
         // Insert into MongoDB
         await usersCollection.insertOne(newUser);
         
+        // Build dynamic verification URL
+        const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
+        const verificationUrl = `${baseUrl}/users/verify/${token}`;
+
+        // Send verification email using Resend
+        await resend.emails.send({
+            from: process.env.RESEND_FROM_EMAIL,
+            to: newUser.email,
+            subject: 'Verify your account',
+            html: `
+                <h2>Welcome, ${newUser.firstName}!</h2>
+                <p>Thank you for registering. Please verify your email by clicking the link below:</p>
+                <a href="${verificationUrl}">${verificationUrl}</a>
+            `
+        });
+
         // Redirect to a success page or login
         res.render('registration-success', { title: "Success!" });
 
