@@ -34,7 +34,6 @@
       <div class="card" style="max-width: 500px">
         <h1 class="card-title">Login to Your Account</h1>
 
-        <%# eto yung logout notif %>
         <% if (typeof message !== 'undefined' && message) { %>
           <div class="notification">
             <p><%= message %></p>
@@ -64,6 +63,9 @@
           </div>
           <button type="submit" class="btn">Login</button>
         </form>
+        <div style="text-align: center; margin-top: 1rem;">
+            <a href="/password/forgot">Forgot Password?</a>
+        </div>
         <p style="text-align: center; margin-top: 1rem">
           Don't have an account? <a href="/users/register">Register here</a>
         </p>

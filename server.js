@@ -18,8 +18,8 @@ app.use(session({
     resave: false,
     saveUninitialized: false,
     cookie: { 
-        secure: false, // change mamaya
-        maxAge: 15 * 60 * 1000 //
+        secure: false, // Should be true in production with HTTPS
+        maxAge: 15 * 60 * 1000 // Sets session timeout to 15 minutes
     } 
 }));
 
@@ -38,9 +38,11 @@ async function main() {
 
         const indexRoute = require('./routes/index');
         const usersRoute = require('./routes/users');
+        const passwordRoute = require('./routes/password'); // Require the new route
 
         app.use('/', indexRoute);
         app.use('/users', usersRoute);
+        app.use('/password', passwordRoute); // Use the new route
 
        
         app.listen(port, () => {

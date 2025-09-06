@@ -1,4 +1,3 @@
-
 .form-group {
     margin-bottom: 1rem;
 }
@@ -42,4 +41,15 @@
 
 .btn:hover {
     background-color: #166FE5;
+}
+
+/* atoy dyay logout notif*/
+.notification {
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+    border-radius: 6px;
+    background-color: #e7f3ff;
+    color: #1c1e21;
+    text-align: center;
+    border: 1px solid #bde0ff;
 }
