@@ -1,50 +1,22 @@
-// routes/users.js
-
-// --------------------------------------------------
-// DEPENDENCIES
-// --------------------------------------------------
-
 const express = require('express');
-const { MongoClient, ObjectId } = require('mongodb');
-require('dotenv').config();
-
 const router = express.Router();
-<<<<<<< Updated upstream
-
-// --------------------------------------------------
-// MONGODB SETUP
-// --------------------------------------------------
-
-const uri = process.env.MONGO_URI;
-const client = new MongoClient(uri);
-const dbName = "ecommerceDB";
-
-// --------------------------------------------------
-// REGISTRATION ROUTES
-// --------------------------------------------------
-=======
 const bcrypt = require('bcrypt');
 const { title } = require('process');
 const saltRounds = 12;
 const { Resend } = require('resend');
 const resend = new Resend(process.env.RESEND_API_KEY);
->>>>>>> Stashed changes
 
 // Show registration form
 router.get('/register', (req, res) => {
-    res.render('register', { title: "Register" });
+    res.render('register', { 
+        title: "Register",
+        errors: []
+    });
 });
 
 // Handle registration form submission
 router.post('/register', async (req, res) => {
     try {
-<<<<<<< Updated upstream
-        await client.connect();
-        const db = client.db(dbName);
-        const usersCollection = db.collection('users');
-
-        // Get form data
-=======
         const { v4: uuidv4 } = await import('uuid');
         const db = req.app.locals.client.db(req.app.locals.dbName);
         const usersCollection = db.collection('users');
@@ -76,18 +48,11 @@ router.post('/register', async (req, res) => {
         const currentDate = new Date();
         const token = uuidv4();
 
->>>>>>> Stashed changes
         const newUser = {
-            name: req.body.name,
+            userId: uuidv4(),
+            firstName: req.body.firstName,
+            lastName: req.body.lastName,
             email: req.body.email,
-<<<<<<< Updated upstream
-            password: req.body.password 
-        };
-
-        // Insert new user into the database
-        await usersCollection.insertOne(newUser);
-        res.send("User registered successfully!");
-=======
             passwordHash: hashedPassword,
             role: 'customer',
             accountStatus: 'active',
@@ -111,20 +76,13 @@ router.post('/register', async (req, res) => {
         });
 
         res.render('registration-success', { title: "Success!" });
->>>>>>> Stashed changes
 
     } catch (err) {
         console.error("Error saving user:", err);
         res.status(500).send("Something went wrong.");
     }
-    // await client.close(); 
 });
 
-<<<<<<< Updated upstream
-// --------------------------------------------------
-// USER LISTING ROUTE
-// --------------------------------------------------
-=======
 // Show login form
 router.get('/login', (req, res) => {
     let message = '';
@@ -136,24 +94,13 @@ router.get('/login', (req, res) => {
         message: message
     });
 });
->>>>>>> Stashed changes
 
-// Show all registered users
-router.get('/list', async (req, res) => {
+// Handle login form submission
+router.post('/login', async (req, res) => {
     try {
-        await client.connect();
-        const db = client.db(dbName);
+        const db = req.app.locals.client.db(req.app.locals.dbName);
         const usersCollection = db.collection('users');
 
-<<<<<<< Updated upstream
-        const users = await usersCollection.find().toArray();
-        res.render('users-list', { title: "Registered Users", users: users });
-
-    } catch (err) {
-        console.error("Error fetching users:", err);
-        res.status(500).send("Something went wrong.");
-    }
-=======
         const user = await usersCollection.findOne({ email: req.body.email });
         if (!user) {
             return res.status(404).send("User not found.");
@@ -225,76 +172,18 @@ router.get('/admin', (req, res) => {
     }
     // We'll build this route in account.js later
     res.redirect('/account/admin'); 
->>>>>>> Stashed changes
 });
 
-// --------------------------------------------------
-// USER EDIT & UPDATE ROUTES
-// --------------------------------------------------
-
-// Show edit form for a specific user
-router.get('/edit/:id', async (req, res) => {
-    try {
-        await client.connect();
-        const db = client.db(dbName);
-        const usersCollection = db.collection('users');
-
-        const user = await usersCollection.findOne({ _id: new ObjectId(req.params.id) });
-
-        if (!user) {
-            return res.status(404).send("User not found.");
+// Logout route
+router.get('/logout', (req, res) => {
+    req.session.destroy(err => {
+        if (err) {
+            console.error("Error destroying session:", err);
+            return res.send("Something went wrong during logout.");
         }
-<<<<<<< Updated upstream
-
-        res.render('edit-user', { title: "Edit User", user: user });
-
-    } catch (err) {
-        console.error("Error loading user:", err);
-        res.status(500).send("Something went wrong.");
-    }
-});
-
-// Handle update form submission
-router.post('/edit/:id', async (req, res) => {
-    try {
-        await client.connect();
-        const db = client.db(dbName);
-        const usersCollection = db.collection('users');
-
-        const updatedFields = {
-            $set: {
-                name: req.body.name,
-                email: req.body.email
-            }
-        };
-
-        await usersCollection.updateOne({ _id: new ObjectId(req.params.id) }, updatedFields);
-        res.redirect('/users/list');
-
-    } catch (err) {
-        console.error("Error updating user:", err);
-        res.status(500).send("Something went wrong.");
-    }
-});
-
-//Handle Delete Data
-router.post('/delete/:id', async (req, res) => {
-    try {
-        await client.connect();
-        const db = client.db(dbName);
-        const usersCollection = db.collection('users');
-        
-        await usersCollection.deleteOne({ _id: new ObjectId(req.params.id) });
-        res.redirect('/users/list');
-    } catch (err) {
-        console.error("Error deleting user:", err);
-        res.send("Something went wrong.");
-    }
-=======
         res.clearCookie('connect.sid');
         res.redirect('/users/login?status=loggedout');
     });
->>>>>>> Stashed changes
 });
 
 module.exports = router;
