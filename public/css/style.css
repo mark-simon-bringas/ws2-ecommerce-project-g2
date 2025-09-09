@@ -84,18 +84,36 @@ li {
     opacity: 0; visibility: hidden; transition: opacity 300ms ease, visibility 300ms ease;
     padding: 1rem; color: #fff;
 }
-.overlay.is-active { opacity: 1; visibility: visible; }
-.overlay-close-btn { position: absolute; top: 1rem; right: 1.5rem; background: none; border: none; color: #fff; font-size: 2.5rem; cursor: pointer; }
+.overlay.is-active { 
+    opacity: 1; 
+    visibility: visible; 
+}
+.overlay-close-btn { 
+    position: absolute; 
+    top: 1rem; 
+    right: 1.5rem; 
+    background: none; 
+    border: none; 
+    font-size: 2.5rem; 
+    cursor: pointer; 
+    color: #fff;
+}
 #mobile-menu-overlay ul { padding-top: 60px; padding-left: 20px; }
 #mobile-menu-overlay li a { font-size: 28px; font-weight: 600; color: #fff; line-height: 2; }
+
+/* Styles for both mobile and desktop search content */
 .search-content { padding-top: 60px; max-width: 600px; margin: 0 auto; }
 .search-input-group { display: flex; align-items: center; gap: 1rem; border-bottom: 2px solid #86868b; padding-bottom: 0.5rem; }
-.search-input-group input { width: 100%; background: none; border: none; color: #fff; font-size: 28px; font-weight: 600; outline: none; }
+.search-input-group input { width: 100%; background: none; border: none; font-size: 28px; font-weight: 600; outline: none; }
 .search-input-group input::placeholder { color: #86868b; }
 .quick-links { margin-top: 2rem; }
 .quick-links span { font-size: 14px; color: #86868b; }
 .quick-links ul { margin-top: 1rem; }
-.quick-links li a { display: block; color: #fff; padding: 0.75rem 0; font-size: 18px; font-weight: 500; }
+.quick-links li a { display: block; padding: 0.75rem 0; font-size: 18px; font-weight: 500; }
+/* Mobile search specific colors */
+#search-overlay .search-input-group input { color: #fff; }
+#search-overlay .quick-links li a { color: #fff; }
+
 
 .cart-icon-container {
     position: relative;
@@ -172,7 +190,7 @@ li {
 }
 .bento-box-content p { 
     font-weight: 500; 
-    margin-bottom: 0;
+    margin-bottom: 0; 
 }
 
 .product-card {
@@ -539,25 +557,75 @@ li {
     .user-dropdown-link + .user-dropdown-link { border-top: 1px solid rgba(255, 255, 255, 0.15); }
     .user-dropdown-link:hover { background-color: rgba(255, 255, 255, 0.1); }
     
-    .dropdown-search-panel {
-        left: 50% !important;
-        transform: translateX(-50%) !important;
-        width: 80%;
-        max-width: 800px;
+    /* UPDATED: More specific selector to ensure centering override */
+    .dropdown .con-1.dropdown-search-panel {
+        left: 50%;
+        transform: translateX(-50%);
+        max-width: 90vw;
+        top: 1rem;
+        padding: 1.5rem;
     }
-
     .dropdown-search-panel .search-content {
-        padding-top: 2rem;
+        padding-top: 0;
         max-width: none;
         width: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
     }
-
+    .dropdown-search-panel .search-input-group {
+        border-bottom: none;
+        background-color: rgba(255, 255, 255, 0.1);
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        gap: 0.75rem;
+        width: 80%;
+        max-width: 500px;
+    }
+    .dropdown-search-panel .search-input-group .iconify {
+        color: #86868b;
+    }
     .dropdown-search-panel .search-input-group input {
-        font-size: 22px;
+        font-size: 1rem;
+        font-weight: 500;
+        color: #fff;
     }
-
+    .dropdown-search-panel .search-input-group input::placeholder {
+        color: #86868b;
+    }
+    .dropdown-search-panel .quick-links {
+        display: block;
+        margin-top: 1.5rem;
+        width: 100%;
+    }
+    .dropdown-search-panel .quick-links span {
+        font-size: 12px;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: #86868b;
+        text-align: center;
+        display: block;
+    }
+    .dropdown-search-panel .quick-links ul {
+        padding-left: 0;
+        margin-top: 0.75rem;
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 0.5rem 1rem;
+    }
     .dropdown-search-panel .quick-links li a {
-        font-size: 16px;
+        font-size: 14px;
+        padding: 0.5rem;
+        font-weight: 400;
+        color: #fff;
+        display: block;
+        border-radius: 6px;
+        transition: background-color 0.2s ease;
+        text-align: center;
+    }
+    .dropdown-search-panel .quick-links li a:hover {
+        background-color: rgba(255, 255, 255, 0.1);
     }
     
     /* --- Dashboard Desktop Styles --- */

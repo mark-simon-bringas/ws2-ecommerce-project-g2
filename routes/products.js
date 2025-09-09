@@ -98,7 +98,7 @@ router.get('/manage', async (req, res) => {
         };
         const apiProductsPromise = axios.request(apiOptions);
 
-        const [localProducts, apiResponse] = await Promise.all([localProductsPromise, apiResponse]);
+        const [localProducts, apiResponse] = await Promise.all([localProductsPromise, apiProductsPromise]);
 
         res.render('admin-products', {
             title: "Manage Products",
