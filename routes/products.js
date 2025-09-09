@@ -18,6 +18,12 @@ router.get('/', async (req, res) => {
             query.gender = req.query.category;
             pageTitle = `${req.query.category.charAt(0).toUpperCase() + req.query.category.slice(1)}'s Collection`;
         }
+        
+        // Handle brand filtering
+        if (req.query.brand) {
+            query.brand = req.query.brand;
+            pageTitle = `${req.query.brand} Collection`;
+        }
 
         // Handle new arrivals filtering
         if (req.query.new === 'true') {
@@ -36,6 +42,36 @@ router.get('/', async (req, res) => {
     } catch (err) {
         console.error("Error fetching products for shop page:", err);
         res.status(500).send("Error loading the shop page.");
+    }
+});
+
+// GET /products/search - Handle search queries
+router.get('/search', async (req, res) => {
+    try {
+        const db = req.app.locals.client.db(req.app.locals.dbName);
+        const productsCollection = db.collection('products');
+        const searchQuery = req.query.q || "";
+
+        // Use a regular expression for a case-insensitive search on name and brand
+        const query = {
+            $or: [
+                { name: { $regex: searchQuery, $options: 'i' } },
+                { brand: { $regex: searchQuery, $options: 'i' } }
+            ]
+        };
+
+        const products = await productsCollection.find(query).toArray();
+        const pageTitle = `Search results for "${searchQuery}"`;
+
+        res.render('shop', {
+            title: pageTitle,
+            pageTitle: pageTitle,
+            products: products
+        });
+
+    } catch (err) {
+        console.error("Error searching products:", err);
+        res.status(500).send("Error performing search.");
     }
 });
 
@@ -62,7 +98,7 @@ router.get('/manage', async (req, res) => {
         };
         const apiProductsPromise = axios.request(apiOptions);
 
-        const [localProducts, apiResponse] = await Promise.all([localProductsPromise, apiProductsPromise]);
+        const [localProducts, apiResponse] = await Promise.all([localProductsPromise, apiResponse]);
 
         res.render('admin-products', {
             title: "Manage Products",
@@ -229,8 +265,8 @@ router.get('/:sku', async (req, res) => {
         const { sku } = req.params;
 
         // This check prevents "men" or "women" from being treated as a SKU
-        if (['men', 'women'].includes(sku.toLowerCase())) {
-            return res.redirect(`/products?category=${sku.toLowerCase()}`);
+        if (['men', 'women', 'search'].includes(sku.toLowerCase())) {
+            return res.status(404).send("Page not found."); // Prevent route collision
         }
 
         const product = await productsCollection.findOne({ sku: sku });

@@ -1,6 +1,6 @@
 document.addEventListener('DOMContentLoaded', function() {
 
-    // --- Desktop Navbar Dropdown Logic (No Change) ---
+    // --- Desktop Navbar Dropdown Logic ---
     const desktopNavLinks = document.querySelectorAll(".navbar-desktop .list-menu");
     const desktopSearchBtn = document.getElementById('desktop-search-btn');
     const dropdownContainer = document.querySelector(".dropdown");
@@ -23,7 +23,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (desktopSearchBtn) {
             desktopSearchBtn.addEventListener('click', (e) => {
                 e.preventDefault();
-                const searchPanelIndex = 6;
+                const searchPanelIndex = 4; // Corrected index for the search panel
                 const isSearchOpen = dropdownContainer.style.height === "330px" && contentPanels[searchPanelIndex].style.opacity === "1";
                 isSearchOpen ? closeDropdown() : openDropdown(searchPanelIndex);
             });
@@ -31,7 +31,7 @@ document.addEventListener('DOMContentLoaded', function() {
         dropdownContainer.addEventListener("mouseleave", closeDropdown);
     }
 
-    // --- Desktop User Dropdown Menu Logic (No Change) ---
+    // --- Desktop User Dropdown Menu Logic ---
     const userMenuBtn = document.getElementById('user-menu-btn');
     const userDropdown = document.getElementById('user-dropdown');
     if (userMenuBtn && userDropdown) {
@@ -46,7 +46,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // --- Mobile Overlay Logic (No Change) ---
+    // --- Mobile Overlay Logic ---
     const mobileMenuBtn = document.getElementById('mobile-menu-btn');
     const mobileSearchBtn = document.getElementById('mobile-search-btn');
     const mobileMenuOverlay = document.getElementById('mobile-menu-overlay');

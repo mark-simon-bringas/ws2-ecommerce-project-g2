@@ -82,27 +82,47 @@
 
     <div class="overlay" id="search-overlay">
         <button class="overlay-close-btn" id="search-overlay-close-btn">&times;</button>
-        <div class="search-content">
-            <div class="search-input-group">
-                <span class="iconify" data-icon="material-symbols:search-rounded" data-width="28" data-height="28"></span>
-                <input type="text" placeholder="Search sneakslab.com">
+        <form action="/products/search" method="GET">
+            <div class="search-content">
+                <div class="search-input-group">
+                    <span class="iconify" data-icon="material-symbols:search-rounded" data-width="28" data-height="28"></span>
+                    <input type="text" name="q" placeholder="Search sneakslab.com" required>
+                </div>
+                <div class="quick-links">
+                    <span>Quick Links</span>
+                    <ul>
+                        <li><a href="/products/search?q=New Arrivals">→ New Arrivals</a></li>
+                        <li><a href="/products/search?q=Jordan">→ Jordan</a></li>
+                        <li><a href="/products/search?q=Nike Dunk">→ Nike Dunk</a></li>
+                    </ul>
+                </div>
             </div>
-            <div class="quick-links">
-                <span>Quick Links</span>
-                <ul>
-                    <li><a href="#">→ New Arrivals</a></li><li><a href="#">→ Bestsellers</a></li><li><a href="#">→ Jordan</a></li><li><a href="#">→ Nike Dunk</a></li>
-                </ul>
-            </div>
-        </div>
+        </form>
     </div>
     
     <div class="dropdown">
       <div class="con-1"><ul class="main"><span>Shop</span><li><a href="/products">Shop the Latest</a></li><li><a href="/products?category=men">Shop Men's</a></li><li><a href="/products?category=women">Shop Women's</a></li><li><a href="/products?new=true">Shop New Arrivals</a></li></ul><ul><span>Quick Links</span><li><a href="#">Find a Store</a></li><li><a href="#">Order Status</a></li><li><a href="#">Financing</a></li></ul></div>
-      <div class="con-1"><ul class="main"><span>Shop Men's</span><li><a href="#">New Releases</a></li><li><a href="#">Running</a></li><li><a href="#">Lifestyle</a></li><li><a href="#">Basketball</a></li><li><a href="#">Sandals & Slides</a></li></ul><ul><span>Featured</span><li><a href="#">Bestsellers</a></li><li><a href="#">Clearance</a></li></ul></div>
-      <div class="con-1"><ul class="main"><span>Shop Women's</span><li><a href="#">New Releases</a></li><li><a href="#">Running</a></li><li><a href="#">Lifestyle</a></li><li><a href="#">Platforms</a></li><li><a href="#">Sandals & Slides</a></li></ul><ul><span>Featured</span><li><a href="#">Bestsellers</a></li><li><a href="#">Clearance</a></li></ul></div>
-      <div class="con-1"><ul class="main"><span>New Arrivals</span><li><a href="/products?new=true">Shop All New Arrivals</a></li><li><a href="#">Latest Men's</a></li><li><a href="#">Latest Women's</a></li></ul><ul><span>Featured</span><li><a href="#">Hottest Releases</a></li></ul></div>
-      <div class="con-1"></div>
-      <div class="con-1 dropdown-search-panel"><div class="search-content"><div class="search-input-group"><span class="iconify" data-icon="material-symbols:search-rounded" data-width="28" data-height="28"></span><input type="text" placeholder="Search sneakslab.com"></div><div class="quick-links"><span>Quick Links</span><ul><li><a href="#">→ New Arrivals</a></li><li><a href="#">→ Bestsellers</a></li><li><a href="#">→ Jordan</a></li><li><a href="#">→ Nike Dunk</a></li></ul></div></div></div>
+      <div class="con-1"><ul class="main"><span>Shop Men's</span><li><a href="/products?new=true&category=men">New Releases</a></li><li><a href="/products?brand=Nike&category=men">Nike</a></li><li><a href="/products?brand=Jordan&category=men">Jordan</a></li><li><a href="/products?brand=adidas&category=men">Adidas</a></li></ul><ul><span>Featured</span><li><a href="#">Bestsellers</a></li><li><a href="#">Clearance</a></li></ul></div>
+      <div class="con-1"><ul class="main"><span>Shop Women's</span><li><a href="/products?new=true&category=women">New Releases</a></li><li><a href="/products?brand=Nike&category=women">Nike</a></li><li><a href="/products?brand=Jordan&category=women">Jordan</a></li><li><a href="/products?brand=adidas&category=women">Adidas</a></li></ul><ul><span>Featured</span><li><a href="#">Bestsellers</a></li><li><a href="#">Clearance</a></li></ul></div>
+      <div class="con-1"><ul class="main"><span>New Arrivals</span><li><a href="/products?new=true">Shop All New Arrivals</a></li><li><a href="/products?new=true&category=men">Latest Men's</a></li><li><a href="/products?new=true&category=women">Latest Women's</a></li></ul><ul><span>Featured</span><li><a href="#">Hottest Releases</a></li></ul></div>
+      <div class="con-1 dropdown-search-panel">
+        <form action="/products/search" method="GET">
+            <div class="search-content">
+                <div class="search-input-group">
+                    <span class="iconify" data-icon="material-symbols:search-rounded" data-width="28" data-height="28"></span>
+                    <input type="text" name="q" placeholder="Search sneakslab.com" required>
+                </div>
+                <div class="quick-links">
+                    <span>Quick Links</span>
+                    <ul>
+                        <li><a href="/products/search?q=New Arrivals">→ New Arrivals</a></li>
+                        <li><a href="/products/search?q=Jordan">→ Jordan</a></li>
+                        <li><a href="/products/search?q=Nike Dunk">→ Nike Dunk</a></li>
+                    </ul>
+                </div>
+            </div>
+        </form>
+      </div>
     </div>
     
     <div class="content-wrapper">

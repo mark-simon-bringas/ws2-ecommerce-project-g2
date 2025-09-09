@@ -5,22 +5,23 @@
             <% products.forEach(product => { %>
                 <div class="col">
                     <div class="product-card">
-                        <a href="/products/<%= product.sku %>" class="product-card-link">
-                            <div class="product-card-img-container">
-                                <img src="<%= product.thumbnailUrl %>" class="product-card-img" alt="<%= product.name %>">
+                        <div class="product-card-img-container">
+                            <a href="/products/<%= product.sku %>" class="product-card-img-link"></a>
+                            <img src="<%= product.thumbnailUrl %>" class="product-card-img" alt="<%= product.name %>">
+                            <div class="product-card-actions">
+                                <button type="button" class="btn-action" title="Add to Wishlist">
+                                    <i class="bi bi-heart"></i>
+                                </button>
+                                <button type="button" class="btn-action" title="Add to Cart" data-bs-toggle="modal" data-bs-target="#productModal-<%= product.sku %>">
+                                    <i class="bi bi-bag-plus"></i>
+                                </button>
                             </div>
-                            <div class="product-card-body">
+                        </div>
+                        <div class="product-card-body">
+                            <a href="/products/<%= product.sku %>" class="text-decoration-none">
                                 <div class="product-title"><%= product.name %></div>
                                 <div class="product-price">$<%= product.retailPrice %></div>
-                            </div>
-                        </a>
-                        <div class="product-card-actions">
-                            <button type="button" class="btn-action" title="Add to Wishlist">
-                                <i class="bi bi-heart"></i>
-                            </button>
-                            <button type="button" class="btn-action" title="Add to Cart" data-bs-toggle="modal" data-bs-target="#productModal-<%= product.sku %>">
-                                <i class="bi bi-bag-plus"></i>
-                            </button>
+                            </a>
                         </div>
                     </div>
                 </div>
@@ -28,8 +29,8 @@
         </div>
     <% } else { %>
         <div class="text-center p-5 bg-light rounded-4">
-            <h3 class="text-body-secondary">Nothing to see here... yet.</h3>
-            <p class="lead text-body-secondary">No products were found for this category.</p>
+            <h3 class="text-body-secondary">No products found.</h3>
+            <p class="lead text-body-secondary">Try adjusting your search or filter to find what you're looking for.</p>
         </div>
     <% } %>
 </div>
