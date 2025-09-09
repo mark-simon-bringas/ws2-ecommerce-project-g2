@@ -1,0 +1,16 @@
+<div class="row justify-content-center mt-5">
+    <div class="col-lg-6 col-md-8">
+        <div class="card shadow-sm text-center p-5">
+            <div class="card-body">
+                <h1 class="h2 mb-3">Thank you for your order! 🎉</h1>
+                <p class="lead text-body-secondary">
+                    Your order has been placed and is being processed. A confirmation will be sent to <strong><%= order.customer.email %></strong>.
+                </p>
+                <hr class="my-4">
+                <p class="text-body-secondary">Your Order ID is:</p>
+                <p class="h5 text-monospace"><strong><%= order._id %></strong></p>
+                <a href="/" class="btn btn-primary btn-lg mt-4">Continue Shopping</a>
+            </div>
+        </div>
+    </div>
+</div>

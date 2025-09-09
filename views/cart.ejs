@@ -1,0 +1,79 @@
+<div class="container my-5">
+    <div class="row">
+        <div class="col-lg-8">
+            <h1 class="h2 mb-4">Your Cart</h1>
+
+            <% if (cart && cart.items.length > 0) { %>
+                <div class="card shadow-sm">
+                    <div class="list-group list-group-flush">
+                        <% cart.items.forEach(item => { %>
+                            <div class="list-group-item p-3">
+                                <div class="row align-items-center">
+                                    <div class="col-2 col-md-2">
+                                        <img src="<%= item.thumbnailUrl %>" alt="<%= item.name %>" class="img-fluid rounded">
+                                    </div>
+                                    <div class="col-10 col-md-5">
+                                        <h6 class="mb-0"><%= item.name %></h6>
+                                        <small class="text-body-secondary">Brand: <%= item.brand %></small><br>
+                                        <small class="text-body-secondary">Size: <%= item.size %></small>
+                                    </div>
+                                    <div class="col-md-3 mt-3 mt-md-0">
+                                        <form action="/cart/update" method="POST" class="d-flex">
+                                            <input type="hidden" name="itemId" value="<%= item.itemId %>">
+                                            <input type="number" class="form-control me-2" name="newQty" value="<%= item.qty %>" min="1">
+                                            <button type="submit" class="btn btn-sm btn-outline-secondary">Update</button>
+                                        </form>
+                                    </div>
+                                    <div class="col-md-1 text-end">
+                                        <span class="fw-bold d-none d-md-block">$<%= item.price.toFixed(2) %></span>
+                                    </div>
+                                    <div class="col-md-1 text-end">
+                                        <form action="/cart/remove" method="POST" class="d-inline">
+                                            <input type="hidden" name="itemId" value="<%= item.itemId %>">
+                                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Remove item">&times;</button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        <% }) %>
+                    </div>
+                </div>
+            <% } else { %>
+                <div class="card shadow-sm text-center p-5">
+                    <div class="card-body">
+                        <h2 class="h4">Your cart is empty.</h2>
+                        <p class="text-body-secondary">Looks like you haven't added anything to your cart yet.</p>
+                        <a href="/" class="btn btn-primary mt-3">Continue Shopping</a>
+                    </div>
+                </div>
+            <% } %>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title h4 mb-3">Order Summary</h5>
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span>Subtotal</span>
+                            <span>$<%= cart.totalPrice.toFixed(2) %></span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span>Shipping</span>
+                            <span>Free</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between fw-bold h5">
+                            <span>Total</span>
+                            <span>$<%= cart.totalPrice.toFixed(2) %></span>
+                        </li>
+                    </ul>
+                    <div class="d-grid mt-4">
+                        <a href="/checkout" class="btn btn-primary btn-lg <%= (cart && cart.items.length > 0) ? '' : 'disabled' %>">
+                            Proceed to Checkout
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

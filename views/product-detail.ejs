@@ -1,0 +1,49 @@
+<div class="container my-5">
+    <div class="row">
+        <div class="col-md-7">
+            <% if (product.imageUrl) { %>
+                <img src="<%= product.imageUrl %>" alt="<%= product.name %>" class="img-fluid rounded shadow-sm">
+            <% } else { %>
+                <img src="https://via.placeholder.com/800x800.png?text=No+Image" alt="No Image Available" class="img-fluid rounded shadow-sm">
+            <% } %>
+        </div>
+        <div class="col-md-5">
+            <p class="text-body-secondary mb-2"><%= product.brand %></p>
+            <h1 class="display-5 fw-bold"><%= product.name %></h1>
+            <p class="h3 my-3">$<%= product.retailPrice %></p>
+            
+            <p class="text-body-secondary">A timeless classic, redesigned for modern comfort and style. The perfect addition to any collection.</p>
+            
+            <hr>
+            
+            <form action="/cart/add" method="POST">
+                <input type="hidden" name="productId" value="<%= product._id %>">
+                <input type="hidden" name="sku" value="<%= product.sku %>">
+
+                <div class="mb-3">
+                    <label for="size" class="form-label"><strong>Select Size</strong></label>
+                    <select class="form-select form-select-lg" id="size" name="size" required>
+                        <option>8</option>
+                        <option>8.5</option>
+                        <option>9</option>
+                        <option>9.5</option>
+                        <option>10</option>
+                        <option>10.5</option>
+                        <option>11</option>
+                        <option>12</option>
+                    </select>
+                </div>
+                
+                <div class="d-grid">
+                    <button type="submit" class="btn btn-primary btn-lg">
+                        <i class="bi bi-bag-plus"></i> Add to Cart
+                    </button>
+                </div>
+            </form>
+            
+            <div class="mt-4">
+                <p class="text-body-secondary"><small>SKU: <%= product.sku %></small></p>
+            </div>
+        </div>
+    </div>
+</div>

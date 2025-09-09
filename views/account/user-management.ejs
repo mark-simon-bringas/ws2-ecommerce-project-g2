@@ -1,0 +1,54 @@
+<h1 class="h2 mb-4">User Management</h1>
+    
+<div class="dashboard-card">
+    <div class="card-body">
+        <% if (users && users.length > 0) { %>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Role</th>
+                            <th>Status</th>
+                            <th>Verified</th>
+                            <th>Created At</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% users.forEach(user => { %>
+                            <tr>
+                                <td><%= user.firstName %> <%= user.lastName %></td>
+                                <td><%= user.email %></td>
+                                <td>
+                                    <% if (user.role === 'admin') { %>
+                                        <span class="badge bg-primary-subtle text-primary-emphasis">Admin</span>
+                                    <% } else { %>
+                                        <span class="badge bg-secondary-subtle text-secondary-emphasis">Customer</span>
+                                    <% } %>
+                                </td>
+                                <td>
+                                    <% if (user.accountStatus === 'active') { %>
+                                        <span class="badge bg-success-subtle text-success-emphasis">Active</span>
+                                    <% } else { %>
+                                        <span class="badge bg-danger-subtle text-danger-emphasis"><%= user.accountStatus %></span>
+                                    <% } %>
+                                </td>
+                                <td>
+                                    <% if (user.isEmailVerified) { %>
+                                        <span class="badge bg-light text-body-secondary">Yes</span>
+                                    <% } else { %>
+                                        <span class="badge bg-light text-body-secondary">No</span>
+                                    <% } %>
+                                </td>
+                                <td><%= new Date(user.createdAt).toLocaleDateString() %></td>
+                            </tr>
+                        <% }) %>
+                    </tbody>
+                </table>
+            </div>
+        <% } else { %>
+            <p class="text-body-secondary">No users found in the database.</p>
+        <% } %>
+    </div>
+</div>

@@ -1,3 +1,4 @@
+<<<<<<< Updated upstream
 <!DOCTYPE html>
 <html>
     <head>
@@ -8,3 +9,195 @@
         <p>Welcome to your WS2 E-commerce Project!</p>
     </body>
 </html>
+=======
+<div id="heroCarousel" class="carousel slide hero-carousel mb-5" data-bs-ride="carousel">
+    <div class="carousel-indicators">
+        <button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="0" class="active" aria-current="true" aria-label="Slide 1"></button>
+        <button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="1" aria-label="Slide 2"></button>
+    </div>
+    <div class="carousel-inner">
+        <div class="carousel-item active" style="background-image: url('https://images.unsplash.com/photo-1542291026-7eec264c27ff?q=80&w=2070&auto=format&fit=crop')">
+            <div class="carousel-caption text-start pb-5">
+                <h1 class="display-3 fw-bold">Legacy Reimagined</h1>
+                <p class="lead my-3">Timeless silhouettes, modern performance. Unbox the next generation of style.</p>
+                <a href="/products" class="btn btn-light btn-lg">Shop the Collection</a>
+            </div>
+        </div>
+        <div class="carousel-item" style="background-image: url('https://images.unsplash.com/photo-1552346154-21d32810aba3?q=80&w=2070&auto=format&fit=crop')">
+            <div class="carousel-caption text-start pb-5">
+                <h1 class="display-3 fw-bold">Feel The Future</h1>
+                <p class="lead my-3">Experience the next leap in comfort and design. Engineered for every step.</p>
+                <a href="/products?new=true" class="btn btn-light btn-lg">Explore New Arrivals</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container mb-5">
+    <div class="row g-4">
+        <div class="col-lg-7">
+            <a href="/products?new=true" class="bento-box bento-box-large">
+                <img src="https://images.unsplash.com/photo-1606107557195-0e29a4b5b4aa?q=80&w=1964&auto=format&fit=crop" alt="Featured Product">
+                <div class="bento-box-content">
+                    <p>New Arrivals</p>
+                    <h3>The Latest Drops</h3>
+                </div>
+            </a>
+        </div>
+        <div class="col-lg-5">
+            <div class="row g-4">
+                <div class="col-12">
+                     <a href="/products?category=men" class="bento-box">
+                        <img src="https://images.unsplash.com/photo-1560769629-975ec94e6a86?q=80&w=1964&auto=format&fit=crop" alt="Men's Collection">
+                        <div class="bento-box-content">
+                            <p>Men's Collection</p>
+                            <h3>For Every Step</h3>
+                        </div>
+                    </a>
+                </div>
+                <div class="col-12">
+                    <a href="/products?category=women" class="bento-box">
+                        <img src="https://images.unsplash.com/photo-1543163521-1bf539c55dd2?q=80&w=2080&auto=format&fit=crop" alt="Women's Collection">
+                        <div class="bento-box-content">
+                            <p>Women's Collection</p>
+                            <h3>Define Your Style</h3>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container my-5 py-5">
+    <div class="d-flex justify-content-between align-items-center mb-5">
+        <h2 class="display-5 fw-bold mb-0">Fresh Off The Line</h2>
+        <a href="/products?new=true" class="btn btn-outline-dark">View All</a>
+    </div>
+    <% if (newArrivals && newArrivals.length > 0) { %>
+        <div class="row row-cols-1 row-cols-sm-2 row-cols-lg-4 g-4">
+            <% newArrivals.forEach(product => { %>
+                <div class="col">
+                    <div class="product-card">
+                        <a href="/products/<%= product.sku %>" class="product-card-link">
+                            <div class="product-card-img-container">
+                                <img src="<%= product.thumbnailUrl %>" class="product-card-img" alt="<%= product.name %>">
+                            </div>
+                            <div class="product-card-body">
+                                <div class="product-title"><%= product.name %></div>
+                                <div class="product-price">$<%= product.retailPrice %></div>
+                            </div>
+                        </a>
+                        <div class="product-card-actions">
+                            <button type="button" class="btn-action" title="Add to Wishlist">
+                                <i class="bi bi-heart"></i>
+                            </button>
+                            <button type="button" class="btn-action" title="Add to Cart" data-bs-toggle="modal" data-bs-target="#productModal-<%= product.sku %>">
+                                <i class="bi bi-bag-plus"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            <% }) %>
+        </div>
+    <% } else { %>
+        <p class="text-center text-body-secondary">No new arrivals to show right now.</p>
+    <% } %>
+</div>
+
+<div class="bg-light my-5 py-5">
+    <div class="container">
+        <h2 class="display-5 fw-bold text-center mb-5">The sneakslab Difference</h2>
+        <div class="row text-center g-4">
+            <div class="col-md-4">
+                <div class="feature-icon-container mb-3">
+                    <i class="bi bi-patch-check-fill"></i>
+                </div>
+                <h4>Authenticity Guaranteed</h4>
+                <p class="text-body-secondary">Every pair is 100% authentic, sourced from trusted partners and verified by our experts.</p>
+            </div>
+            <div class="col-md-4">
+                <div class="feature-icon-container mb-3">
+                    <i class="bi bi-airplane-fill"></i>
+                </div>
+                <h4>Fast, Free Shipping</h4>
+                <p class="text-body-secondary">Get your grails delivered to your door quickly and securely, with free shipping on all orders.</p>
+            </div>
+            <div class="col-md-4">
+                <div class="feature-icon-container mb-3">
+                    <i class="bi bi-arrow-counterclockwise"></i>
+                </div>
+                <h4>Easy Returns</h4>
+                <p class="text-body-secondary">Not the perfect fit? Our hassle-free return policy has you covered.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container my-5 py-5">
+    <h2 class="display-5 fw-bold text-center mb-5">Shop by Brand</h2>
+    <div class="brand-grid">
+        <a href="#" class="brand-logo-container">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/a/a6/Logo_NIKE.svg" alt="Nike" class="brand-logo">
+        </a>
+        <a href="#" class="brand-logo-container">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/2/20/Adidas_Logo.svg" alt="Adidas" class="brand-logo">
+        </a>
+        <a href="#" class="brand-logo-container">
+            <img src="https://upload.wikimedia.org/wikipedia/en/thumb/3/37/Jumpman_logo.svg/1200px-Jumpman_logo.svg.png" alt="Jordan" class="brand-logo">
+        </a>
+        <a href="#" class="brand-logo-container">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/e/ea/New_Balance_logo.svg" alt="New Balance" class="brand-logo">
+        </a>
+    </div>
+</div>
+
+<% if (newArrivals && newArrivals.length > 0) { %>
+    <% newArrivals.forEach(product => { %>
+        <div class="modal fade" id="productModal-<%= product.sku %>" tabindex="-1" aria-labelledby="productModalLabel-<%= product.sku %>" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header border-0">
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body text-center">
+                        <img src="<%= product.thumbnailUrl %>" alt="<%= product.name %>" class="img-fluid rounded-3 mb-3" style="max-height: 250px;">
+                        <h5 class="modal-title" id="productModalLabel-<%= product.sku %>"><%= product.name %></h5>
+                        <p class="text-body-secondary"><%= product.brand %></p>
+                        <p class="h4 fw-bold">$<%= product.retailPrice %></p>
+                        
+                        <form action="/cart/add" method="POST" id="form-add-<%= product.sku %>">
+                            <input type="hidden" name="productId" value="<%= product._id %>">
+                            <input type="hidden" name="sku" value="<%= product.sku %>">
+                            <div class="my-4">
+                                <label for="size-<%= product.sku %>" class="form-label"><strong>Select Size</strong></label>
+                                <select class="form-select form-select-lg" id="size-<%= product.sku %>" name="size" required>
+                                    <option>8</option>
+                                    <option>8.5</option>
+                                    <option>9</option>
+                                    <option>9.5</option>
+                                    <option>10</option>
+                                    <option>10.5</option>
+                                    <option>11</option>
+                                    <option>12</option>
+                                </select>
+                            </div>
+                        </form>
+        
+                         <form action="/cart/add" method="POST" id="form-buy-<%= product.sku %>" class="d-none">
+                            <input type="hidden" name="productId" value="<%= product._id %>">
+                            <input type="hidden" name="sku" value="<%= product.sku %>">
+                            <input type="hidden" name="size" value=""> <input type="hidden" name="buyNow" value="true">
+                        </form>
+        
+                    </div>
+                    <div class="modal-footer border-0 d-flex flex-column gx-3">
+                         <button type="submit" form="form-buy-<%= product.sku %>" class="btn btn-primary btn-lg w-100 mb-2" onclick="document.querySelector('#form-buy-<%= product.sku %> input[name=size]').value = document.querySelector('#size-<%= product.sku %>').value;">Buy Now</button>
+                         <button type="submit" form="form-add-<%= product.sku %>" class="btn btn-outline-secondary btn-lg w-100">Add to Cart</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    <% }) %>
+<% } %>
+>>>>>>> Stashed changes

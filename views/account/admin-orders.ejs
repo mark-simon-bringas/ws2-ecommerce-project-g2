@@ -1,0 +1,68 @@
+<div class="page-header d-flex justify-content-between align-items-center">
+    <div>
+        <h1>Order Management</h1>
+        <p class="text-body-secondary">View and manage all customer orders.</p>
+    </div>
+</div>
+
+<% if (typeof message !== 'undefined' && message) { %>
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <%= message %>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+<% } %>
+
+<div class="dashboard-card">
+    <div class="card-body">
+        <% if (orders && orders.length > 0) { %>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Order ID</th>
+                            <th>Date</th>
+                            <th>Customer</th>
+                            <th>Total</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% orders.forEach(order => { %>
+                            <tr>
+                                <td>
+                                    <a href="/account/admin/orders/<%= order._id %>" class="fw-semibold">
+                                        ...<%= order._id.toString().slice(-6) %>
+                                    </a>
+                                </td>
+                                <td><%= new Date(order.orderDate).toLocaleDateString() %></td>
+                                <td><%= order.customer.firstName %> <%= order.customer.lastName %></td>
+                                <td class="fw-bold"><%= order.total.toLocaleString('en-US', { style: 'currency', currency: 'USD' }) %></td>
+                                <td>
+                                    <% if (order.status === 'Processing') { %>
+                                        <span class="badge bg-info-subtle text-info-emphasis rounded-pill"><%= order.status %></span>
+                                    <% } else if (order.status === 'Shipped') { %>
+                                        <span class="badge bg-primary-subtle text-primary-emphasis rounded-pill"><%= order.status %></span>
+                                    <% } else if (order.status === 'Cancelled') { %>
+                                        <span class="badge bg-secondary-subtle text-secondary-emphasis rounded-pill"><%= order.status %></span>
+                                    <% } else { %>
+                                        <span class="badge bg-success-subtle text-success-emphasis rounded-pill"><%= order.status %></span>
+                                    <% } %>
+                                </td>
+                                <td>
+                                    <a href="/account/admin/orders/<%= order._id %>" class="btn btn-sm btn-outline-secondary">
+                                        <i class="bi bi-eye"></i> View
+                                    </a>
+                                </td>
+                            </tr>
+                        <% }) %>
+                    </tbody>
+                </table>
+            </div>
+        <% } else { %>
+            <div class="text-center p-5">
+                <p class="lead text-body-secondary">There are no orders to display yet.</p>
+            </div>
+        <% } %>
+    </div>
+</div>

@@ -1,0 +1,83 @@
+<div class="page-header">
+    <h1>Order Details</h1>
+    <p class="text-body-secondary">
+        Order <span class="text-monospace">#<%= order._id.toString() %></span> placed on <%= new Date(order.orderDate).toLocaleString() %>
+    </p>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-8">
+        <div class="dashboard-card mb-4">
+            <div class="card-body">
+                <h5 class="card-title fw-semibold mb-3">Items in Order (<%= order.items.length %>)</h5>
+                <ul class="list-group list-group-flush">
+                    <% order.items.forEach(item => { %>
+                        <li class="list-group-item d-flex align-items-center px-0">
+                            <img src="<%= item.thumbnailUrl %>" alt="<%= item.name %>" style="width: 60px; height: 60px; object-fit: cover;" class="rounded me-3">
+                            <div class="flex-grow-1">
+                                <div class="fw-semibold"><%= item.name %></div>
+                                <small class="text-body-secondary">Size: <%= item.size %> | Qty: <%= item.qty %></small>
+                            </div>
+                            <div class="text-end">
+                                <div class="fw-bold"><%= item.price.toLocaleString('en-US', { style: 'currency', currency: 'USD' }) %></div>
+                                <small class="text-body-secondary"><%= item.unitPrice.toLocaleString('en-US', { style: 'currency', currency: 'USD' }) %> each</small>
+                            </div>
+                        </li>
+                    <% }) %>
+                </ul>
+                <div class="list-group-item d-flex justify-content-end fw-bold fs-5 px-0 mt-3">
+                    <span class="me-3">Total:</span>
+                    <span><%= order.total.toLocaleString('en-US', { style: 'currency', currency: 'USD' }) %></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="dashboard-card mb-4">
+            <div class="card-body">
+                <h5 class="card-title fw-semibold mb-3">Actions</h5>
+                <form action="/account/admin/orders/update-status/<%= order._id %>" method="POST" class="mb-3">
+                    <label for="newStatus" class="form-label">Update Order Status</label>
+                    <div class="input-group">
+                        <select id="newStatus" name="newStatus" class="form-select">
+                            <option value="Processing" <%= order.status === 'Processing' ? 'selected' : '' %>>Processing</option>
+                            <option value="Shipped" <%= order.status === 'Shipped' ? 'selected' : '' %>>Shipped</option>
+                            <option value="Delivered" <%= order.status === 'Delivered' ? 'selected' : '' %>>Delivered</option>
+                            <option value="Cancelled" <%= order.status === 'Cancelled' ? 'selected' : '' %> disabled>Cancelled</option>
+                        </select>
+                        <button type="submit" class="btn btn-primary">Update</button>
+                    </div>
+                </form>
+                
+                <% if (order.status === 'Processing') { %>
+                <hr>
+                <form action="/account/admin/orders/cancel/<%= order._id %>" method="POST">
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-outline-danger" onclick="return confirm('Are you sure you want to cancel this order? This action cannot be undone.');">
+                            <i class="bi bi-x-circle"></i> Cancel Order
+                        </button>
+                    </div>
+                </form>
+                <% } %>
+            </div>
+        </div>
+
+        <div class="dashboard-card">
+            <div class="card-body">
+                <h5 class="card-title fw-semibold mb-3">Customer</h5>
+                <p class="mb-1">
+                    <strong><%= order.customer.firstName %> <%= order.customer.lastName %></strong>
+                </p>
+                <p class="mb-3">
+                    <a href="mailto:<%= order.customer.email %>"><%= order.customer.email %></a>
+                </p>
+                <h6 class="fw-semibold">Shipping Address</h6>
+                <p class="text-body-secondary">
+                    <%= order.shippingAddress.address %><br>
+                    <%= order.shippingAddress.state %>, <%= order.shippingAddress.zip %>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>

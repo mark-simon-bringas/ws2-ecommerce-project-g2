@@ -1,0 +1,45 @@
+<h1 class="h2 mb-4">Order History</h1>
+    
+<div class="dashboard-card">
+    <div class="card-body">
+        <% if (orders && orders.length > 0) { %>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Order ID</th>
+                            <th>Date</th>
+                            <th>Total</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% orders.forEach(order => { %>
+                            <tr>
+                                <td><small class="text-body-secondary text-monospace">...<%= order._id.toString().slice(-6) %></small></td>
+                                <td><%= new Date(order.orderDate).toLocaleDateString() %></td>
+                                <td class="fw-bold">$<%= order.total.toFixed(2) %></td>
+                                <td>
+                                    <% if (order.status === 'Processing') { %>
+                                        <span class="badge bg-info-subtle text-info-emphasis"><%= order.status %></span>
+                                    <% } else if (order.status === 'Shipped') { %>
+                                            <span class="badge bg-primary-subtle text-primary-emphasis"><%= order.status %></span>
+                                    <% } else if (order.status === 'Cancelled') { %>
+                                        <span class="badge bg-secondary-subtle text-secondary-emphasis"><%= order.status %></span>
+                                    <% } else { %>
+                                            <span class="badge bg-success-subtle text-success-emphasis"><%= order.status %></span>
+                                    <% } %>
+                                </td>
+                            </tr>
+                        <% }) %>
+                    </tbody>
+                </table>
+            </div>
+        <% } else { %>
+            <div class="text-center p-5">
+                <p class="lead text-body-secondary">You have not placed any orders yet.</p>
+                <a href="/products" class="btn btn-primary mt-3">Start Shopping</a>
+            </div>
+        <% } %>
+    </div>
+</div>
