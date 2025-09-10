@@ -1,0 +1,28 @@
+.auth-page-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem 1rem;
+    min-height: calc(100vh - 44px); /* Full height minus navbar */
+    background-color: var(--bg-color);
+}
+
+.auth-card {
+    background-color: #fff;
+    border-radius: 1rem;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.08);
+    padding: 2rem;
+    max-width: 480px;
+    width: 100%;
+}
+
+.auth-card .form-control {
+    padding: 0.8rem 1rem;
+    font-size: 1rem;
+}
+
+@media (min-width: 992px) {
+    .auth-card {
+        padding: 3rem;
+    }
+}

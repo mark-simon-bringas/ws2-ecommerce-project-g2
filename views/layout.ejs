@@ -10,6 +10,11 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/style.css">
     <link rel="stylesheet" href="/css/mobile.css">
+    
+    <% if (typeof page !== 'undefined' && page === 'auth') { %>
+        <link rel="stylesheet" href="/css/auth.css">
+    <% } %>
+
     <script src="https://code.iconify.design/2/2.2.1/iconify.min.js"></script>
     <title><%= title %> | sneakslab</title>
 </head>
@@ -185,7 +190,7 @@
                 </main>
             </div>
         <% } else { %>
-            <main class="container-fluid p-0">
+            <main>
                 <%- body %>
             </main>
         <% } %>
