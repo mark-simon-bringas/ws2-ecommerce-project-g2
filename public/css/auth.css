@@ -1,28 +1,94 @@
-.auth-page-wrapper {
+/* --- Styles for Authentication Pages (Login, Register, etc.) --- */
+
+.auth-container {
     display: flex;
-    align-items: center;
     justify-content: center;
-    padding: 3rem 1rem;
-    min-height: calc(100vh - 44px); /* Full height minus navbar */
-    background-color: var(--bg-color);
+    align-items: center;
+    width: 100%;
+    min-height: calc(100vh - 92px);
+    padding: 2rem 1rem;
+    background-color: var(--card-bg-color); 
 }
 
 .auth-card {
-    background-color: #fff;
-    border-radius: 1rem;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.08);
-    padding: 2rem;
-    max-width: 480px;
+    background-color: var(--card-bg-color);
+    padding: 2.5rem;
+    border-radius: 16px; 
+    box-shadow: none; 
     width: 100%;
+    max-width: 550px;
 }
 
-.auth-card .form-control {
-    padding: 0.8rem 1rem;
+.auth-card .form-control-lg {
+    padding: 0.8rem 1.1rem;
     font-size: 1rem;
 }
 
-@media (min-width: 992px) {
+/* --- Updated: New styles for password validation feedback --- */
+.password-criteria {
+    font-size: 0.8rem;
+    color: var(--text-color-secondary);
+    margin-top: 0.75rem;
+    padding-left: 0;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.25rem 1rem;
+    transition: all 0.3s ease-in-out; /* Add transition to the container for smoother overall movement */
+}
+
+.password-criteria li {
+    list-style: none;
+    margin-bottom: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.3s ease-in-out, margin 0.3s ease-in-out; /* Add margin transition */
+    max-height: 20px; /* Initial height for animation */
+    overflow: hidden;
+    position: relative; /* Needed for absolute positioning of icons */
+    padding-bottom: 0.25rem; /* Small padding for visual spacing */
+}
+
+.password-criteria li.valid {
+    color: #34c759; /* Green for valid */
+    max-height: 0;
+    opacity: 0;
+    transform: translateX(-10px);
+    margin-bottom: -0.5rem; /* Collapse margin when hidden */
+    padding-bottom: 0;
+}
+
+.password-criteria li.invalid {
+    color: #ff3b30; /* Red for invalid */
+    max-height: 20px; /* Ensure it's visible if invalid */
+    opacity: 1;
+    transform: translateX(0);
+    margin-bottom: 0;
+    padding-bottom: 0.25rem;
+}
+
+.password-criteria li .iconify {
+    font-size: 1rem;
+    line-height: 1;
+    flex-shrink: 0;
+    /* Optional: Animate icon color for fun */
+    transition: color 0.3s ease-in-out; 
+}
+
+
+/* --- Responsive adjustments for smaller screens (no border) --- */
+@media (max-width: 576px) {
+    .auth-container {
+        align-items: flex-start; 
+        padding: 2rem 1rem;
+    }
+
     .auth-card {
-        padding: 3rem;
+        padding: 2rem 1.5rem;
+        border: none; 
+    }
+
+    .password-criteria {
+        grid-template-columns: 1fr;
     }
 }

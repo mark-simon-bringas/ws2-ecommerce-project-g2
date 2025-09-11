@@ -11,8 +11,9 @@ document.addEventListener('DOMContentLoaded', function() {
             dropdownContainer.style.height = "0px";
             contentPanels.forEach(panel => panel.style.opacity = "0");
         };
+        // --- Updated ---
         const openDropdown = (activeIndex) => {
-            dropdownContainer.style.height = "330px";
+            dropdownContainer.style.height = "280px"; // Decreased height from 330px
             contentPanels.forEach((panel, index) => {
                 panel.style.opacity = (index === activeIndex) ? "1" : "0";
             });
@@ -23,8 +24,8 @@ document.addEventListener('DOMContentLoaded', function() {
         if (desktopSearchBtn) {
             desktopSearchBtn.addEventListener('click', (e) => {
                 e.preventDefault();
-                const searchPanelIndex = 4; // Corrected index for the search panel
-                const isSearchOpen = dropdownContainer.style.height === "330px" && contentPanels[searchPanelIndex].style.opacity === "1";
+                const searchPanelIndex = 4;
+                const isSearchOpen = dropdownContainer.style.height === "280px" && contentPanels[searchPanelIndex].style.opacity === "1";
                 isSearchOpen ? closeDropdown() : openDropdown(searchPanelIndex);
             });
         }

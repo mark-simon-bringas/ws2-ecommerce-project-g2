@@ -30,9 +30,11 @@ app.use(session({
 }));
 
 // Custom middleware to make user session and cart available to all views
+// --- Updated ---
 app.use((req, res, next) => {
     res.locals.currentUser = req.session.user;
-    res.locals.cart = req.session.cart; // Make cart available to all views
+    res.locals.cart = req.session.cart;
+    res.locals.path = req.path; // Added: Make the current path available to all views
     next();
 });
 

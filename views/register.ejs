@@ -1,18 +1,8 @@
-<div class="row justify-content-center mt-5">
-    <div class="col-lg-5 col-md-8">
+<div class="auth-container">
+    <div class="auth-card">
         <div class="text-center">
             <h1 class="h2 mb-4">Create an Account</h1>
         </div>
-
-        <% if (typeof errors !== 'undefined' && errors.length > 0) { %>
-            <div class="alert alert-danger" role="alert">
-                <ul class="mb-0">
-                    <% errors.forEach(function(error) { %>
-                        <li><%= error %></li>
-                    <% }) %>
-                </ul>
-            </div>
-        <% } %>
 
         <form action="/users/register" method="POST">
             <div class="row">
@@ -32,6 +22,13 @@
             <div class="mb-3">
                 <label for="password" class="form-label">Password</label>
                 <input type="password" id="password" name="password" class="form-control form-control-lg" required>
+                <ul class="password-criteria">
+                    <li id="length-check"><span class="iconify"></span>At least 8 characters</li>
+                    <li id="upper-check"><span class="iconify"></span>One uppercase letter</li>
+                    <li id="lower-check"><span class="iconify"></span>One lowercase letter</li>
+                    <li id="number-check"><span class="iconify"></span>One number</li>
+                    <li id="special-check"><span class="iconify"></span>One special character</li>
+                </ul>
             </div>
             <div class="mb-3">
                 <label for="confirmPassword" class="form-label">Confirm Password</label>
@@ -44,7 +41,43 @@
         </form>
 
         <p class="text-center text-body-secondary mt-4">
-            Already have an account? <a href="/users/login" class="text-decoration-none">Sign in</a>
+            Already have an account? <a href="/users/login">Sign in</a>
         </p>
     </div>
 </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const passwordInput = document.getElementById('password');
+        const confirmPasswordInput = document.getElementById('confirmPassword');
+
+        const checks = {
+            length: { el: document.getElementById('length-check'), regex: /.{8,}/ },
+            upper: { el: document.getElementById('upper-check'), regex: /[A-Z]/ },
+            lower: { el: document.getElementById('lower-check'), regex: /[a-z]/ },
+            number: { el: document.getElementById('number-check'), regex: /[0-9]/ },
+            special: { el: document.getElementById('special-check'), regex: /[!@#$%^&*()_\+\-=\[\]{};':"\\|,.<>\/?`~]/ }
+        };
+
+        const validate = () => {
+            const password = passwordInput.value;
+            for (const key in checks) {
+                const check = checks[key];
+                const icon = check.el.querySelector('.iconify');
+                
+                if (check.regex.test(password)) {
+                    check.el.classList.remove('invalid');
+                    check.el.classList.add('valid');
+                    icon.dataset.icon = 'material-symbols:check-circle-outline-rounded';
+                } else {
+                    check.el.classList.remove('valid');
+                    check.el.classList.add('invalid');
+                    icon.dataset.icon = 'material-symbols:cancel-outline-rounded';
+                }
+            }
+        };
+
+        passwordInput.addEventListener('input', validate);
+        validate();
+    });
+</script>
