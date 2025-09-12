@@ -10,7 +10,8 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 router.get('/register', (req, res) => {
     res.render('register', { 
         title: "Register",
-        errors: []
+        errors: [],
+        page: 'auth'
     });
 });
 
@@ -40,7 +41,8 @@ router.post('/register', async (req, res) => {
         if (pwdStrength.length > 0) {
             return res.status(400).render('register', {
                 title: "Register",
-                errors: pwdStrength
+                errors: pwdStrength,
+                page: 'auth'
             });
         }
 
@@ -91,45 +93,63 @@ router.get('/login', (req, res) => {
     }
     res.render('login', { 
         title: "Login",
-        message: message
+        message: message,
+        error: req.query.error, // Added to handle potential redirect errors
+        page: 'auth' 
     });
 });
 
 // Handle login form submission
+// --- Updated ---
 router.post('/login', async (req, res) => {
     try {
         const db = req.app.locals.client.db(req.app.locals.dbName);
         const usersCollection = db.collection('users');
 
         const user = await usersCollection.findOne({ email: req.body.email });
-        if (!user) {
-            return res.status(404).send("User not found.");
+        
+        // Check password validity. Note: We check the user object *after* the password check
+        // to avoid revealing whether an email is registered (timing attack prevention).
+        const isPasswordValid = user ? await bcrypt.compare(req.body.password, user.passwordHash) : false;
+
+        if (!user || !isPasswordValid) {
+            return res.status(401).render('login', {
+                title: "Login",
+                error: 'Invalid email or password.', // Pass a specific error message
+                page: 'auth'
+            });
         }
+        
         if (!user.isEmailVerified) {
-            return res.send("Please verify your email before logging in.");
-        }
-        if (user.accountStatus !== 'active') {
-            return res.status(403).send("Account is not active.");
+             return res.status(401).render('login', {
+                title: "Login",
+                error: 'Please verify your email before logging in.',
+                page: 'auth'
+            });
         }
 
-        const isPasswordValid = await bcrypt.compare(req.body.password, user.passwordHash);
-        if (isPasswordValid) {
-            req.session.user = {
-                userId: user.userId,
-                firstName: user.firstName,
-                lastName: user.lastName,
-                email: user.email,
-                role: user.role,
-                isEmailVerified: user.isEmailVerified
-            };
-            // On successful login, redirect to the new account page
-            res.redirect('/account');
-        } else {
-            res.status(401).send("Invalid credentials.");
+        if (user.accountStatus !== 'active') {
+             return res.status(403).render('login', {
+                title: "Login",
+                error: 'This account is not active.',
+                page: 'auth'
+            });
         }
+
+        // If all checks pass, create session
+        req.session.user = {
+            userId: user.userId,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            email: user.email,
+            role: user.role,
+            isEmailVerified: user.isEmailVerified
+        };
+        res.redirect('/account');
+
     } catch (err) {
         console.error("Error during login:", err);
-        res.status(500).send("Something went wrong during login.");
+        res.status(500).redirect('/users/login?error=' + encodeURIComponent('An unexpected error occurred.'));
     }
 });
 

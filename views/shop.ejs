@@ -9,9 +9,16 @@
                             <a href="/products/<%= product.sku %>" class="product-card-img-link"></a>
                             <img src="<%= product.thumbnailUrl %>" class="product-card-img" alt="<%= product.name %>">
                             <div class="product-card-actions">
-                                <button type="button" class="btn-action" title="Add to Wishlist">
-                                    <i class="bi bi-heart"></i>
-                                </button>
+                                <% if (currentUser) { %>
+                                    <button type="button" class="btn-action wishlist-toggle-btn" title="Toggle Wishlist" data-product-id="<%= product._id %>">
+                                        <% const isWishlisted = wishlist.some(id => id.equals(product._id)); %>
+                                        <i class="bi <%= isWishlisted ? 'bi-heart-fill' : 'bi-heart' %>"></i>
+                                    </button>
+                                <% } else { %>
+                                    <a href="/users/login" class="btn-action" title="Login to Add to Wishlist">
+                                        <i class="bi bi-heart"></i>
+                                    </a>
+                                <% } %>
                                 <button type="button" class="btn-action" title="Add to Cart" data-bs-toggle="modal" data-bs-target="#productModal-<%= product.sku %>">
                                     <i class="bi bi-bag-plus"></i>
                                 </button>
@@ -68,7 +75,7 @@
                             </div>
                         </form>
         
-                         <form action="/cart/add" method="POST" id="form-buy-<%= product.sku %>" class="d-none">
+                        <form action="/cart/add" method="POST" id="form-buy-<%= product.sku %>" class="d-none">
                             <input type="hidden" name="productId" value="<%= product._id %>">
                             <input type="hidden" name="sku" value="<%= product.sku %>">
                             <input type="hidden" name="size" value=""> <input type="hidden" name="buyNow" value="true">
@@ -76,7 +83,7 @@
         
                     </div>
                     <div class="modal-footer border-0 d-flex flex-column gx-3">
-                         <button type="submit" form="form-buy-<%= product.sku %>" class="btn btn-primary btn-lg w-100 mb-2" onclick="document.querySelector('#form-buy-<%= product.sku %> input[name=size]').value = document.querySelector('#size-<%= product.sku %>').value;">Buy Now</button>
+                        <button type="submit" form="form-buy-<%= product.sku %>" class="btn btn-primary btn-lg w-100 mb-2" onclick="document.querySelector('#form-buy-<%= product.sku %> input[name=size]').value = document.querySelector('#size-<%= product.sku %>').value;">Buy Now</button>
                          <button type="submit" form="form-add-<%= product.sku %>" class="btn btn-outline-secondary btn-lg w-100">Add to Cart</button>
                     </div>
                 </div>

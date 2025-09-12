@@ -1,3 +1,5 @@
+<% const isHomepage = true; %>
+
 <div id="heroCarousel" class="carousel slide hero-carousel" data-bs-ride="carousel">
     <div class="carousel-indicators">
         <button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="0" class="active" aria-current="true" aria-label="Slide 1"></button>
@@ -7,22 +9,25 @@
     <div class="carousel-inner">
         <div class="carousel-item active" style="background-image: url('https://images.unsplash.com/photo-1542291026-7eec264c27ff?q=80&w=2070&auto=format&fit=crop')">
             <div class="carousel-caption text-center pb-5">
-                <h1 class="display-3 fw-bold">Fresh Off The Line</h1>
+             
+               <h1 class="display-3 fw-bold">Fresh Off The Line</h1>
                 <p class="lead my-3">Discover the latest drops and must-have releases from the world's top brands.</p>
                 <a href="/products?new=true" class="btn btn-light btn-lg">Explore New Arrivals</a>
             </div>
         </div>
         <div class="carousel-item" style="background-image: url('https://images.unsplash.com/photo-1552346154-21d32810aba3?q=80&w=2070&auto=format&fit=crop')">
-            <div class="carousel-caption text-center pb-5">
+          
+           <div class="carousel-caption text-center pb-5">
                 <h1 class="display-3 fw-bold">The Classics, Reimagined</h1>
                 <p class="lead my-3">Iconic silhouettes that defined a generation, now back in stock.</p>
                 <a href="/products" class="btn btn-light btn-lg">Shop the Collection</a>
             </div>
         </div>
-        <div class="carousel-item" style="background-image: url('https://images.unsplash.com/photo-1543508282-6319a3e2621f?q=80&w=2030&auto=format&fit=crop');">
+      
+         <div class="carousel-item" style="background-image: url('https://images.unsplash.com/photo-1543508282-6319a3e2621f?q=80&w=2030&auto=format&fit=crop');">
             <div class="carousel-caption text-center pb-5">
                 <h1 class="display-3 fw-bold">Up to 40% Off</h1>
-                <p class="lead my-3">Score big on last-chance styles. Limited time only.</p>
+                <p class="lead my-3">Limited time only.</p>
                 <a href="/products?sale=true" class="btn btn-light btn-lg">Shop Clearance</a>
             </div>
         </div>
@@ -34,7 +39,8 @@
         <a href="/products?category=men" class="category-showcase-item">
             <img src="https://images.unsplash.com/photo-1560769629-975ec94e6a86?q=80&w=1964&auto=format&fit=crop" alt="Men's Collection" class="category-showcase-item-bg">
             <div class="btn btn-light btn-lg">Shop Men's</div>
-        </a>
+   
+             </a>
         <a href="/products?category=women" class="category-showcase-item">
             <img src="https://images.unsplash.com/photo-1543163521-1bf539c55dd2?q=80&w=2080&auto=format&fit=crop" alt="Women's Collection" class="category-showcase-item-bg">
             <div class="btn btn-light btn-lg">Shop Women's</div>
@@ -42,7 +48,8 @@
         <a href="/products?category=kids" class="category-showcase-item">
             <img src="https://images.unsplash.com/photo-1511556532299-8f662fc26c06?q=80&w=2070&auto=format&fit=crop" alt="Kids' Collection" class="category-showcase-item-bg">
             <div class="btn btn-light btn-lg">Shop Kids'</div>
-        </a>
+   
+             </a>
         <a href="/products?sale=true" class="category-showcase-item">
              <img src="https://images.unsplash.com/photo-1562183241-b937e95585b6?q=80&w=1964&auto=format&fit=crop" alt="Sale" class="category-showcase-item-bg">
             <div class="btn btn-light btn-lg">Shop Sale</div>
@@ -54,6 +61,7 @@
 <section class="product-carousel-section container-fluid mb-5">
     <div class="container">
          <div class="section-header d-flex justify-content-between align-items-center">
+            
             <h2 class="display-5 fw-bold mb-0">New Arrivals</h2>
             <a href="/products?new=true" class="btn btn-outline-dark">View All</a>
         </div>
@@ -65,7 +73,16 @@
                     <a href="/products/<%= product.sku %>" class="product-card-img-link"></a>
                     <img src="<%= product.thumbnailUrl %>" class="product-card-img" alt="<%= product.name %>">
                     <div class="product-card-actions">
-                        <button type="button" class="btn-action" title="Add to Wishlist"><i class="bi bi-heart"></i></button>
+                        <% if (currentUser) { %>
+                            <button type="button" class="btn-action wishlist-toggle-btn" title="Toggle Wishlist" data-product-id="<%= product._id %>">
+                                <% const isWishlisted = wishlist.some(id => id.equals(product._id)); %>
+                                <i class="bi <%= isWishlisted ? 'bi-heart-fill' : 'bi-heart' %>"></i>
+                            </button>
+                        <% } else { %>
+                            <a href="/users/login" class="btn-action" title="Login to Add to Wishlist">
+                                <i class="bi bi-heart"></i>
+                            </a>
+                        <% } %>
                         <button type="button" class="btn-action" title="Add to Cart" data-bs-toggle="modal" data-bs-target="#productModal-<%= product.sku %>"><i class="bi bi-bag-plus"></i></button>
                     </div>
                 </div>
@@ -96,7 +113,16 @@
                     <a href="/products/<%= product.sku %>" class="product-card-img-link"></a>
                     <img src="<%= product.thumbnailUrl %>" class="product-card-img" alt="<%= product.name %>">
                     <div class="product-card-actions">
-                        <button type="button" class="btn-action" title="Add to Wishlist"><i class="bi bi-heart"></i></button>
+                        <% if (currentUser) { %>
+                            <button type="button" class="btn-action wishlist-toggle-btn" title="Toggle Wishlist" data-product-id="<%= product._id %>">
+                                <% const isWishlisted = wishlist.some(id => id.equals(product._id)); %>
+                                <i class="bi <%= isWishlisted ? 'bi-heart-fill' : 'bi-heart' %>"></i>
+                            </button>
+                        <% } else { %>
+                            <a href="/users/login" class="btn-action" title="Login to Add to Wishlist">
+                                <i class="bi bi-heart"></i>
+                            </a>
+                        <% } %>
                         <button type="button" class="btn-action" title="Add to Cart" data-bs-toggle="modal" data-bs-target="#productModal-<%= product.sku %>"><i class="bi bi-bag-plus"></i></button>
                     </div>
                 </div>
@@ -122,7 +148,7 @@
         </a>
         <a href="/products?category=women" class="promo-banner-item" style="background-image: linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), url('https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?q=80&w=2000&auto=format&fit=crop');">
             <div>
-                <h3 class="display-5">For Her</h3>
+                 <h3 class="display-5">For Her</h3>
                 <p class="lead">The best in comfort, style, and design.</p>
             </div>
         </a>
@@ -134,7 +160,7 @@
     <div class="container">
          <div class="section-header d-flex justify-content-between align-items-center">
             <h2 class="display-5 fw-bold mb-0">Jordan Collection</h2>
-            <a href="/products?brand=Jordan" class="btn btn-outline-dark">View All</a>
+                 <a href="/products?brand=Jordan" class="btn btn-outline-dark">View All</a>
         </div>
     </div>
     <div class="product-carousel">
@@ -142,21 +168,30 @@
             <div class="product-card">
                 <div class="product-card-img-container">
                     <a href="/products/<%= product.sku %>" class="product-card-img-link"></a>
-                    <img src="<%= product.thumbnailUrl %>" class="product-card-img" alt="<%= product.name %>">
+                               <img src="<%= product.thumbnailUrl %>" class="product-card-img" alt="<%= product.name %>">
                     <div class="product-card-actions">
-                        <button type="button" class="btn-action" title="Add to Wishlist"><i class="bi bi-heart"></i></button>
+                        <% if (currentUser) { %>
+                            <button type="button" class="btn-action wishlist-toggle-btn" title="Toggle Wishlist" data-product-id="<%= product._id %>">
+                                <% const isWishlisted = wishlist.some(id => id.equals(product._id)); %>
+                                <i class="bi <%= isWishlisted ? 'bi-heart-fill' : 'bi-heart' %>"></i>
+                            </button>
+                        <% } else { %>
+                            <a href="/users/login" class="btn-action" title="Login to Add to Wishlist">
+                                <i class="bi bi-heart"></i>
+                            </a>
+                        <% } %>
                         <button type="button" class="btn-action" title="Add to Cart" data-bs-toggle="modal" data-bs-target="#productModal-<%= product.sku %>"><i class="bi bi-bag-plus"></i></button>
                     </div>
                 </div>
                 <div class="product-card-body">
                     <a href="/products/<%= product.sku %>" class="text-decoration-none">
-                        <div class="product-title"><%= product.name %></div>
+                     <div class="product-title"><%= product.name %></div>
                         <div class="product-price">$<%= product.retailPrice %></div>
                     </a>
                 </div>
             </div>
         <% }) %>
-    </div>
+       </div>
 </section>
 <% } %>
 
@@ -174,14 +209,14 @@
 
 <div class="bg-light my-5 py-5">
     <div class="container">
-        <div class="section-header text-center">
+           <div class="section-header text-center">
              <h2 class="display-5 fw-bold">The Sneakslab Difference</h2>
         </div>
         <div class="row text-center g-4 mt-4">
             <div class="col-md-4">
                 <div class="feature-icon-container mb-3">
                     <i class="bi bi-patch-check-fill"></i>
-                </div>
+                         </div>
                 <h4>Authenticity Guaranteed</h4>
                 <p class="text-body-secondary">Every pair is 100% authentic, sourced from trusted partners and verified by our experts.</p>
             </div>
@@ -191,13 +226,13 @@
                 </div>
                 <h4>Fast, Free Shipping</h4>
                 <p class="text-body-secondary">Get your grails delivered to your door quickly and securely, with free shipping on all orders.</p>
-            </div>
+             </div>
             <div class="col-md-4">
                 <div class="feature-icon-container mb-3">
                     <i class="bi bi-arrow-counterclockwise"></i>
                 </div>
                 <h4>Easy Returns</h4>
-                <p class="text-body-secondary">Not the perfect fit? Our hassle-free return policy has you covered.</p>
+               <p class="text-body-secondary">Not the perfect fit? Our hassle-free return policy has you covered.</p>
             </div>
         </div>
     </div>
@@ -207,41 +242,40 @@
     <% allProducts.forEach(product => { %>
         <div class="modal fade" id="productModal-<%= product.sku %>" tabindex="-1" aria-labelledby="productModalLabel-<%= product.sku %>" aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered">
-                <div class="modal-content">
+                 <div class="modal-content">
                     <div class="modal-header border-0">
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body text-center">
-                        <img src="<%= product.thumbnailUrl %>" alt="<%= product.name %>" class="img-fluid rounded-3 mb-3" style="max-height: 250px;">
+                                       <img src="<%= product.thumbnailUrl %>" alt="<%= product.name %>" class="img-fluid rounded-3 mb-3" style="max-height: 250px;">
                         <h5 class="modal-title" id="productModalLabel-<%= product.sku %>"><%= product.name %></h5>
                         <p class="text-body-secondary"><%= product.brand %></p>
-                        <p class="h4 fw-bold">$<%= product.retailPrice %></p>
+                       <p class="h4 fw-bold">$<%= product.retailPrice %></p>
                         
                         <form action="/cart/add" method="POST" id="form-add-<%= product.sku %>">
                             <input type="hidden" name="productId" value="<%= product._id %>">
                             <input type="hidden" name="sku" value="<%= product.sku %>">
                             <div class="my-4">
-                                <label for="size-<%= product.sku %>" class="form-label"><strong>Select Size</strong></label>
+                                <label for="size-<%= product.sku %>" class="form-label"><strong> Size</strong></label>
                                 <select class="form-select form-select-lg" id="size-<%= product.sku %>" name="size" required>
                                     <option>8</option>
-                                    <option>8.5</option>
+                         <option>8.5</option>
                                     <option>9</option>
                                     <option>9.5</option>
-                                    <option>10</option>
+                                       <option>10</option>
                                     <option>10.5</option>
                                     <option>11</option>
-                                    <option>12</option>
+                                             <option>12</option>
                                 </select>
                             </div>
-                        </form>
+                         </form>
         
                         <form action="/cart/add" method="POST" id="form-buy-<%= product.sku %>" class="d-none">
                             <input type="hidden" name="productId" value="<%= product._id %>">
-                            <input type="hidden" name="sku" value="<%= product.sku %>">
+                         <input type="hidden" name="sku" value="<%= product.sku %>">
                             <input type="hidden" name="size" value=""> <input type="hidden" name="buyNow" value="true">
                         </form>
-        
-                    </div>
+                 </div>
                     <div class="modal-footer border-0 d-flex flex-column gx-3">
                         <button type="submit" form="form-buy-<%= product.sku %>" class="btn btn-primary btn-lg w-100 mb-2" onclick="document.querySelector('#form-buy-<%= product.sku %> input[name=size]').value = document.querySelector('#size-<%= product.sku %>').value;">Buy Now</button>
                         <button type="submit" form="form-add-<%= product.sku %>" class="btn btn-outline-secondary btn-lg w-100">Add to Cart</button>

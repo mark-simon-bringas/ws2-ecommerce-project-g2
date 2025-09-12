@@ -1,0 +1,89 @@
+<div class="page-header">
+    <h1>My Wishlist</h1>
+    <p class="text-body-secondary">Your collection of favorite items.</p>
+</div>
+
+<% if (products && products.length > 0) { %>
+    <div class="row row-cols-1 row-cols-sm-2 row-cols-lg-4 g-4">
+        <% products.forEach(product => { %>
+            <div class="col">
+                <div class="product-card">
+                    <div class="product-card-img-container">
+                        <a href="/products/<%= product.sku %>" class="product-card-img-link"></a>
+                        <img src="<%= product.thumbnailUrl %>" class="product-card-img" alt="<%= product.name %>">
+                        <div class="product-card-actions">
+                            <% if (currentUser) { %>
+                                <button type="button" class="btn-action wishlist-toggle-btn" title="Toggle Wishlist" data-product-id="<%= product._id %>">
+                                    <% const isWishlisted = wishlist.some(id => id.equals(product._id)); %>
+                                    <i class="bi <%= isWishlisted ? 'bi-heart-fill' : 'bi-heart' %>"></i>
+                                </button>
+                            <% } else { %>
+                                <a href="/users/login" class="btn-action" title="Login to Add to Wishlist">
+                                    <i class="bi bi-heart"></i>
+                                </a>
+                            <% } %>
+                            <button type="button" class="btn-action" title="Add to Cart" data-bs-toggle="modal" data-bs-target="#productModal-<%= product.sku %>">
+                                <i class="bi bi-bag-plus"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="product-card-body">
+                        <a href="/products/<%= product.sku %>" class="text-decoration-none">
+                            <div class="product-title"><%= product.name %></div>
+                            <div class="product-price">$<%= product.retailPrice %></div>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        <% }) %>
+    </div>
+<% } else { %>
+    <div class="dashboard-card">
+        <div class="card-body text-center p-5">
+            <h3 class="text-body-secondary">Your wishlist is empty.</h3>
+            <p class="lead text-body-secondary">Looks like you haven't saved any items yet.</p>
+            <a href="/products" class="btn btn-primary mt-3">Discover Products</a>
+        </div>
+    </div>
+<% } %>
+
+<% if (products && products.length > 0) { %>
+    <% products.forEach(product => { %>
+        <div class="modal fade" id="productModal-<%= product.sku %>" tabindex="-1" aria-labelledby="productModalLabel-<%= product.sku %>" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header border-0">
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body text-center">
+                        <img src="<%= product.thumbnailUrl %>" alt="<%= product.name %>" class="img-fluid rounded-3 mb-3" style="max-height: 250px;">
+                        <h5 class="modal-title" id="productModalLabel-<%= product.sku %>"><%= product.name %></h5>
+                        <p class="text-body-secondary"><%= product.brand %></p>
+                        <p class="h4 fw-bold">$<%= product.retailPrice %></p>
+                        
+                        <form action="/cart/add" method="POST" id="form-add-<%= product.sku %>">
+                            <input type="hidden" name="productId" value="<%= product._id %>">
+                            <input type="hidden" name="sku" value="<%= product.sku %>">
+                            <div class="my-4">
+                                <label for="size-<%= product.sku %>" class="form-label"><strong>Select Size</strong></label>
+                                <select class="form-select form-select-lg" id="size-<%= product.sku %>" name="size" required>
+                                    <option>8</option>
+                                    <option>8.5</option>
+                                    <option>9</option>
+                                    <option>9.5</option>
+                                    <option>10</option>
+                                    <option>10.5</option>
+                                    <option>11</option>
+                                    <option>12</option>
+                                </select>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer border-0">
+                         <button type="submit" form="form-add-<%= product.sku %>" class="btn btn-primary btn-lg w-100">Add to Cart</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    <% }) %>
+<% } %>

@@ -1,0 +1,40 @@
+<div class="auth-container">
+    <div class="auth-card">
+        <div class="text-center">
+            <h1 class="h2 mb-2">Write a Review</h1>
+            <p class="text-body-secondary">Share your thoughts on the product below.</p>
+        </div>
+
+        <div class="d-flex align-items-center my-4 p-3 rounded-3" style="background-color: var(--bg-color);">
+            <img src="<%= product.thumbnailUrl %>" alt="<%= product.name %>" style="width: 80px; height: 80px; object-fit: contain;" class="me-3">
+            <div>
+                <h2 class="h5 mb-0"><%= product.name %></h2>
+                <p class="text-body-secondary mb-0"><%= product.brand %></p>
+            </div>
+        </div>
+         
+        <form action="/products/<%= product.sku %>/review" method="POST">
+            <input type="hidden" name="productId" value="<%= product._id %>">
+            
+            <div class="mb-3">
+                <label class="form-label">Your Rating</label>
+                <div class="star-rating">
+                    <input type="radio" id="5-stars" name="rating" value="5" required /><label for="5-stars" class="star">&#9733;</label>
+                    <input type="radio" id="4-stars" name="rating" value="4" /><label for="4-stars" class="star">&#9733;</label>
+                    <input type="radio" id="3-stars" name="rating" value="3" /><label for="3-stars" class="star">&#9733;</label>
+                    <input type="radio" id="2-stars" name="rating" value="2" /><label for="2-stars" class="star">&#9733;</label>
+                    <input type="radio" id="1-star" name="rating" value="1" /><label for="1-star" class="star">&#9733;</label>
+                </div>
+            </div>
+
+            <div class="mb-3">
+              <label for="comment" class="form-label">Your Review</label>
+              <textarea class="form-control" name="comment" id="comment" rows="5" placeholder="What did you like or dislike?" required></textarea>
+            </div>
+            
+            <div class="d-grid mt-4">
+                <button type="submit" class="btn btn-primary btn-lg">Submit Review</button>
+            </div>
+        </form>
+    </div>
+</div>
