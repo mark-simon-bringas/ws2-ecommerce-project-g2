@@ -11,6 +11,7 @@ const port = process.env.PORT || 3000;
 
 // Middleware
 app.use(bodyParser.urlencoded({ extended: true }));
+app.use(express.json()); // Added: This allows the server to parse JSON request bodies
 app.use(express.static('public'));
 
 // -- View Engine Setup --
@@ -30,11 +31,10 @@ app.use(session({
 }));
 
 // Custom middleware to make user session and cart available to all views
-// --- Updated ---
 app.use((req, res, next) => {
     res.locals.currentUser = req.session.user;
     res.locals.cart = req.session.cart;
-    res.locals.path = req.path; // Added: Make the current path available to all views
+    res.locals.path = req.path;
     next();
 });
 

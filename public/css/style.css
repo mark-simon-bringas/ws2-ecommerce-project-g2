@@ -3,37 +3,37 @@
 /* --- 1. Premium Theme Variables --- */
 :root {
   --font-main: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  --bg-color: #f5f5f7; /* Apple's light gray background */
+  --bg-color: #f5f5f7;
   --text-color: #1d1d1f;
   --text-color-secondary: #6e6e73;
   --card-bg-color: #ffffff;
   --link-color: #0071e3;
   --link-hover-color: #0077ed;
   --border-color: #d2d2d7;
-  --sidebar-bg: #eff2f5; /* Slightly different gray for sidebar */
+  --sidebar-bg: #eff2f5;
   --sidebar-link-color: var(--text-color-secondary);
   --sidebar-link-active-bg: #d9e6f5;
   --sidebar-link-active-color: var(--link-color);
   --btn-primary-bg: #0071e3;
   --btn-primary-hover-bg: #0077ed;
-
-  /* New: Colors for stat card icons for Apple aesthetic */
-  --stat-icon-revenue-bg: #e1f3e7; /* Light green */
-  --stat-icon-revenue-color: #34c759; /* Green */
-  --stat-icon-orders-bg: #e0f2fe; /* Light blue */
-  --stat-icon-orders-color: #007aff; /* Blue */
-  --stat-icon-users-bg: #e9e8fe; /* Light purple */
-  --stat-icon-users-color: #5856d6; /* Purple */
-  --stat-icon-products-bg: #fff5e0; /* Light orange */
-  --stat-icon-products-color: #ff9500; /* Orange */
+  --star-color: #ffb400;
+  --stat-icon-revenue-bg: #e1f3e7;
+  --stat-icon-revenue-color: #34c759;
+  --stat-icon-orders-bg: #e0f2fe;
+  --stat-icon-orders-color: #007aff;
+  --stat-icon-users-bg: #e9e8fe;
+  --stat-icon-users-color: #5856d6;
+  --stat-icon-products-bg: #fff5e0;
+  --stat-icon-products-color: #ff9500;
 }
 
 /* --- 2. Global Styles --- */
 body {
   font-family: var(--font-main);
-  background-color: #fff; /* Changed to white for a cleaner base */
+  background-color: #fff;
   color: var(--text-color);
   -webkit-font-smoothing: antialiased;
+  line-height: 1.5;
 }
 a {
   text-decoration: none;
@@ -47,18 +47,16 @@ li {
   list-style: none;
 }
 .content-wrapper {
-  margin-top: 48px; /* Default mobile navbar height */
+  margin-top: 48px;
 }
-/* --- Added --- */
-/* This rule removes the top margin on the homepage only */
 .homepage .content-wrapper {
     margin-top: 0;
 }
 .btn-lg {
-    padding: 0.8rem 1.75rem; /* Larger padding for a premium feel */
+    padding: 0.8rem 1.75rem;
     font-size: 1rem;
     font-weight: 500;
-    border-radius: 980px; /* Pill shape */
+    border-radius: 980px;
 }
 .btn-primary {
     background-color: var(--btn-primary-bg);
@@ -69,6 +67,16 @@ li {
     background-color: var(--btn-primary-hover-bg);
     border-color: var(--btn-primary-hover-bg);
 }
+.btn-outline-secondary {
+    border-color: var(--border-color);
+    color: var(--text-color);
+    font-weight: 500;
+}
+.btn-outline-secondary:hover {
+    background-color: var(--bg-color);
+    border-color: var(--border-color);
+    color: var(--text-color);
+}
 .section-header {
     margin-bottom: 2.5rem;
 }
@@ -77,13 +85,65 @@ li {
     font-weight: 700;
 }
 
+/* --- Global Form Styling --- */
+.form-control, .form-select {
+    box-shadow: none !important;
+    border-color: var(--border-color);
+}
+.form-control:focus, .form-select:focus {
+    border-color: var(--link-hover-color);
+    box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.15) !important;
+}
+
+/* Dashboard-specific clean form styles */
+.form-control-clean, .form-select-clean {
+    padding: 0.6rem 1rem;
+    font-size: 0.95rem;
+    background-color: var(--card-bg-color);
+    border: 1px solid var(--card-bg-color);
+    border-radius: 8px;
+    transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+.form-control-clean:focus, .form-select-clean:focus {
+    background-color: #fff;
+    border-color: var(--link-hover-color);
+    box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.15);
+}
+
+/* Scoped: Professional Form Styling for Auth Pages ONLY */
+.auth-card .form-label {
+    font-size: 0.9rem;
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+    color: var(--text-color);
+}
+.auth-card .form-control,
+.auth-card .form-select {
+    background-color: var(--bg-color);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 0.8rem 1.1rem;
+    font-size: 1rem;
+    color: var(--text-color);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.auth-card .form-control:focus,
+.auth-card .form-select:focus {
+    background-color: #fff;
+}
+.auth-card .form-control-lg,
+.auth-card .form-select-lg {
+    padding: 0.8rem 1.1rem;
+    font-size: 1rem;
+}
+
 
 /* --- 3 & 4. Navbars & Overlays --- */
 .navbar-desktop, .dropdown { display: none; }
 .navbar-mobile {
     display: flex; 
     background-color: #454545;
-    position: sticky; /* UPDATED from fixed to sticky */
+    position: sticky;
     top: 0; 
     left: 0; 
     right: 0; 
@@ -92,7 +152,7 @@ li {
     padding: 0 1rem; 
     justify-content: space-between; 
     align-items: center;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1); /* ADDED for better separation */
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 .navbar-mobile-link { padding: 0 0.5rem; }
 .navbar-mobile-actions { display: flex; align-items: center; gap: 0.5rem; }
@@ -121,7 +181,6 @@ li {
 #mobile-menu-overlay ul { padding-top: 60px; padding-left: 20px; }
 #mobile-menu-overlay li a { font-size: 28px; font-weight: 600; color: #fff; line-height: 2; }
 
-/* Styles for both mobile and desktop search content */
 .search-content { padding-top: 60px; max-width: 600px; margin: 0 auto; }
 .search-input-group { display: flex; align-items: center; gap: 1rem; border-bottom: 2px solid #86868b; padding-bottom: 0.5rem; }
 .search-input-group input { width: 100%; background: none; border: none; font-size: 28px; font-weight: 600; outline: none; }
@@ -130,7 +189,6 @@ li {
 .quick-links span { font-size: 14px; color: #86868b; }
 .quick-links ul { margin-top: 1rem; }
 .quick-links li a { display: block; padding: 0.75rem 0; font-size: 18px; font-weight: 500; }
-/* Mobile search specific colors */
 #search-overlay .search-input-group input { color: #fff; }
 #search-overlay .quick-links li a { color: #fff; }
 
@@ -153,7 +211,7 @@ li {
     display: flex;
     justify-content: center;
     align-items: center;
-    border: 2px solid #454545; /* Same as navbar background */
+    border: 2px solid #454545;
 }
 
 
@@ -238,7 +296,7 @@ li {
     color: #fff;
     text-decoration: none;
     text-shadow: 0 1px 4px rgba(0,0,0,0.5);
-    background-color: #333; /* Fallback color */
+    background-color: #333;
     background-size: cover;
     background-position: center bottom;
 }
@@ -352,6 +410,104 @@ li {
     color: var(--text-color);
 }
 
+/* Styles for Product Detail Page */
+.product-detail-page .product-image-container {
+    background-color: var(--bg-color);
+    border-radius: 18px;
+    padding: 2rem;
+}
+.product-detail-page .product-info-panel {
+    position: sticky;
+    top: 100px;
+}
+.size-selector {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+    gap: 0.75rem;
+}
+.size-selector .btn {
+    border-radius: 8px;
+    font-weight: 500;
+}
+.size-selector .btn-check:checked+.btn {
+    background-color: var(--text-color);
+    border-color: var(--text-color);
+    color: #fff;
+}
+.product-feature-highlights {
+    display: flex;
+    gap: 2rem;
+    background-color: var(--bg-color);
+    padding: 1rem;
+    border-radius: 12px;
+}
+.product-feature-highlights .feature-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+.product-feature-highlights .feature-item i {
+    font-size: 1.25rem;
+    color: var(--text-color-secondary);
+}
+.product-feature-highlights .feature-item p {
+    margin-bottom: 0;
+}
+.product-details-accordion .accordion-item {
+    border: none;
+    border-bottom: 1px solid var(--border-color);
+}
+.product-details-accordion .accordion-button {
+    font-size: 1.25rem;
+    font-weight: 600;
+    padding: 1.5rem 0;
+    color: var(--text-color);
+}
+.product-details-accordion .accordion-button:not(.collapsed) {
+    background-color: transparent;
+    box-shadow: none;
+}
+.product-details-accordion .accordion-button:focus {
+    box-shadow: none;
+}
+.product-details-accordion .accordion-body {
+    padding: 0 0 1.5rem 0;
+    color: var(--text-color-secondary);
+}
+
+/* Styles for Reviews Section */
+.review-list .review-card {
+    border-bottom: 1px solid var(--border-color);
+    padding: 1.5rem 0;
+}
+.review-list .review-card:last-child {
+    border-bottom: none;
+}
+.review-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+.review-author {
+    font-weight: 600;
+}
+.review-date {
+    font-size: 0.85rem;
+    color: var(--text-color-secondary);
+}
+.review-rating {
+    margin-bottom: 0.75rem;
+    color: var(--star-color);
+}
+.review-body p {
+    margin-bottom: 0;
+    color: var(--text-color-secondary);
+}
+
+
 /* --- 6. Admin Page Styles --- */
 .product-import-card { 
     position: relative; cursor: pointer; border-radius: 12px;
@@ -382,36 +538,15 @@ li {
 .floating-action-bar.is-active {
     bottom: 24px;
 }
-.form-control-clean, .form-select-clean {
-    padding: 0.6rem 1rem;
-    font-size: 0.95rem;
-    background-color: var(--card-bg-color);
-    border: 1px solid var(--card-bg-color);
-    border-radius: 8px;
-    transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
-}
-.form-control-clean:focus, .form-select-clean:focus {
-    background-color: #fff;
-    border-color: var(--link-hover-color);
-    box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.15);
-}
-.form-control, .form-select {
-    box-shadow: none !important;
-    border-color: var(--border-color);
-}
-.form-control:focus, .form-select:focus {
-    border-color: var(--link-hover-color);
-    box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.15) !important;
-}
 
-/* --- 7. Dashboard Layout --- */
+
+/* --- 7. Dashboard Layout & Components --- */
 .dashboard-layout { display: flex; flex-direction: column; }
 .dashboard-sidebar {
     display: none; 
 }
 .dashboard-main-content { padding: 1.5rem; }
 
-/* --- 8. Dashboard Components --- */
 .page-header h1 {
     font-size: 2.5rem;
     font-weight: 700;
@@ -484,7 +619,7 @@ li {
 
 @media (min-width: 992px) {
     .content-wrapper { margin-top: 44px; }
-    .homepage .content-wrapper { margin-top: 0; } /* Keep homepage override for desktop */
+    .homepage .content-wrapper { margin-top: 0; }
     .navbar-mobile { display: none; }
     .navbar-desktop { 
         display: block; 
@@ -562,6 +697,7 @@ li {
     .dropdown .con-1.dropdown-search-panel {
         left: 50%;
         transform: translateX(-50%);
+        width: 850px;
         max-width: 90vw;
         top: 1rem;
         padding: 1.5rem;

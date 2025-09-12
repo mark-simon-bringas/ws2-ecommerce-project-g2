@@ -11,9 +11,8 @@ document.addEventListener('DOMContentLoaded', function() {
             dropdownContainer.style.height = "0px";
             contentPanels.forEach(panel => panel.style.opacity = "0");
         };
-        // --- Updated ---
         const openDropdown = (activeIndex) => {
-            dropdownContainer.style.height = "280px"; // Decreased height from 330px
+            dropdownContainer.style.height = "280px";
             contentPanels.forEach((panel, index) => {
                 panel.style.opacity = (index === activeIndex) ? "1" : "0";
             });
@@ -58,21 +57,63 @@ document.addEventListener('DOMContentLoaded', function() {
     const openOverlay = (overlay) => {
         if (overlay) {
             overlay.classList.add('is-active');
-            body.classList.add('overlay-active');
+            body.style.overflow = 'hidden';
         }
     };
     const closeAllOverlays = () => {
         document.querySelectorAll('.overlay.is-active').forEach(overlay => {
             overlay.classList.remove('is-active');
         });
-        body.classList.remove('overlay-active');
+        body.style.overflow = '';
     };
     if (mobileMenuBtn) { mobileMenuBtn.addEventListener('click', (e) => { e.preventDefault(); openOverlay(mobileMenuOverlay); }); }
     if (mobileSearchBtn) { mobileSearchBtn.addEventListener('click', (e) => { e.preventDefault(); openOverlay(searchOverlay); }); }
     if (mobileMenuCloseBtn) { mobileMenuCloseBtn.addEventListener('click', (e) => { e.preventDefault(); closeAllOverlays(); }); }
     if (searchOverlayCloseBtn) { searchOverlayCloseBtn.addEventListener('click', (e) => { e.preventDefault(); closeAllOverlays(); }); }
 
-    // --- REVAMPED: Admin Product Page Logic ---
+    // --- Added: Global Wishlist Toggle Logic ---
+    document.body.addEventListener('click', function(event) {
+        const wishlistBtn = event.target.closest('.wishlist-toggle-btn');
+        if (wishlistBtn) {
+            const productId = wishlistBtn.dataset.productId;
+            const icon = wishlistBtn.querySelector('i');
+
+            fetch('/account/wishlist/toggle', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ productId: productId })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    // If user is not logged in, the middleware will redirect,
+                    // causing fetch to error. We can redirect the user from here.
+                    if (response.status === 401 || response.redirected) {
+                        window.location.href = '/users/login';
+                        return;
+                    }
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data && data.success) {
+                    if (data.newStatus === 'added') {
+                        icon.classList.remove('bi-heart');
+                        icon.classList.add('bi-heart-fill');
+                    } else {
+                        icon.classList.remove('bi-heart-fill');
+                        icon.classList.add('bi-heart');
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Wishlist toggle error:', error);
+            });
+        }
+    });
+
+
+    // --- Admin Product Page Logic ---
     if (document.getElementById('nav-tabContent')) {
 
         // --- Import Tab Logic ---
@@ -95,7 +136,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (!card) return;
                 const checkbox = card.querySelector('.product-checkbox');
                 if (checkbox) {
-                    checkbox.checked = !checkbox.checked;
+                    if (event.target.tagName !== 'INPUT') {
+                        checkbox.checked = !checkbox.checked;
+                    }
                     card.classList.toggle('is-selected', checkbox.checked);
                     updateImportSelectionState();
                 }
@@ -169,7 +212,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 const ul = document.createElement('ul');
                 ul.className = 'pagination';
 
-                // Prev button
                 const prevLi = document.createElement('li');
                 prevLi.className = `page-item ${currentPage === 1 ? 'disabled' : ''}`;
                 const prevA = document.createElement('a');
@@ -192,7 +234,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     ul.appendChild(li);
                 }
 
-                // Next button
                 const nextLi = document.createElement('li');
                 nextLi.className = `page-item ${currentPage === pageCount ? 'disabled' : ''}`;
                 const nextA = document.createElement('a');
@@ -207,7 +248,6 @@ document.addEventListener('DOMContentLoaded', function() {
             };
 
             const processTable = () => {
-                // 1. Filter
                 const searchTerm = searchInput.value.toLowerCase();
                 const selectedBrand = brandFilter.value;
                 const visibleRows = allRows.filter(row => {
@@ -218,7 +258,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     return matchesSearch && matchesBrand;
                 });
 
-                // 2. Sort
                 const sortValue = sortSelect.value;
                 visibleRows.sort((a, b) => {
                     const aName = a.dataset.name;
@@ -235,7 +274,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 });
 
-                // 3. Re-append to DOM and Paginate
                 tableBody.innerHTML = '';
                 visibleRows.forEach(row => tableBody.appendChild(row));
                 displayPage(visibleRows, 1);
@@ -258,7 +296,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             });
             
-            // Initial Load
             updateDeleteSelectionState();
             processTable();
         }

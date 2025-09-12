@@ -6,6 +6,16 @@ router.get('/', async (req, res) => {
     try {
         const db = req.app.locals.client.db(req.app.locals.dbName);
         const productsCollection = db.collection('products');
+        const usersCollection = db.collection('users');
+
+        // Added: Fetch user's wishlist if they are logged in
+        let userWishlist = [];
+        if (req.session.user) {
+            const user = await usersCollection.findOne({ userId: req.session.user.userId });
+            if (user && user.wishlist) {
+                userWishlist = user.wishlist;
+            }
+        }
 
         // Fetch all data required for the new dynamic homepage in parallel
         const [
@@ -13,15 +23,11 @@ router.get('/', async (req, res) => {
             topKicks,
             jordanCollection
         ] = await Promise.all([
-            // Carousel 1: Get the 8 latest products
             productsCollection.find().sort({ importedAt: -1 }).limit(8).toArray(),
-            // Carousel 2: Get another 8 products, skipping the latest ones for variety
             productsCollection.find().sort({ importedAt: -1 }).skip(8).limit(8).toArray(),
-            // Carousel 3: Get 8 products specifically from the Jordan brand
             productsCollection.find({ brand: 'Jordan' }).limit(8).toArray()
         ]);
         
-        // Combine all products and remove duplicates to properly render the modals
         const allProductsMap = new Map();
         [...newArrivals, ...topKicks, ...jordanCollection].forEach(product => {
             allProductsMap.set(product._id.toString(), product);
@@ -33,7 +39,8 @@ router.get('/', async (req, res) => {
             newArrivals: newArrivals,
             topKicks: topKicks,
             jordanCollection: jordanCollection,
-            allProducts: allProducts // Pass this combined list for the modals
+            allProducts: allProducts,
+            wishlist: userWishlist // Added: Pass wishlist to the template
         });
 
     } catch (err) {

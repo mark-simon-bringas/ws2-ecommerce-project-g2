@@ -52,9 +52,7 @@ const isLoggedIn = (req, res, next) => {
     if (!req.session.user) {
         return res.redirect('/users/login');
     }
-    // Pass user to all dashboard views via res.locals
     res.locals.user = req.session.user;
-    // Pass currentUser to the main layout for the top navbar
     res.locals.currentUser = req.session.user;
     next();
 };
@@ -73,13 +71,86 @@ router.use(isLoggedIn);
 // GET /account -> Redirect to the default dashboard view
 router.get('/', (req, res) => {
     if (req.session.user.role === 'admin') {
-        res.redirect('/account/admin/dashboard'); // Admin default
+        res.redirect('/account/admin/dashboard');
     } else {
-        res.redirect('/account/orders'); // Customer default
+        res.redirect('/account/orders');
     }
 });
 
-// GET /account/admin/dashboard - The main admin overview
+
+// POST /account/wishlist/toggle
+router.post('/wishlist/toggle', async (req, res) => {
+    try {
+        const { productId } = req.body;
+        const userId = req.session.user.userId;
+        const productObjectId = new ObjectId(productId);
+
+        if (!productId) {
+            return res.status(400).json({ success: false, message: 'Product ID is required.' });
+        }
+
+        const db = req.app.locals.client.db(req.app.locals.dbName);
+        const usersCollection = db.collection('users');
+
+        const user = await usersCollection.findOne({ userId: userId });
+        const isWishlisted = user && user.wishlist && user.wishlist.some(id => id.equals(productObjectId));
+
+        let updateOperation;
+        let newStatus;
+
+        if (isWishlisted) {
+            updateOperation = { $pull: { wishlist: productObjectId } };
+            newStatus = 'removed';
+        } else {
+            updateOperation = { $addToSet: { wishlist: productObjectId } };
+            newStatus = 'added';
+        }
+
+        await usersCollection.updateOne({ userId: userId }, updateOperation);
+
+        res.json({ success: true, newStatus: newStatus });
+
+    } catch (err) {
+        console.error("Error toggling wishlist item:", err);
+        res.status(500).json({ success: false, message: 'An error occurred.' });
+    }
+});
+
+
+// GET /account/wishlist - Display the user's wishlist page
+// --- Updated ---
+router.get('/wishlist', async (req, res) => {
+    try {
+        const db = req.app.locals.client.db(req.app.locals.dbName);
+        const usersCollection = db.collection('users');
+        const productsCollection = db.collection('products');
+        
+        const user = await usersCollection.findOne({ userId: req.session.user.userId });
+        
+        let wishlistedProducts = [];
+        let userWishlist = []; // Ensure we have the list of IDs
+        if (user && user.wishlist && user.wishlist.length > 0) {
+            userWishlist = user.wishlist;
+            wishlistedProducts = await productsCollection.find({
+                _id: { $in: user.wishlist }
+            }).toArray();
+        }
+
+        res.render('account/wishlist', {
+            title: "My Wishlist",
+            view: 'wishlist',
+            products: wishlistedProducts,
+            wishlist: userWishlist // Pass the list of IDs to the template
+        });
+
+    } catch (err) {
+        console.error("Error fetching wishlist:", err);
+        res.status(500).send("Could not load your wishlist.");
+    }
+});
+
+
+// GET /account/admin/dashboard
 router.get('/admin/dashboard', isAdmin, async (req, res) => {
     try {
         const db = req.app.locals.client.db(req.app.locals.dbName);
@@ -87,7 +158,6 @@ router.get('/admin/dashboard', isAdmin, async (req, res) => {
         const productsCollection = db.collection('products');
         const ordersCollection = db.collection('orders');
 
-        // Fetch existing and new data in parallel
         const [
             userCount, 
             productCount, 
@@ -108,7 +178,7 @@ router.get('/admin/dashboard', isAdmin, async (req, res) => {
 
         res.render('account/dashboard', {
             title: "Admin Dashboard",
-            view: 'admin-dashboard', // For marking the active nav link
+            view: 'admin-dashboard',
             data: { 
                 userCount,
                 productCount,
@@ -135,7 +205,7 @@ router.get('/admin/orders', isAdmin, async (req, res) => {
             title: "Order Management",
             view: 'admin-orders',
             orders: allOrders,
-            message: req.query.message // For success messages
+            message: req.query.message
         });
     } catch (err) {
         console.error("Error fetching all orders:", err);
@@ -157,7 +227,7 @@ router.get('/admin/orders/:id', isAdmin, async (req, res) => {
 
         res.render('account/admin-order-detail', {
             title: `Order #${order._id.toString().slice(-6)}`,
-            view: 'admin-orders', // Keep the sidebar link active
+            view: 'admin-orders',
             order: order
         });
     } catch (err) {
@@ -223,7 +293,7 @@ router.post('/admin/orders/update-status/:id', isAdmin, async (req, res) => {
 });
 
 // POST /account/admin/orders/cancel/:id - Cancel an order
-router.post('/admin/orders/cancel/:id', isAdmin, async (req, res) => {
+router.post('/account/admin/orders/cancel/:id', isAdmin, async (req, res) => {
     try {
         const db = req.app.locals.client.db(req.app.locals.dbName);
         const ordersCollection = db.collection('orders');
@@ -326,7 +396,6 @@ router.post('/settings/update-profile', async (req, res) => {
             { $set: { firstName: firstName, lastName: lastName, updatedAt: new Date() } }
         );
 
-        // Update the session
         req.session.user.firstName = firstName;
         req.session.user.lastName = lastName;
 
@@ -344,7 +413,6 @@ router.post('/settings/update-password', async (req, res) => {
         const { currentPassword, newPassword, confirmPassword } = req.body;
         const userId = req.session.user.userId;
 
-        // 1. Validation
         if (newPassword !== confirmPassword) {
             return res.redirect('/account/settings?error=' + encodeURIComponent('New passwords do not match.'));
         }
@@ -353,8 +421,7 @@ router.post('/settings/update-password', async (req, res) => {
         if (newPassword.length < 8) { pwdStrengthErrors.push("Password must be at least 8 characters long.") }
         if (!/[A-Z]/.test(newPassword)) { pwdStrengthErrors.push("Password must contain at least one uppercase letter."); }
         if (!/[a-z]/.test(newPassword)) { pwdStrengthErrors.push("Password must contain at least one lowercase letter."); }
-        if (!/[0-9]/.test(newPassword)) { pwdStrengthErrors.push("Password must contain at least one number."); }
-        if (!/[!@#$%^&*()_\+\-=\[\]{};':\"\\|,.<>\/?`~]/.test(newPassword)) { pwdStrengthErrors.push("Password must contain a special character."); }
+        if (!/[0-9]/.test(newPassword)) { pwdStrengthErrors.push("Password must contain a special character."); }
         
         if (pwdStrengthErrors.length > 0) {
             return res.redirect('/account/settings?error=' + encodeURIComponent(pwdStrengthErrors.join(' ')));
@@ -364,13 +431,11 @@ router.post('/settings/update-password', async (req, res) => {
         const usersCollection = db.collection('users');
         const user = await usersCollection.findOne({ userId: userId });
 
-        // 2. Verify current password
         const isPasswordValid = await bcrypt.compare(currentPassword, user.passwordHash);
         if (!isPasswordValid) {
             return res.redirect('/account/settings?error=' + encodeURIComponent('Incorrect current password.'));
         }
 
-        // 3. Hash and update new password
         const hashedPassword = await bcrypt.hash(newPassword, saltRounds);
         await usersCollection.updateOne(
             { userId: userId },

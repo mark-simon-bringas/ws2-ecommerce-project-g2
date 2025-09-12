@@ -149,7 +149,7 @@
     </div>
     
     <div class="content-wrapper">
-        <% const isDashboard = typeof view !== 'undefined' && (view.startsWith('admin-') || ['orders', 'settings'].includes(view)); %>
+        <% const isDashboard = typeof view !== 'undefined' && (view.startsWith('admin-') || ['orders', 'settings', 'wishlist'].includes(view)); %>
         
         <% if (isDashboard) { %>
             <div class="dashboard-layout">
@@ -191,15 +191,17 @@
                                 <h6 class="nav-heading mt-4">My Account</h6>
          
                                    <a class="nav-link <%= (view === 'orders') ? 'active' : '' %>" href="/account/orders">
-                                    <i class="bi bi-receipt"></i>
-                                    <span>Order History</span>
-                     
-                           </a>
-                                <a class="nav-link <%= (view === 'settings') ? 'active' : '' %>" href="/account/settings">
-                                    <i class="bi bi-person-circle"></i>
-                                    <span>Account Settings</span>
-                     
-                           </a>
+                                        <i class="bi bi-receipt"></i>
+                                        <span>Order History</span>
+                                   </a>
+                                   <a class="nav-link <%= (view === 'wishlist') ? 'active' : '' %>" href="/account/wishlist">
+                                        <i class="bi bi-heart-fill"></i>
+                                        <span>My Wishlist</span>
+                                   </a>
+                                   <a class="nav-link <%= (view === 'settings') ? 'active' : '' %>" href="/account/settings">
+                                        <i class="bi bi-person-circle"></i>
+                                        <span>Account Settings</span>
+                                   </a>
                             </nav>
                         </div>
                         <a class="nav-link" href="/users/logout">
@@ -237,15 +239,20 @@
                 <i class="bi bi-box-seam-fill"></i>
                 <span>Products</span>
             </a>
+        <% } else { %>
+            <a href="/account/orders" class="bottom-navbar-link <%= (view === 'orders') ? 'active' : '' %>">
+                <i class="bi bi-receipt"></i>
+                <span>Orders</span>
+            </a>
+            <a href="/account/wishlist" class="bottom-navbar-link <%= (view === 'wishlist') ? 'active' : '' %>">
+                <i class="bi bi-heart-fill"></i>
+                <span>Wishlist</span>
+            </a>
+            <a href="/account/settings" class="bottom-navbar-link <%= (view === 'settings') ? 'active' : '' %>">
+                <i class="bi bi-person-circle"></i>
+                <span>Settings</span>
+            </a>
         <% } %>
-        <a href="/account/orders" class="bottom-navbar-link <%= (view === 'orders') ? 'active' : '' %>">
-            <i class="bi bi-receipt"></i>
-            <span>Orders</span>
-        </a>
-        <a href="/account/settings" class="bottom-navbar-link <%= (view === 'settings') ? 'active' : '' %>">
-            <i class="bi bi-person-circle"></i>
-            <span>Settings</span>
-        </a>
     </div>
     <% } %>
 

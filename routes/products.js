@@ -3,29 +3,45 @@ const router = express.Router();
 const axios = require('axios');
 const { ObjectId } = require('mongodb');
 
+// Middleware to check if the user is logged in
+const isLoggedIn = (req, res, next) => {
+    if (!req.session.user) {
+        return res.redirect('/users/login');
+    }
+    next();
+};
+
 // GET /products - The main shop page with filtering
+// --- Updated ---
 router.get('/', async (req, res) => {
     try {
         const db = req.app.locals.client.db(req.app.locals.dbName);
         const productsCollection = db.collection('products');
+        const usersCollection = db.collection('users');
+
+        // Added: Fetch user's wishlist if they are logged in
+        let userWishlist = [];
+        if (req.session.user) {
+            const user = await usersCollection.findOne({ userId: req.session.user.userId });
+            if (user && user.wishlist) {
+                userWishlist = user.wishlist;
+            }
+        }
 
         let query = {};
         let sort = {};
         let pageTitle = "Shop All";
 
-        // Handle category filtering
         if (req.query.category) {
             query.gender = req.query.category;
             pageTitle = `${req.query.category.charAt(0).toUpperCase() + req.query.category.slice(1)}'s Collection`;
         }
         
-        // Handle brand filtering
         if (req.query.brand) {
             query.brand = req.query.brand;
             pageTitle = `${req.query.brand} Collection`;
         }
 
-        // Handle new arrivals filtering
         if (req.query.new === 'true') {
             sort = { importedAt: -1 };
             pageTitle = "New Arrivals";
@@ -35,8 +51,9 @@ router.get('/', async (req, res) => {
         
         res.render('shop', { 
             title: pageTitle,
-            pageTitle: pageTitle, // For displaying a heading on the page
-            products: products 
+            pageTitle: pageTitle,
+            products: products,
+            wishlist: userWishlist // Added: Pass wishlist to the template
         });
 
     } catch (err) {
@@ -46,13 +63,23 @@ router.get('/', async (req, res) => {
 });
 
 // GET /products/search - Handle search queries
+// --- Updated ---
 router.get('/search', async (req, res) => {
     try {
         const db = req.app.locals.client.db(req.app.locals.dbName);
         const productsCollection = db.collection('products');
+        const usersCollection = db.collection('users');
         const searchQuery = req.query.q || "";
 
-        // Use a regular expression for a case-insensitive search on name and brand
+        // Added: Fetch user's wishlist if they are logged in
+        let userWishlist = [];
+        if (req.session.user) {
+            const user = await usersCollection.findOne({ userId: req.session.user.userId });
+            if (user && user.wishlist) {
+                userWishlist = user.wishlist;
+            }
+        }
+
         const query = {
             $or: [
                 { name: { $regex: searchQuery, $options: 'i' } },
@@ -66,7 +93,8 @@ router.get('/search', async (req, res) => {
         res.render('shop', {
             title: pageTitle,
             pageTitle: pageTitle,
-            products: products
+            products: products,
+            wishlist: userWishlist // Added: Pass wishlist to the template
         });
 
     } catch (err) {
@@ -193,7 +221,7 @@ router.post('/import-multiple', async (req, res) => {
             const product = JSON.parse(productString);
             productsToInsert.push({
                 name: product.name, sku: product.sku, brand: product.brand,
-                gender: product.gender, // Added gender for filtering
+                gender: product.gender,
                 retailPrice: Number(product.retailPrice), imageUrl: product.image.original,
                 thumbnailUrl: product.image.thumbnail, importedAt: new Date()
             });
@@ -228,7 +256,7 @@ router.post('/delete', async (req, res) => {
     }
 });
 
-// NEW: Route to handle bulk deletion of multiple products
+// Route to handle bulk deletion of multiple products
 router.post('/delete-multiple', async (req, res) => {
     try {
         const db = req.app.locals.client.db(req.app.locals.dbName);
@@ -238,7 +266,6 @@ router.post('/delete-multiple', async (req, res) => {
         if (!productIds) {
             return res.redirect('/products/manage');
         }
-        // Ensure productIds is an array, even if only one is selected
         if (!Array.isArray(productIds)) {
             productIds = [productIds];
         }
@@ -257,16 +284,85 @@ router.post('/delete-multiple', async (req, res) => {
     }
 });
 
+// Route to show the "Add a Review" form
+router.get('/:sku/review', isLoggedIn, async (req, res) => {
+    try {
+        const db = req.app.locals.client.db(req.app.locals.dbName);
+        const productsCollection = db.collection('products');
+        const ordersCollection = db.collection('orders');
+        const { sku } = req.params;
+
+        const product = await productsCollection.findOne({ sku: sku });
+        if (!product) {
+            return res.status(404).send("Product not found.");
+        }
+
+        const hasPurchased = await ordersCollection.findOne({
+            "userId": req.session.user.userId,
+            "items.sku": sku,
+            "status": "Delivered"
+        });
+
+        if (!hasPurchased) {
+            return res.status(403).render('info-page', {
+                title: "Review Not Allowed",
+                message: "You can only write a review for products you have purchased and that have been delivered.",
+                buttonText: "Back to Product",
+                buttonLink: `/products/${sku}`,
+                page: 'auth'
+            });
+        }
+
+        res.render('add-review', {
+            title: `Review ${product.name}`,
+            product: product,
+            page: 'auth'
+        });
+
+    } catch (err) {
+        console.error("Error showing review page:", err);
+        res.status(500).send("An error occurred.");
+    }
+});
+
+// Route to handle the "Add a Review" form submission
+router.post('/:sku/review', isLoggedIn, async (req, res) => {
+    try {
+        const db = req.app.locals.client.db(req.app.locals.dbName);
+        const reviewsCollection = db.collection('reviews');
+        const { productId, rating, comment } = req.body;
+        const { sku } = req.params;
+
+        const newReview = {
+            productId: new ObjectId(productId),
+            userId: req.session.user.userId,
+            rating: parseInt(rating),
+            comment: comment,
+            createdAt: new Date()
+        };
+
+        await reviewsCollection.insertOne(newReview);
+
+        res.redirect(`/products/${sku}`);
+
+    } catch (err) {
+        console.error("Error submitting review:", err);
+        res.status(500).send("An error occurred while submitting your review.");
+    }
+});
+
+
 // Route for a single Product Detail Page (PDP)
 router.get('/:sku', async (req, res) => {
     try {
         const db = req.app.locals.client.db(req.app.locals.dbName);
         const productsCollection = db.collection('products');
+        const usersCollection = db.collection('users');
+        const reviewsCollection = db.collection('reviews');
         const { sku } = req.params;
 
-        // This check prevents "men" or "women" from being treated as a SKU
         if (['men', 'women', 'search'].includes(sku.toLowerCase())) {
-            return res.status(404).send("Page not found."); // Prevent route collision
+            return res.status(404).send("Page not found.");
         }
 
         const product = await productsCollection.findOne({ sku: sku });
@@ -274,11 +370,34 @@ router.get('/:sku', async (req, res) => {
         if (!product) {
             return res.status(404).send("Product not found");
         }
+        
+        const reviews = await reviewsCollection.aggregate([
+            { $match: { productId: product._id } },
+            { $sort: { createdAt: -1 } },
+            {
+                $lookup: {
+                    from: 'users',
+                    localField: 'userId',
+                    foreignField: 'userId',
+                    as: 'author'
+                }
+            },
+            { $unwind: '$author' }
+        ]).toArray();
+
+        let isWishlisted = false;
+        if (req.session.user) {
+            const user = await usersCollection.findOne({ userId: req.session.user.userId });
+            if (user && user.wishlist && user.wishlist.some(id => id.equals(product._id))) {
+                isWishlisted = true;
+            }
+        }
 
         res.render('product-detail', {
             title: product.name,
             product: product,
-            currentUser: req.session.user
+            isWishlisted: isWishlisted,
+            reviews: reviews
         });
 
     } catch (err) {

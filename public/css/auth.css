@@ -24,7 +24,7 @@
     font-size: 1rem;
 }
 
-/* --- Updated: New styles for password validation feedback --- */
+/* Styles for password validation feedback */
 .password-criteria {
     font-size: 0.8rem;
     color: var(--text-color-secondary);
@@ -33,46 +33,63 @@
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 0.25rem 1rem;
-    transition: all 0.3s ease-in-out; /* Add transition to the container for smoother overall movement */
+    transition: all 0.3s ease-in-out;
 }
-
 .password-criteria li {
     list-style: none;
     margin-bottom: 0;
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    transition: all 0.3s ease-in-out, margin 0.3s ease-in-out; /* Add margin transition */
-    max-height: 20px; /* Initial height for animation */
+    transition: all 0.3s ease-in-out, margin 0.3s ease-in-out;
+    max-height: 20px;
     overflow: hidden;
-    position: relative; /* Needed for absolute positioning of icons */
-    padding-bottom: 0.25rem; /* Small padding for visual spacing */
+    position: relative;
+    padding-bottom: 0.25rem;
 }
-
 .password-criteria li.valid {
-    color: #34c759; /* Green for valid */
+    color: #34c759;
     max-height: 0;
     opacity: 0;
     transform: translateX(-10px);
-    margin-bottom: -0.5rem; /* Collapse margin when hidden */
+    margin-bottom: -0.5rem;
     padding-bottom: 0;
 }
-
 .password-criteria li.invalid {
-    color: #ff3b30; /* Red for invalid */
-    max-height: 20px; /* Ensure it's visible if invalid */
+    color: #ff3b30;
+    max-height: 20px;
     opacity: 1;
     transform: translateX(0);
     margin-bottom: 0;
     padding-bottom: 0.25rem;
 }
-
 .password-criteria li .iconify {
     font-size: 1rem;
     line-height: 1;
     flex-shrink: 0;
-    /* Optional: Animate icon color for fun */
     transition: color 0.3s ease-in-out; 
+}
+
+/* --- Added: Interactive Star Rating Styles --- */
+.star-rating {
+    display: flex;
+    flex-direction: row-reverse; /* This is key to the hover effect */
+    justify-content: flex-end;
+    font-size: 2rem;
+}
+.star-rating input[type="radio"] {
+    display: none; /* Hide the actual radio buttons */
+}
+.star-rating label {
+    color: var(--border-color);
+    cursor: pointer;
+    transition: color 0.2s ease;
+}
+/* The magic: style stars on hover and for selected rating */
+.star-rating input[type="radio"]:checked ~ label,
+.star-rating:hover label:hover,
+.star-rating:hover label:hover ~ label {
+    color: var(--star-color);
 }
 
 
