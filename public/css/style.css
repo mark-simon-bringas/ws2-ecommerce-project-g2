@@ -14,9 +14,9 @@
   --sidebar-link-color: var(--text-color-secondary);
   --sidebar-link-active-bg: #d9e6f5;
   --sidebar-link-active-color: var(--link-color);
-  --btn-primary-bg: #0071e3;
-  --btn-primary-hover-bg: #0077ed;
-  --star-color: #ffb400;
+  --btn-primary-bg: #0071e3; /* Original primary button color */
+  --btn-primary-hover-bg: #0077ed; /* Original primary button hover color */
+  --star-color: #ffb400; /* Original star color */
   --stat-icon-revenue-bg: #e1f3e7;
   --stat-icon-revenue-color: #34c759;
   --stat-icon-orders-bg: #e0f2fe;
@@ -25,6 +25,10 @@
   --stat-icon-users-color: #5856d6;
   --stat-icon-products-bg: #fff5e0;
   --stat-icon-products-color: #ff9500;
+
+  /* NEW: Nike specific colors */
+  --nike-black: #111111;
+  --nike-star-color: var(--nike-black);
 }
 
 /* --- 2. Global Styles --- */
@@ -59,13 +63,14 @@ li {
     border-radius: 980px;
 }
 .btn-primary {
-    background-color: var(--btn-primary-bg);
-    border-color: var(--btn-primary-bg);
+    /* Updated for "Add to Bag" button */
+    background-color: var(--nike-black);
+    border-color: var(--nike-black);
     transition: background-color 0.2s ease, border-color 0.2s ease;
 }
 .btn-primary:hover {
-    background-color: var(--btn-primary-hover-bg);
-    border-color: var(--btn-primary-hover-bg);
+    background-color: #4d4d4d; /* Slightly lighter black on hover */
+    border-color: #4d4d4d;
 }
 .btn-outline-secondary {
     border-color: var(--border-color);
@@ -85,7 +90,7 @@ li {
     font-weight: 700;
 }
 
-/* --- Global Form Styling --- */
+/* --- Global & Dashboard Form Styling --- */
 .form-control, .form-select {
     box-shadow: none !important;
     border-color: var(--border-color);
@@ -94,8 +99,6 @@ li {
     border-color: var(--link-hover-color);
     box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.15) !important;
 }
-
-/* Dashboard-specific clean form styles */
 .form-control-clean, .form-select-clean {
     padding: 0.6rem 1rem;
     font-size: 0.95rem;
@@ -410,7 +413,12 @@ li {
     color: var(--text-color);
 }
 
-/* Styles for Product Detail Page */
+/* --- Styles for Product Detail Page --- */
+.product-detail-page {
+    /* Set overall left/right margins for the page to match Nike's aesthetic */
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+}
 .product-detail-page .product-image-container {
     background-color: var(--bg-color);
     border-radius: 18px;
@@ -434,56 +442,44 @@ li {
     border-color: var(--text-color);
     color: #fff;
 }
-.product-feature-highlights {
-    display: flex;
-    gap: 2rem;
-    background-color: var(--bg-color);
-    padding: 1rem;
-    border-radius: 12px;
-}
-.product-feature-highlights .feature-item {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    font-size: 0.9rem;
-    font-weight: 500;
-}
-.product-feature-highlights .feature-item i {
-    font-size: 1.25rem;
-    color: var(--text-color-secondary);
-}
-.product-feature-highlights .feature-item p {
-    margin-bottom: 0;
+.product-details-accordion {
+    border-top: 1px solid var(--border-color);
 }
 .product-details-accordion .accordion-item {
     border: none;
     border-bottom: 1px solid var(--border-color);
 }
 .product-details-accordion .accordion-button {
-    font-size: 1.25rem;
-    font-weight: 600;
+    font-size: 1rem;
+    font-weight: 500;
     padding: 1.5rem 0;
     color: var(--text-color);
 }
 .product-details-accordion .accordion-button:not(.collapsed) {
     background-color: transparent;
     box-shadow: none;
+    color: var(--text-color);
 }
 .product-details-accordion .accordion-button:focus {
     box-shadow: none;
+}
+.product-details-accordion .accordion-button::after {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%231d1d1f'%3e%3cpath fill-rule='evenodd' d='M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z'/%3e%3c/svg%3e");
 }
 .product-details-accordion .accordion-body {
     padding: 0 0 1.5rem 0;
     color: var(--text-color-secondary);
 }
 
-/* Styles for Reviews Section */
+/* Updated: Styles for Reviews Section */
 .review-list .review-card {
-    border-bottom: 1px solid var(--border-color);
     padding: 1.5rem 0;
 }
-.review-list .review-card:last-child {
-    border-bottom: none;
+.review-list .review-card:first-child {
+    padding-top: 0;
+}
+.review-list .review-card:not(:last-child) {
+    border-bottom: 1px solid var(--border-color);
 }
 .review-header {
     display: flex;
@@ -499,14 +495,13 @@ li {
     color: var(--text-color-secondary);
 }
 .review-rating {
-    margin-bottom: 0.75rem;
-    color: var(--star-color);
+    color: var(--nike-star-color); /* Updated: Black stars */
+    font-size: 0.9rem; /* Updated: Smaller font size for stars */
 }
 .review-body p {
     margin-bottom: 0;
     color: var(--text-color-secondary);
 }
-
 
 /* --- 6. Admin Page Styles --- */
 .product-import-card { 
@@ -538,7 +533,6 @@ li {
 .floating-action-bar.is-active {
     bottom: 24px;
 }
-
 
 /* --- 7. Dashboard Layout & Components --- */
 .dashboard-layout { display: flex; flex-direction: column; }
@@ -712,23 +706,23 @@ li {
     }
     .dropdown-search-panel .search-input-group {
         border-bottom: none;
-        background-color: rgba(255, 255, 255, 0.1);
+        background-color: var(--bg-color);
         padding: 0.5rem 1rem;
         border-radius: 8px;
         gap: 0.75rem;
         width: 80%;
         max-width: 500px;
     }
-    .dropdown-search-panel .search-input-group .iconify { color: #86868b; }
-    .dropdown-search-panel .search-input-group input { font-size: 1rem; font-weight: 500; color: #fff; }
-    .dropdown-search-panel .search-input-group input::placeholder { color: #86868b; }
+    .dropdown-search-panel .search-input-group .iconify { color: var(--text-color-secondary); }
+    .dropdown-search-panel .search-input-group input { font-size: 1rem; font-weight: 500; color: var(--text-color); }
+    .dropdown-search-panel .search-input-group input::placeholder { color: var(--text-color-secondary); }
     .dropdown-search-panel .quick-links { display: block; margin-top: 1.5rem; width: 100%; }
     .dropdown-search-panel .quick-links span {
         font-size: 12px;
         font-weight: 500;
         text-transform: uppercase;
         letter-spacing: 0.5px;
-        color: #86868b;
+        color: var(--text-color-secondary);
         text-align: center;
         display: block;
     }
@@ -743,14 +737,14 @@ li {
         font-size: 14px;
         padding: 0.5rem;
         font-weight: 400;
-        color: #fff;
+        color: var(--text-color);
         display: block;
         border-radius: 6px;
         transition: background-color 0.2s ease;
         text-align: center;
     }
     .dropdown-search-panel .quick-links li a:hover {
-        background-color: rgba(255, 255, 255, 0.1);
+        background-color: var(--bg-color);
     }
 
     .section-header h2 {
@@ -776,7 +770,6 @@ li {
         max-height: 50px;
     }
     
-    /* --- Dashboard Desktop Styles --- */
     .dashboard-layout { display: flex; flex-direction: row; }
     .dashboard-sidebar {
         display: flex;
@@ -796,7 +789,7 @@ li {
         transition: all 0.2s ease;
     }
     .dashboard-sidebar .nav-link i { font-size: 1.2rem; }
-    .dashboard-sidebar .nav-link:hover { background-color: var(--bg-color); color: var(--link-color); }
+    .dashboard-sidebar .nav-link:hover { background-color: var(--bg-color); color: var(--text-color); }
     .dashboard-sidebar .nav-link.active {
         background-color: var(--sidebar-link-active-bg); color: var(--sidebar-link-active-color);
         font-weight: 600;

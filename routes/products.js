@@ -12,14 +12,12 @@ const isLoggedIn = (req, res, next) => {
 };
 
 // GET /products - The main shop page with filtering
-// --- Updated ---
 router.get('/', async (req, res) => {
     try {
         const db = req.app.locals.client.db(req.app.locals.dbName);
         const productsCollection = db.collection('products');
         const usersCollection = db.collection('users');
 
-        // Added: Fetch user's wishlist if they are logged in
         let userWishlist = [];
         if (req.session.user) {
             const user = await usersCollection.findOne({ userId: req.session.user.userId });
@@ -53,7 +51,7 @@ router.get('/', async (req, res) => {
             title: pageTitle,
             pageTitle: pageTitle,
             products: products,
-            wishlist: userWishlist // Added: Pass wishlist to the template
+            wishlist: userWishlist
         });
 
     } catch (err) {
@@ -63,7 +61,6 @@ router.get('/', async (req, res) => {
 });
 
 // GET /products/search - Handle search queries
-// --- Updated ---
 router.get('/search', async (req, res) => {
     try {
         const db = req.app.locals.client.db(req.app.locals.dbName);
@@ -71,7 +68,6 @@ router.get('/search', async (req, res) => {
         const usersCollection = db.collection('users');
         const searchQuery = req.query.q || "";
 
-        // Added: Fetch user's wishlist if they are logged in
         let userWishlist = [];
         if (req.session.user) {
             const user = await usersCollection.findOne({ userId: req.session.user.userId });
@@ -94,7 +90,7 @@ router.get('/search', async (req, res) => {
             title: pageTitle,
             pageTitle: pageTitle,
             products: products,
-            wishlist: userWishlist // Added: Pass wishlist to the template
+            wishlist: userWishlist
         });
 
     } catch (err) {
@@ -353,6 +349,7 @@ router.post('/:sku/review', isLoggedIn, async (req, res) => {
 
 
 // Route for a single Product Detail Page (PDP)
+// --- Updated ---
 router.get('/:sku', async (req, res) => {
     try {
         const db = req.app.locals.client.db(req.app.locals.dbName);
@@ -371,33 +368,36 @@ router.get('/:sku', async (req, res) => {
             return res.status(404).send("Product not found");
         }
         
-        const reviews = await reviewsCollection.aggregate([
-            { $match: { productId: product._id } },
-            { $sort: { createdAt: -1 } },
-            {
-                $lookup: {
-                    from: 'users',
-                    localField: 'userId',
-                    foreignField: 'userId',
-                    as: 'author'
-                }
-            },
-            { $unwind: '$author' }
-        ]).toArray();
+        // Fetch reviews, wishlist status, and related products in parallel for efficiency
+        const [reviews, user, relatedProducts] = await Promise.all([
+            // Fetch reviews for the product
+            reviewsCollection.aggregate([
+                { $match: { productId: product._id } },
+                { $sort: { createdAt: -1 } },
+                { $lookup: { from: 'users', localField: 'userId', foreignField: 'userId', as: 'author' } },
+                { $unwind: '$author' }
+            ]).toArray(),
+            
+            // Fetch the current user's data (if they're logged in)
+            req.session.user ? usersCollection.findOne({ userId: req.session.user.userId }) : null,
 
-        let isWishlisted = false;
-        if (req.session.user) {
-            const user = await usersCollection.findOne({ userId: req.session.user.userId });
-            if (user && user.wishlist && user.wishlist.some(id => id.equals(product._id))) {
-                isWishlisted = true;
-            }
-        }
+            // Fetch related products for the "You Might Also Like" carousel
+            productsCollection.find({
+                brand: product.brand,
+                _id: { $ne: product._id } // Exclude the current product
+            }).limit(8).toArray()
+        ]);
+
+        const isWishlisted = user && user.wishlist && user.wishlist.some(id => id.equals(product._id));
+        const userWishlist = user ? user.wishlist : [];
 
         res.render('product-detail', {
             title: product.name,
             product: product,
             isWishlisted: isWishlisted,
-            reviews: reviews
+            reviews: reviews,
+            relatedProducts: relatedProducts, // Pass related products to the view
+            wishlist: userWishlist // Pass the full wishlist for the carousel cards
         });
 
     } catch (err) {

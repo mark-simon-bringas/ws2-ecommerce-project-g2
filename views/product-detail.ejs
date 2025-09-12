@@ -16,8 +16,6 @@
                 <h1 class="product-title display-5 fw-bold"><%= product.name %></h1>
                 <p class="product-price h3 my-3">$<%= product.retailPrice %></p>
                 
-                <hr>
-                
                 <form id="add-to-cart-form" action="/cart/add" method="POST" class="d-grid gap-3">
                     <input type="hidden" name="productId" value="<%= product._id %>">
                     <input type="hidden" name="sku" value="<%= product.sku %>">
@@ -54,93 +52,138 @@
                     <% } %>
                 </div>
 
-                <div class="product-feature-highlights mt-5">
-                    <div class="feature-item">
-                        <i class="bi bi-box-seam"></i>
-                        <p>Free Shipping & Returns</p>
-                    </div>
-                    <div class="feature-item">
-                        <i class="bi bi-patch-check"></i>
-                        <p>Authenticity Guaranteed</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="row mt-5 pt-5">
-        <div class="col-12">
-            <div class="accordion product-details-accordion" id="productDetailsAccordion">
-                <div class="accordion-item">
-                    <h2 class="accordion-header">
-                        <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseDescription" aria-expanded="true" aria-controls="collapseDescription">
-                            Description
-                        </button>
-                    </h2>
-                    <div id="collapseDescription" class="accordion-collapse collapse show" data-bs-parent="#productDetailsAccordion">
-                        <div class="accordion-body">
-                            A timeless classic, redesigned for modern comfort and style. The perfect addition to any collection, this sneaker combines premium materials with iconic design elements to deliver a shoe that's as versatile as it is stylish. Whether you're hitting the streets or the court, do it in style.
-                        </div>
-                    </div>
-                </div>
-                <div class="accordion-item">
-                    <h2 class="accordion-header">
-                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseDetails" aria-expanded="false" aria-controls="collapseDetails">
-                            Details
-                        </button>
-                    </h2>
-                    <div id="collapseDetails" class="accordion-collapse collapse" data-bs-parent="#productDetailsAccordion">
-                        <div class="accordion-body">
-                            <ul class="list-unstyled">
-                                <li><strong>SKU:</strong> <%= product.sku %></li>
-                                <li><strong>Brand:</strong> <%= product.brand %></li>
-                                <li><strong>Category:</strong> <%= product.gender.charAt(0).toUpperCase() + product.gender.slice(1) %></li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="row mt-5 pt-5">
-        <div class="col-12">
-            <div class="reviews-section">
-                <div class="d-flex justify-content-between align-items-center mb-4">
-                    <h2 class="h3 mb-0">Reviews</h2>
-                    <% if (currentUser) { %>
-                        <a href="/products/<%= product.sku %>/review" class="btn btn-primary">Write a Review</a>
-                    <% } %>
+                <div class="mt-5">
+                    <p class="text-body-secondary">A timeless classic, redesigned for modern comfort and style. The perfect addition to any collection.</p>
+                    <ul class="list-unstyled text-body-secondary">
+                        <li>Colour Shown: Ochre/Black/Desert</li>
+                        <li>Style: HQ1966-700</li>
+                    </ul>
+                    <a href="#" class="fw-semibold text-dark view-details-link" data-bs-toggle="modal" data-bs-target="#productDetailsModal">
+                        View Product Details
+                    </a>
                 </div>
 
-                <% if (reviews && reviews.length > 0) { %>
-                    <div class="review-list">
-                        <% reviews.forEach(review => { %>
-                            <div class="review-card">
-                                <div class="review-header">
-                                    <div class="review-author"><%= review.author.firstName %></div>
-                                    <div class="review-date"><%= new Date(review.createdAt).toLocaleDateString() %></div>
-                                </div>
-                                <div class="review-rating">
-                                    <% for(let i = 1; i <= 5; i++) { %>
-                                        <i class="bi <%= i <= review.rating ? 'bi-star-fill' : 'bi-star' %>"></i>
-                                    <% } %>
-                                </div>
-                                <div class="review-body">
-                                    <p><%= review.comment %></p>
-                                </div>
+                <div class="accordion product-details-accordion mt-4" id="deliveryAndReviewsAccordion">
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseDelivery" aria-expanded="false" aria-controls="collapseDelivery">
+                                Free Delivery and Returns
+                            </button>
+                        </h2>
+                        <div id="collapseDelivery" class="accordion-collapse collapse" data-bs-parent="#deliveryAndReviewsAccordion">
+                            <div class="accordion-body">
+                                <p>Your order of ₱7,500 or more gets free standard delivery.</p>
+                                <ul class="list-unstyled text-body-secondary small">
+                                    <li class="mb-2">Standard delivered 5-9 Business Days</li>
+                                    <li>Express delivered 2-4 Business Days</li>
+                                </ul>
+                                <p class="small text-body-secondary mt-3">Orders are processed and delivered Monday-Friday (excluding public holidays).</p>
                             </div>
-                        <% }) %>
+                        </div>
                     </div>
-                <% } else { %>
-                    <div class="text-center p-5 bg-light rounded-4">
-                        <h4 class="text-body-secondary">No reviews yet.</h4>
-                        <p class="lead text-body-secondary">Be the first to share your thoughts!</p>
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseReviews" aria-expanded="false" aria-controls="collapseReviews">
+                                Reviews (<%= reviews.length %>)
+                                <% if (reviews && reviews.length > 0) {
+                                    const averageRating = reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length;
+                                %>
+                                    <span class="review-rating ms-3">
+                                        <% for(let i = 1; i <= 5; i++) { %>
+                                            <i class="bi <%= i <= averageRating ? 'bi-star-fill' : 'bi-star' %>"></i>
+                                        <% } %>
+                                    </span>
+                                <% } %>
+                            </button>
+                        </h2>
+                        <div id="collapseReviews" class="accordion-collapse collapse" data-bs-parent="#deliveryAndReviewsAccordion">
+                            <div class="accordion-body">
+                                <% if (reviews && reviews.length > 0) { %>
+                                    <div class="review-list">
+                                        <% reviews.forEach(review => { %>
+                                            <div class="review-card">
+                                                <div class="review-rating">
+                                                    <% for(let i = 1; i <= 5; i++) { %>
+                                                        <i class="bi <%= i <= review.rating ? 'bi-star-fill' : 'bi-star' %>"></i>
+                                                    <% } %>
+                                                </div>
+                                                <p class="review-body mb-1"><%= review.comment %></p>
+                                                <p class="small text-body-secondary"><%= review.author.firstName %> - <%= new Date(review.createdAt).toLocaleDateString() %></p>
+                                            </div>
+                                        <% }) %>
+                                    </div>
+                                <% } else { %>
+                                    <p class="text-body-secondary">No reviews yet.</p>
+                                <% } %>
+                                <a href="/products/<%= product.sku %>/review" class="btn btn-outline-secondary mt-3">Write a Review</a>
+                            </div>
+                        </div>
                     </div>
-                <% } %>
+                </div>
+
             </div>
         </div>
     </div>
+</div>
+
+<% if (relatedProducts && relatedProducts.length > 0) { %>
+<section class="product-carousel-section container-fluid my-5 py-5>
+    <div class="container">
+         <div class="section-header">
+            <h2 class="display-5 fw-bold mb-0">You Might Also Like</h2>
+        </div>
+    </div>
+    <div class="product-carousel">
+        <% relatedProducts.forEach(relatedProduct => { %>
+            <div class="product-card">
+                <div class="product-card-img-container">
+                    <a href="/products/<%= relatedProduct.sku %>" class="product-card-img-link"></a>
+                    <img src="<%= relatedProduct.thumbnailUrl %>" class="product-card-img" alt="<%= relatedProduct.name %>">
+                    <div class="product-card-actions">
+                        <% if (currentUser) { %>
+                            <button type="button" class="btn-action wishlist-toggle-btn" title="Toggle Wishlist" data-product-id="<%= relatedProduct._id %>">
+                                <% const isWishlisted = wishlist.some(id => id.equals(relatedProduct._id)); %>
+                                <i class="bi <%= isWishlisted ? 'bi-heart-fill' : 'bi-heart' %>"></i>
+                            </button>
+                        <% } else { %>
+                            <a href="/users/login" class="btn-action" title="Login to Add to Wishlist">
+                                <i class="bi bi-heart"></i>
+                            </a>
+                        <% } %>
+                        <button type="button" class="btn-action" title="Add to Cart" data-bs-toggle="modal" data-bs-target="#productModal-<%= relatedProduct.sku %>"><i class="bi bi-bag-plus"></i></button>
+                    </div>
+                </div>
+                <div class="product-card-body">
+                    <a href="/products/<%= relatedProduct.sku %>" class="text-decoration-none">
+                        <div class="product-title"><%= relatedProduct.name %></div>
+                        <div class="product-price">$<%= relatedProduct.retailPrice %></div>
+                    </a>
+                </div>
+            </div>
+        <% }) %>
+    </div>
+</section>
+<% } %>
+
+<div class="modal fade" id="productDetailsModal" tabindex="-1" aria-labelledby="productDetailsModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h1 class="modal-title fs-5" id="productDetailsModalLabel"><%= product.name %></h1>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p>A timeless classic, redesigned for modern comfort and style. The perfect addition to any collection, this sneaker combines premium materials with iconic design elements to deliver a shoe that's as versatile as it is stylish. Whether you're hitting the streets or the court, do it in style.</p>
+        <ul class="list-unstyled">
+            <li><strong>SKU:</strong> <%= product.sku %></li>
+            <li><strong>Brand:</strong> <%= product.brand %></li>
+            <li><strong>Category:</strong> <%= product.gender.charAt(0).toUpperCase() + product.gender.slice(1) %></li>
+            <li><strong>Colour Shown:</strong> Ochre/Black/Desert</li>
+            <li><strong>Style:</strong> HQ1966-700</li>
+        </ul>
+      </div>
+    </div>
+  </div>
 </div>
 
 <% if (currentUser) { %>
@@ -166,12 +209,11 @@
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
-                        // Toggle button state based on the new status from the server
                         if (data.newStatus === 'added') {
                             buttonSpan.textContent = 'In Favorites';
                             buttonIcon.classList.remove('bi-heart');
                             buttonIcon.classList.add('bi-heart-fill');
-                        } else { // 'removed'
+                        } else { 
                             buttonSpan.textContent = 'Favorite';
                             buttonIcon.classList.remove('bi-heart-fill');
                             buttonIcon.classList.add('bi-heart');

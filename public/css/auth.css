@@ -89,7 +89,7 @@
 .star-rating input[type="radio"]:checked ~ label,
 .star-rating:hover label:hover,
 .star-rating:hover label:hover ~ label {
-    color: var(--star-color);
+    color: black;
 }
 
 
