@@ -71,7 +71,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (mobileMenuCloseBtn) { mobileMenuCloseBtn.addEventListener('click', (e) => { e.preventDefault(); closeAllOverlays(); }); }
     if (searchOverlayCloseBtn) { searchOverlayCloseBtn.addEventListener('click', (e) => { e.preventDefault(); closeAllOverlays(); }); }
 
-    // --- Added: Global Wishlist Toggle Logic ---
+    // --- Global Wishlist Toggle Logic ---
     document.body.addEventListener('click', function(event) {
         const wishlistBtn = event.target.closest('.wishlist-toggle-btn');
         if (wishlistBtn) {
@@ -85,8 +85,6 @@ document.addEventListener('DOMContentLoaded', function() {
             })
             .then(response => {
                 if (!response.ok) {
-                    // If user is not logged in, the middleware will redirect,
-                    // causing fetch to error. We can redirect the user from here.
                     if (response.status === 401 || response.redirected) {
                         window.location.href = '/users/login';
                         return;
@@ -264,12 +262,16 @@ document.addEventListener('DOMContentLoaded', function() {
                     const bName = b.dataset.name;
                     const aPrice = parseFloat(a.dataset.price);
                     const bPrice = parseFloat(b.dataset.price);
+                    const aDate = a.dataset.date;
+                    const bDate = b.dataset.date;
 
                     switch (sortValue) {
                         case 'name-asc': return aName.localeCompare(bName);
                         case 'name-desc': return bName.localeCompare(aName);
                         case 'price-asc': return aPrice - bPrice;
                         case 'price-desc': return bPrice - aPrice;
+                        case 'date-desc': return bDate.localeCompare(aDate);
+                        case 'date-asc': return aDate.localeCompare(bDate);
                         default: return 0;
                     }
                 });
@@ -300,4 +302,6 @@ document.addEventListener('DOMContentLoaded', function() {
             processTable();
         }
     }
+
+
 });

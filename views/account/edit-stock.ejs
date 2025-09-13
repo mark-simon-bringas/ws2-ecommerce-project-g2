@@ -1,0 +1,54 @@
+<div class="page-header d-flex justify-content-between align-items-center">
+    <div>
+        <h1>Manage Stock & Price</h1>
+        <p class="text-body-secondary">Update inventory levels and pricing.</p>
+    </div>
+    <a href="/products/manage" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> Back to Products
+    </a>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="dashboard-card">
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-4">
+                    <img src="<%= product.thumbnailUrl %>" alt="<%= product.name %>" style="width: 80px; height: 80px; object-fit: contain;" class="me-3 rounded-3 bg-light p-2">
+                    <div>
+                        <h2 class="h5 mb-0"><%= product.name %></h2>
+                        <p class="text-body-secondary mb-0"><%= product.brand %></p>
+                    </div>
+                </div>
+
+                <form action="/products/stock/<%= product._id %>" method="POST">
+                    <%# ADDED: Input field for Retail Price %>
+                    <div class="mb-4">
+                        <label for="retailPrice" class="form-label fw-semibold">Retail Price</label>
+                        <div class="input-group">
+                            <span class="input-group-text">$</span>
+                            <input type="number" class="form-control" id="retailPrice" name="retailPrice" value="<%= product.retailPrice %>" min="0" step="0.01">
+                        </div>
+                    </div>
+
+                    <h5 class="fw-semibold">Stock Levels by Size</h5>
+                    <hr>
+                    <div class="row g-3">
+                        <% if (product.stock && Object.keys(product.stock).length > 0) { %>
+                            <% Object.keys(product.stock).sort((a, b) => parseFloat(a.replace('_', '.')) - parseFloat(b.replace('_', '.'))).forEach(sizeKey => { %>
+                                <% const displaySize = sizeKey.replace('_', '.'); %>
+                                <div class="col-md-4 col-lg-3">
+                                    <label for="stock-<%= sizeKey %>" class="form-label">Size <%= displaySize %></label>
+                                    <input type="number" class="form-control" id="stock-<%= sizeKey %>" name="stock[<%= displaySize %>]" value="<%= product.stock[sizeKey] %>" min="0">
+                                </div>
+                            <% }) %>
+                        <% } else { %>
+                            <p class="text-body-secondary">No stock information available for this product.</p>
+                        <% } %>
+                    </div>
+                    <hr class="my-4">
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

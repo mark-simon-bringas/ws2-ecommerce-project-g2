@@ -11,6 +11,14 @@ const isLoggedIn = (req, res, next) => {
     next();
 };
 
+// Middleware to check if user is an admin for specific routes
+const isAdmin = (req, res, next) => {
+    if (req.session.user && req.session.user.role === 'admin') {
+        return next();
+    }
+    res.status(403).send("Access Denied.");
+};
+
 // GET /products - The main shop page with filtering
 router.get('/', async (req, res) => {
     try {
@@ -101,11 +109,7 @@ router.get('/search', async (req, res) => {
 
 
 // Route to display the admin product management page
-router.get('/manage', async (req, res) => {
-    if (!req.session.user || req.session.user.role !== 'admin') {
-        return res.status(403).send("Access denied.");
-    }
-    
+router.get('/manage', isAdmin, async (req, res) => {
     try {
         const db = req.app.locals.client.db(req.app.locals.dbName);
         const productsCollection = db.collection('products');
@@ -146,8 +150,8 @@ router.get('/manage', async (req, res) => {
     }
 });
 
-// REVAMPED route to handle the search form submission with filters
-router.post('/search', async (req, res) => {
+// Route to handle search and filter out existing products
+router.post('/search', isAdmin, async (req, res) => {
     const { query, brand, gender } = req.body;
 
     let fullQuery = query;
@@ -169,12 +173,20 @@ router.post('/search', async (req, res) => {
     };
 
     try {
-        const response = await axios.request(options);
-        const products = response.data.results;
-        let html = '';
+        const db = req.app.locals.client.db(req.app.locals.dbName);
+        const productsCollection = db.collection('products');
 
-        if (products && products.length > 0) {
-            products.forEach(product => {
+        const response = await axios.request(options);
+        const apiProducts = response.data.results;
+
+        const existingProducts = await productsCollection.find().project({ sku: 1, _id: 0 }).toArray();
+        const existingSkus = new Set(existingProducts.map(p => p.sku));
+
+        const newProducts = apiProducts.filter(p => !existingSkus.has(p.sku));
+
+        let html = '';
+        if (newProducts && newProducts.length > 0) {
+            newProducts.forEach(product => {
                 const productDataString = JSON.stringify(product);
                 html += `
                     <div class="col">
@@ -191,7 +203,7 @@ router.post('/search', async (req, res) => {
                 `;
             });
         } else {
-            html = `<div class="col-12"><div class="text-center p-5 bg-light rounded"><p class="lead text-body-secondary">No results found for your search.</p></div></div>`;
+            html = `<div class="col-12"><div class="text-center p-5 bg-light rounded"><p class="lead text-body-secondary">No new products found for your search.</p></div></div>`;
         }
         res.send(html);
     } catch (error) {
@@ -201,35 +213,60 @@ router.post('/search', async (req, res) => {
     }
 });
 
-// Route to handle bulk importing of multiple products
-router.post('/import-multiple', async (req, res) => {
+// Route to handle bulk importing with stock initialization ONLY
+router.post('/import-multiple', isAdmin, async (req, res) => {
     try {
         const db = req.app.locals.client.db(req.app.locals.dbName);
         const productsCollection = db.collection('products');
+        const activityLogCollection = db.collection('activity_log');
         let { selectedProducts } = req.body;
         if (!selectedProducts) { return res.redirect('/products/manage'); }
         if (!Array.isArray(selectedProducts)) { selectedProducts = [selectedProducts]; }
 
         const productsToInsert = [];
-        const skusToInsert = [];
+        const standardSizes = ['8', '8.5', '9', '9.5', '10', '10.5', '11', '12'];
 
-        selectedProducts.forEach(productString => {
+        for (const productString of selectedProducts) {
             const product = JSON.parse(productString);
-            productsToInsert.push({
-                name: product.name, sku: product.sku, brand: product.brand,
-                gender: product.gender,
-                retailPrice: Number(product.retailPrice), imageUrl: product.image.original,
-                thumbnailUrl: product.image.thumbnail, importedAt: new Date()
-            });
-            skusToInsert.push(product.sku);
-        });
 
+            const initialStock = standardSizes.reduce((acc, size) => {
+                const safeSizeKey = size.replace('.', '_');
+                acc[safeSizeKey] = 10;
+                return acc;
+            }, {});
+
+            productsToInsert.push({
+                name: product.name,
+                sku: product.sku,
+                brand: product.brand,
+                gender: product.gender,
+                retailPrice: Number(product.retailPrice),
+                imageUrl: product.image.original,
+                thumbnailUrl: product.image.thumbnail,
+                importedAt: new Date(),
+                stock: initialStock
+            });
+        }
+
+        const skusToInsert = productsToInsert.map(p => p.sku);
         const existingProducts = await productsCollection.find({ sku: { $in: skusToInsert } }).project({ sku: 1 }).toArray();
-        const existingSkus = existingProducts.map(p => p.sku);
-        const newProducts = productsToInsert.filter(p => !existingSkus.includes(p.sku));
+        const existingSkus = new Set(existingProducts.map(p => p.sku));
+        const newProducts = productsToInsert.filter(p => !existingSkus.has(p.sku));
 
         if (newProducts.length > 0) {
             await productsCollection.insertMany(newProducts);
+
+            const logEntry = {
+                userId: req.session.user.userId,
+                userFirstName: req.session.user.firstName,
+                userRole: req.session.user.role,
+                actionType: 'PRODUCT_IMPORT',
+                details: {
+                    productCount: newProducts.length
+                },
+                timestamp: new Date()
+            };
+            await activityLogCollection.insertOne(logEntry);
         }
         res.redirect('/products/manage');
     } catch (err) {
@@ -238,8 +275,9 @@ router.post('/import-multiple', async (req, res) => {
     }
 });
 
+
 // Route to delete a single product
-router.post('/delete', async (req, res) => {
+router.post('/delete', isAdmin, async (req, res) => {
     try {
         const db = req.app.locals.client.db(req.app.locals.dbName);
         const productsCollection = db.collection('products');
@@ -253,7 +291,7 @@ router.post('/delete', async (req, res) => {
 });
 
 // Route to handle bulk deletion of multiple products
-router.post('/delete-multiple', async (req, res) => {
+router.post('/delete-multiple', isAdmin, async (req, res) => {
     try {
         const db = req.app.locals.client.db(req.app.locals.dbName);
         const productsCollection = db.collection('products');
@@ -277,6 +315,73 @@ router.post('/delete-multiple', async (req, res) => {
     } catch (err) {
         console.error("Error deleting multiple products:", err);
         res.status(500).send("An error occurred during the bulk delete.");
+    }
+});
+
+// Route to show the edit stock page
+router.get('/stock/:id', isAdmin, async (req, res) => {
+    try {
+        const db = req.app.locals.client.db(req.app.locals.dbName);
+        const productsCollection = db.collection('products');
+        const productId = req.params.id;
+
+        const product = await productsCollection.findOne({ _id: new ObjectId(productId) });
+        if (!product) {
+            return res.status(404).send("Product not found.");
+        }
+
+        res.render('account/edit-stock', {
+            title: "Edit Stock",
+            view: 'admin-products',
+            product: product
+        });
+    } catch (err) {
+        console.error("Error showing edit stock page:", err);
+        res.status(500).send("An error occurred.");
+    }
+});
+
+// UPDATED: Route to handle the stock AND price update
+router.post('/stock/:id', isAdmin, async (req, res) => {
+    const productId = req.params.id;
+    const { retailPrice, stock: newStockLevels } = req.body;
+    const updateQuery = {};
+
+    try {
+        const db = req.app.locals.client.db(req.app.locals.dbName);
+        const productsCollection = db.collection('products');
+
+        // Prepare stock level updates
+        for (const size in newStockLevels) {
+            const quantity = parseInt(newStockLevels[size], 10);
+            if (!isNaN(quantity) && quantity >= 0) {
+                const safeSizeKey = size.replace('.', '_');
+                updateQuery[`stock.${safeSizeKey}`] = quantity;
+            }
+        }
+
+        // Prepare retail price update
+        const newRetailPrice = parseFloat(retailPrice);
+        if (!isNaN(newRetailPrice) && newRetailPrice >= 0) {
+            updateQuery.retailPrice = newRetailPrice;
+        }
+
+        if (Object.keys(updateQuery).length > 0) {
+            await productsCollection.updateOne(
+                { _id: new ObjectId(productId) },
+                { $set: updateQuery }
+            );
+        }
+
+        res.redirect('/products/manage');
+
+    } catch (err) {
+        console.error("--- STOCK/PRICE UPDATE FAILED ---");
+        console.error("Timestamp:", new Date().toISOString());
+        console.error("Product ID:", productId);
+        console.error("Attempted Update Data:", updateQuery);
+        console.error("Full Error:", err);
+        res.status(500).send("Failed to update stock/price.");
     }
 });
 
@@ -349,7 +454,6 @@ router.post('/:sku/review', isLoggedIn, async (req, res) => {
 
 
 // Route for a single Product Detail Page (PDP)
-// --- Updated ---
 router.get('/:sku', async (req, res) => {
     try {
         const db = req.app.locals.client.db(req.app.locals.dbName);
@@ -368,9 +472,7 @@ router.get('/:sku', async (req, res) => {
             return res.status(404).send("Product not found");
         }
         
-        // Fetch reviews, wishlist status, and related products in parallel for efficiency
         const [reviews, user, relatedProducts] = await Promise.all([
-            // Fetch reviews for the product
             reviewsCollection.aggregate([
                 { $match: { productId: product._id } },
                 { $sort: { createdAt: -1 } },
@@ -378,13 +480,11 @@ router.get('/:sku', async (req, res) => {
                 { $unwind: '$author' }
             ]).toArray(),
             
-            // Fetch the current user's data (if they're logged in)
             req.session.user ? usersCollection.findOne({ userId: req.session.user.userId }) : null,
 
-            // Fetch related products for the "You Might Also Like" carousel
             productsCollection.find({
                 brand: product.brand,
-                _id: { $ne: product._id } // Exclude the current product
+                _id: { $ne: product._id }
             }).limit(8).toArray()
         ]);
 
@@ -396,8 +496,8 @@ router.get('/:sku', async (req, res) => {
             product: product,
             isWishlisted: isWishlisted,
             reviews: reviews,
-            relatedProducts: relatedProducts, // Pass related products to the view
-            wishlist: userWishlist // Pass the full wishlist for the carousel cards
+            relatedProducts: relatedProducts,
+            wishlist: userWishlist
         });
 
     } catch (err) {

@@ -17,7 +17,7 @@
         <div class="row g-4 mt-3">
             <div class="col-md-6">
                 <div class="dashboard-card h-100">
-                     <div class="card-body d-flex align-items-center gap-4">
+                    <div class="card-body d-flex align-items-center gap-4">
                         <div class="stat-icon bg-primary-subtle text-primary-emphasis"><i class="bi bi-box-seam-fill"></i></div>
                         <div>
                             <p class="stat-value mb-0"><%= localProducts.length %></p>
@@ -49,14 +49,16 @@
                     <div class="col-lg-3">
                         <select class="form-select form-select-lg form-control-clean" id="inventory-brand-filter">
                             <option value="">All Brands</option>
-                             <% const brands = [...new Set(localProducts.map(p => p.brand))]; %>
-                             <% brands.sort().forEach(brand => { %>
+                            <% const brands = [...new Set(localProducts.map(p => p.brand))]; %>
+                            <% brands.sort().forEach(brand => { %>
                                 <option value="<%= brand %>"><%= brand %></option>
-                             <% }) %>
+                            <% }) %>
                         </select>
                     </div>
                     <div class="col-lg-3">
-                         <select class="form-select form-select-lg form-control-clean" id="inventory-sort">
+                        <select class="form-select form-select-lg form-control-clean" id="inventory-sort">
+                            <option value="date-desc">Sort by Date (Newest)</option>
+                            <option value="date-asc">Sort by Date (Oldest)</option>
                             <option value="name-asc">Sort by Name (A-Z)</option>
                             <option value="name-desc">Sort by Name (Z-A)</option>
                             <option value="price-desc">Sort by Price (High-Low)</option>
@@ -80,7 +82,7 @@
                             </thead>
                             <tbody>
                                 <% localProducts.forEach(product => { %>
-                                    <tr data-brand="<%= product.brand %>" data-name="<%= product.name.toLowerCase() %>" data-price="<%= product.retailPrice %>">
+                                    <tr data-brand="<%= product.brand %>" data-name="<%= product.name.toLowerCase() %>" data-price="<%= product.retailPrice %>" data-sku="<%= product.sku %>" data-date="<%= product.importedAt.toISOString() %>">
                                         <td><input class="form-check-input inventory-checkbox" type="checkbox" name="productIds" value="<%= product._id %>"></td>
                                         <td><img src="<%= product.thumbnailUrl %>" alt="<%= product.name %>" class="img-fluid rounded-2"></td>
                                         <td>
@@ -88,11 +90,15 @@
                                             <div class="small text-body-secondary"><%= product.brand %></div>
                                         </td>
                                         <td><small class="text-monospace text-body-secondary"><%= product.sku %></small></td>
-                                        <td class="fw-semibold">$<%= product.retailPrice %></td>
+                                        <td class="fw-semibold product-price">$<%= product.retailPrice %></td>
                                         <td>
+                                            <%# ADDED: "Edit Stock" button %>
+                                            <a href="/products/stock/<%= product._id %>" class="btn btn-sm btn-outline-secondary me-1" title="Edit Stock">
+                                                <i class="bi bi-pencil-square"></i>
+                                            </a>
                                             <form action="/products/delete" method="POST" style="display: inline;">
                                                 <input type="hidden" name="productId" value="<%= product._id %>">
-                                                <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+                                                <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete Product"><i class="bi bi-trash"></i></button>
                                             </form>
                                         </td>
                                     </tr>
@@ -101,7 +107,7 @@
                         </table>
                     </div>
                 </form>
-                 <% if (!localProducts || localProducts.length === 0) { %>
+                <% if (!localProducts || localProducts.length === 0) { %>
                     <p class="text-body-secondary p-4 text-center">You haven't imported any products yet. Use the "Import Products" tab to find some.</p>
                 <% } %>
                 

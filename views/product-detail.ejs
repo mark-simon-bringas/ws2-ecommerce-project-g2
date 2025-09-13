@@ -10,7 +10,6 @@
                 <% } %>
             </div>
 
-            <%# ADDED: New section for relevant icon details %>
             <div class="product-extra-details">
                 <div class="detail-item">
                     <i class="bi bi-rulers"></i>
@@ -49,6 +48,15 @@
                 <h1 class="product-title display-5 fw-bold"><%= product.name %></h1>
                 <p class="product-price h3 my-3">$<%= product.retailPrice %></p>
                 
+                <%# FIXED: Stock checking logic to handle underscore format %>
+                <% 
+                    const standardSizes = ['8', '8.5', '9', '9.5', '10', '10.5', '11', '12'];
+                    const isCompletelyOutOfStock = product.stock && standardSizes.every(size => {
+                        const safeSizeKey = size.replace('.', '_');
+                        return product.stock[safeSizeKey] <= 0;
+                    });
+                %>
+
                 <form id="add-to-cart-form" action="/cart/add" method="POST" class="d-grid gap-3">
                     <input type="hidden" name="productId" value="<%= product._id %>">
                     <input type="hidden" name="sku" value="<%= product.sku %>">
@@ -59,13 +67,22 @@
                             <a href="#" class="small text-body-secondary">Size Guide</a>
                         </label>
                         <div class="size-selector">
-                            <% ['8', '8.5', '9', '9.5', '10', '10.5', '11', '12'].forEach(size => { %>
-                                <input type="radio" class="btn-check" name="size" id="size-<%= size %>" value="<%= size %>" autocomplete="off" required>
-                                <label class="btn btn-outline-secondary" for="size-<%= size %>"><%= size %></label>
+                            <% standardSizes.forEach(size => { %>
+                                <% 
+                                    const safeSizeKey = size.replace('.', '_');
+                                    const isSizeAvailable = product.stock && product.stock[safeSizeKey] > 0;
+                                %>
+                                <input type="radio" class="btn-check" name="size" id="size-<%= size %>" value="<%= size %>" autocomplete="off" required <%= !isSizeAvailable ? 'disabled' : '' %>>
+                                <label class="btn btn-outline-secondary <%= !isSizeAvailable ? 'disabled' : '' %>" for="size-<%= size %>"><%= size %></label>
                             <% }) %>
                         </div>
                     </div>
-                    <button type="submit" class="btn btn-primary btn-lg">Add to Bag</button>
+                    
+                    <% if (isCompletelyOutOfStock) { %>
+                        <button type="button" class="btn btn-primary btn-lg" disabled>Out of Stock</button>
+                    <% } else { %>
+                        <button type="submit" class="btn btn-primary btn-lg">Add to Bag</button>
+                    <% } %>
                 </form>
 
                 <div class="d-grid mt-3">

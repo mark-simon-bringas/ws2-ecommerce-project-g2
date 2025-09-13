@@ -118,7 +118,6 @@ router.post('/wishlist/toggle', async (req, res) => {
 
 
 // GET /account/wishlist - Display the user's wishlist page
-// --- Updated ---
 router.get('/wishlist', async (req, res) => {
     try {
         const db = req.app.locals.client.db(req.app.locals.dbName);
@@ -128,7 +127,7 @@ router.get('/wishlist', async (req, res) => {
         const user = await usersCollection.findOne({ userId: req.session.user.userId });
         
         let wishlistedProducts = [];
-        let userWishlist = []; // Ensure we have the list of IDs
+        let userWishlist = [];
         if (user && user.wishlist && user.wishlist.length > 0) {
             userWishlist = user.wishlist;
             wishlistedProducts = await productsCollection.find({
@@ -140,7 +139,7 @@ router.get('/wishlist', async (req, res) => {
             title: "My Wishlist",
             view: 'wishlist',
             products: wishlistedProducts,
-            wishlist: userWishlist // Pass the list of IDs to the template
+            wishlist: userWishlist
         });
 
     } catch (err) {
@@ -150,20 +149,22 @@ router.get('/wishlist', async (req, res) => {
 });
 
 
-// GET /account/admin/dashboard
+// UPDATED: /account/admin/dashboard to include activity log
 router.get('/admin/dashboard', isAdmin, async (req, res) => {
     try {
         const db = req.app.locals.client.db(req.app.locals.dbName);
         const usersCollection = db.collection('users');
         const productsCollection = db.collection('products');
         const ordersCollection = db.collection('orders');
+        const activityLogCollection = db.collection('activity_log');
 
         const [
             userCount, 
             productCount, 
             orderCount, 
             revenueResult,
-            recentOrders
+            recentOrders,
+            recentActivityLogs
         ] = await Promise.all([
             usersCollection.countDocuments(),
             productsCollection.countDocuments(),
@@ -171,9 +172,26 @@ router.get('/admin/dashboard', isAdmin, async (req, res) => {
             ordersCollection.aggregate([
                 { $group: { _id: null, totalRevenue: { $sum: "$total" } } }
             ]).toArray(),
-            ordersCollection.find().sort({ orderDate: -1 }).limit(5).toArray()
+            ordersCollection.find().sort({ orderDate: -1 }).limit(5).toArray(),
+            activityLogCollection.find().sort({ timestamp: -1 }).limit(5).toArray()
         ]);
         
+        // Combine and sort recent activities
+        const normalizedOrders = recentOrders.map(order => ({
+            type: 'ORDER',
+            timestamp: order.orderDate,
+            data: order
+        }));
+        const normalizedLogs = recentActivityLogs.map(log => ({
+            type: 'IMPORT',
+            timestamp: log.timestamp,
+            data: log
+        }));
+
+        const combinedActivity = [...normalizedOrders, ...normalizedLogs]
+            .sort((a, b) => b.timestamp - a.timestamp) // Sort descending by timestamp
+            .slice(0, 5); // Get the 5 most recent activities
+
         const totalRevenue = revenueResult.length > 0 ? revenueResult[0].totalRevenue : 0;
 
         res.render('account/dashboard', {
@@ -184,7 +202,7 @@ router.get('/admin/dashboard', isAdmin, async (req, res) => {
                 productCount,
                 orderCount,
                 totalRevenue,
-                recentOrders
+                recentActivity: combinedActivity // Pass the new combined feed
             }
         });
 
