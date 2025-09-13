@@ -25,7 +25,6 @@ app.use(session({
     resave: false,
     saveUninitialized: false,
     cookie: { 
-        // UPDATED: Sets the secure flag in production environments like Render
         secure: process.env.NODE_ENV === 'production', 
         maxAge: 15 * 60 * 1000 
     } 
@@ -52,9 +51,10 @@ async function createDbIndexes() {
         const db = client.db(app.locals.dbName);
         console.log("Ensuring database indexes exist...");
 
-        await db.collection('users').createIndex({ email: 1 }, { unique: true });
+        // UPDATED: Temporarily removed the 'unique' constraint for diagnostics
+        await db.collection('users').createIndex({ email: 1 });
         await db.collection('users').createIndex({ userId: 1 });
-        await db.collection('products').createIndex({ sku: 1 }, { unique: true });
+        await db.collection('products').createIndex({ sku: 1 });
         await db.collection('products').createIndex({ brand: 1 });
         await db.collection('orders').createIndex({ userId: 1 });
         await db.collection('activity_log').createIndex({ timestamp: -1 });
@@ -80,8 +80,7 @@ async function main() {
         const cartRoute = require('./routes/cart');
         const checkoutRoute = require('./routes/checkout');
         const accountRoute = require('./routes/account');
-        // REMOVED: The require for the deleted api.js file
-        
+
         app.use('/', indexRoute);
         app.use('/users', usersRoute);
         app.use('/password', passwordRoute);
@@ -89,7 +88,6 @@ async function main() {
         app.use('/cart', cartRoute);
         app.use('/checkout', checkoutRoute);
         app.use('/account', accountRoute);
-        // REMOVED: The app.use for the deleted api route
        
         app.listen(port, () => {
             console.log(`Server running on port ${port}`);
