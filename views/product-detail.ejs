@@ -1,6 +1,7 @@
-<div class="container my-5 product-detail-page">
-    <div class="row">
-        <div class="col-lg-7">
+<div class="my-5"> 
+    <div class="product-detail-layout">
+
+        <div class="product-detail-layout__gallery">
             <div class="product-image-container">
                 <% if (product.imageUrl) { %>
                     <img src="<%= product.imageUrl %>" alt="<%= product.name %>" class="img-fluid">
@@ -8,9 +9,41 @@
                     <img src="https://via.placeholder.com/800x800.png?text=No+Image" alt="No Image Available" class="img-fluid">
                 <% } %>
             </div>
+
+            <%# ADDED: New section for relevant icon details %>
+            <div class="product-extra-details">
+                <div class="detail-item">
+                    <i class="bi bi-rulers"></i>
+                    <div>
+                        <h6 class="detail-item__title">True to Size</h6>
+                        <p class="detail-item__text">Fits just right.</p>
+                    </div>
+                </div>
+                <div class="detail-item">
+                    <i class="bi bi-feather"></i>
+                    <div>
+                        <h6 class="detail-item__title">Lightweight</h6>
+                        <p class="detail-item__text">Cushioned for comfort.</p>
+                    </div>
+                </div>
+                <div class="detail-item">
+                    <i class="bi bi-grip-horizontal"></i>
+                    <div>
+                        <h6 class="detail-item__title">Durable Traction</h6>
+                        <p class="detail-item__text">A sole that grips.</p>
+                    </div>
+                </div>
+                <div class="detail-item">
+                    <i class="bi bi-award"></i>
+                    <div>
+                        <h6 class="detail-item__title">Premium Materials</h6>
+                        <p class="detail-item__text">Crafted with care.</p>
+                    </div>
+                </div>
+            </div>
         </div>
 
-        <div class="col-lg-5">
+        <div class="product-detail-layout__info">
             <div class="product-info-panel">
                 <p class="text-body-secondary mb-2"><%= product.brand %></p>
                 <h1 class="product-title display-5 fw-bold"><%= product.name %></h1>
@@ -98,6 +131,9 @@
                         </h2>
                         <div id="collapseReviews" class="accordion-collapse collapse" data-bs-parent="#deliveryAndReviewsAccordion">
                             <div class="accordion-body">
+                                <div class="text-end mb-4">
+                                    <a href="/products/<%= product.sku %>/review" class="btn btn-outline-secondary">Write a Review</a>
+                                </div>
                                 <% if (reviews && reviews.length > 0) { %>
                                     <div class="review-list">
                                         <% reviews.forEach(review => { %>
@@ -113,23 +149,21 @@
                                         <% }) %>
                                     </div>
                                 <% } else { %>
-                                    <p class="text-body-secondary">No reviews yet.</p>
+                                    <p class="text-body-secondary text-center">No reviews yet. Be the first to share your thoughts!</p>
                                 <% } %>
-                                <a href="/products/<%= product.sku %>/review" class="btn btn-outline-secondary mt-3">Write a Review</a>
                             </div>
                         </div>
                     </div>
                 </div>
-
             </div>
         </div>
     </div>
 </div>
 
 <% if (relatedProducts && relatedProducts.length > 0) { %>
-<section class="product-carousel-section container-fluid my-5 py-5>
+<section class="product-carousel-section container-fluid my-5 py-5">
     <div class="container">
-         <div class="section-header">
+        <div class="section-header">
             <h2 class="display-5 fw-bold mb-0">You Might Also Like</h2>
         </div>
     </div>
@@ -166,14 +200,23 @@
 <% } %>
 
 <div class="modal fade" id="productDetailsModal" tabindex="-1" aria-labelledby="productDetailsModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
+  <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
     <div class="modal-content">
       <div class="modal-header">
-        <h1 class="modal-title fs-5" id="productDetailsModalLabel"><%= product.name %></h1>
+        <div class="product-modal-header">
+            <img src="<%= product.thumbnailUrl %>" alt="<%= product.name %>" class="product-modal-header__image">
+            <div class="product-modal-header__info">
+                <h1 class="modal-title fs-5" id="productDetailsModalLabel"><%= product.name %></h1>
+                <p class="product-price mb-0">$<%= product.retailPrice %></p>
+            </div>
+        </div>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body">
+        <h5 class="fw-bold">Timeless Design</h5>
         <p>A timeless classic, redesigned for modern comfort and style. The perfect addition to any collection, this sneaker combines premium materials with iconic design elements to deliver a shoe that's as versatile as it is stylish. Whether you're hitting the streets or the court, do it in style.</p>
+        
+        <h5 class="fw-bold mt-4">Product Details</h5>
         <ul class="list-unstyled">
             <li><strong>SKU:</strong> <%= product.sku %></li>
             <li><strong>Brand:</strong> <%= product.brand %></li>
@@ -193,7 +236,6 @@
         if (wishlistForm) {
             wishlistForm.addEventListener('submit', function(event) {
                 event.preventDefault();
-                
                 const productId = this.querySelector('input[name="productId"]').value;
                 const button = this.querySelector('button');
                 const buttonSpan = button.querySelector('span');
@@ -201,9 +243,7 @@
 
                 fetch('/account/wishlist/toggle', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
+                    headers: { 'Content-Type': 'application/json', },
                     body: JSON.stringify({ productId: productId })
                 })
                 .then(response => response.json())
