@@ -25,8 +25,7 @@ app.use(session({
     resave: false,
     saveUninitialized: false,
     cookie: { 
-        // UPDATED: Correctly sets the secure flag for production
-        secure: process.env.NODE_ENV === 'production', 
+        secure: false, 
         maxAge: 15 * 60 * 1000 
     } 
 }));
