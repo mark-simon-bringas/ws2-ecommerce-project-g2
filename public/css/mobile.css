@@ -1,31 +1,35 @@
 /* ==== MOBILE SPECIFIC STYLES FOR BOTTOM NAVIGATION ==== */
 
+/* This file should be linked AFTER style.css in your HTML to ensure overrides */
+
 @media (max-width: 991.98px) {
     .dashboard-layout {
-        height: calc(100vh - 48px);
-        overflow: hidden;
+        height: calc(100vh - 48px); /* Full viewport height minus the top navbar */
+        overflow: hidden; /* Prevent the whole layout from scrolling */
     }
 
+    /* Make the main content area the scrollable part */
     .dashboard-main-content {
         height: 100%;
         overflow-y: auto;
-        -webkit-overflow-scrolling: touch;
-        padding-bottom: 100px;
+        -webkit-overflow-scrolling: touch; /* for smooth scrolling on iOS */
+        padding-bottom: 100px; /* Extra padding to keep content above the bottom nav */
     }
 
+    /* Bottom Navigation Bar */
     .bottom-navbar {
         position: fixed;
         bottom: 0;
         left: 0;
         right: 0;
-        height: auto;
+        height: auto; /* Let padding define the height */
         background-color: rgba(255, 255, 255, 0.85);
         backdrop-filter: saturate(180%) blur(20px);
         -webkit-backdrop-filter: saturate(180%) blur(20px);
         border-top: 1px solid rgba(0, 0, 0, 0.1);
         display: flex;
         justify-content: space-around;
-        align-items: flex-start;
+        align-items: flex-start; /* Align to top for better padding control */
         padding: 12px 0.5rem;
         padding-bottom: calc(12px + env(safe-area-inset-bottom));
         z-index: 1100;
@@ -43,7 +47,7 @@
         text-decoration: none;
         transition: color 0.2s ease;
         -webkit-tap-highlight-color: transparent;
-        position: relative; /* This is needed for badge positioning */
+        position: relative;
     }
 
     .bottom-navbar-link i {
@@ -65,7 +69,6 @@
         color: var(--link-color);
     }
 
-    /* FIXED: Correctly positions the notification badge */
     .bottom-navbar-link .badge {
         position: absolute;
         top: -2px;
@@ -73,5 +76,38 @@
         transform: translateX(22px);
         font-size: 10px;
         padding: 0.3em 0.5em;
+    }
+
+    /* --- ADDED: Styles for Mobile Sticky Checkout --- */
+    .mobile-checkout-sticky {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background-color: #fff;
+        border-top: 1px solid var(--border-color);
+        padding: 1rem;
+        padding-bottom: calc(1rem + env(safe-area-inset-bottom));
+        z-index: 1050;
+    }
+    .checkout-options {
+        position: absolute;
+        bottom: 100%;
+        left: 0;
+        right: 0;
+        background-color: #fff;
+        border-top: 1px solid var(--border-color);
+        transform: translateY(100%);
+        transition: transform 0.3s ease-in-out, visibility 0.3s ease-in-out;
+        visibility: hidden;
+    }
+    .checkout-options.is-active {
+        transform: translateY(0);
+        visibility: visible;
+    }
+
+    /* Hide the desktop summary buttons on mobile */
+    .summary-card-desktop .d-grid {
+        display: none !important;
     }
 }
