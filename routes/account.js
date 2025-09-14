@@ -191,11 +191,6 @@ router.get('/admin/dashboard', isAdmin, async (req, res) => {
         
         const totalRevenue = revenueResult.length > 0 ? revenueResult[0].totalRevenue : 0;
 
-        // ADDED: Temporary debug log to inspect the data
-        console.log("--- DEBUG: Recent Activity Data ---");
-        console.log(JSON.stringify(recentActivity, null, 2));
-        console.log("---------------------------------");
-
         res.render('account/dashboard', {
             title: "Admin Dashboard",
             view: 'admin-dashboard',
@@ -214,12 +209,15 @@ router.get('/admin/dashboard', isAdmin, async (req, res) => {
     }
 });
 
-// GET /account/admin/orders - List all orders for the admin
+// GET /account/admin/orders - Now marks orders as "read"
 router.get('/admin/orders', isAdmin, async (req, res) => {
     try {
         const db = req.app.locals.client.db(req.app.locals.dbName);
         const ordersCollection = db.collection('orders');
+        
         const allOrders = await ordersCollection.find().sort({ orderDate: -1 }).toArray();
+
+        ordersCollection.updateMany({ isNew: true }, { $set: { isNew: false } });
 
         res.render('account/admin-orders', {
             title: "Order Management",
@@ -312,35 +310,53 @@ router.post('/admin/orders/update-status/:id', isAdmin, async (req, res) => {
     }
 });
 
-// POST /account/admin/orders/cancel/:id - Cancel an order
-router.post('/account/admin/orders/cancel/:id', isAdmin, async (req, res) => {
+// FIXED: /account/admin/orders/cancel/:id - Now correctly updates status and logs activity
+router.post('/admin/orders/cancel/:id', isAdmin, async (req, res) => {
     try {
         const db = req.app.locals.client.db(req.app.locals.dbName);
         const ordersCollection = db.collection('orders');
+        const activityLogCollection = db.collection('activity_log');
         const orderId = req.params.id;
 
-        const result = await ordersCollection.findOneAndUpdate(
+        const orderToCancel = await ordersCollection.findOne({ _id: new ObjectId(orderId) });
+
+        if (!orderToCancel) {
+            return res.status(404).send("Order not found.");
+        }
+
+        await ordersCollection.updateOne(
             { _id: new ObjectId(orderId) },
-            { $set: { status: 'Cancelled' } },
-            { returnDocument: 'after' }
+            { $set: { status: 'Cancelled' } }
         );
-        
-        const cancelledOrder = result;
 
-        if (cancelledOrder) {
-            const emailTitle = 'Your Order Has Been Cancelled';
-            const emailMessage = `Hi ${cancelledOrder.customer.firstName}, your order has been successfully cancelled as requested. If you have any questions, please contact our support team.`;
-            const emailHtml = createStatusEmailHtml(emailTitle, emailMessage, cancelledOrder);
+        // Create log entry
+        const logEntry = {
+            userId: req.session.user.userId,
+            userFirstName: req.session.user.firstName,
+            userRole: req.session.user.role,
+            actionType: 'ORDER_CANCEL',
+            details: {
+                orderId: orderToCancel._id,
+                customerName: `${orderToCancel.customer.firstName} ${orderToCancel.customer.lastName}`
+            },
+            timestamp: new Date()
+        };
+        await activityLogCollection.insertOne(logEntry);
 
-            const { data, error } = await resend.emails.send({
-                from: process.env.RESEND_FROM_EMAIL,
-                to: cancelledOrder.customer.email,
-                subject: emailTitle,
-                html: emailHtml,
-            });
-            if (error) {
-                console.error(`Resend API Error for order ${orderId}:`, error);
-            }
+        // Send email
+        const emailTitle = 'Your Order Has Been Cancelled';
+        const emailMessage = `Hi ${orderToCancel.customer.firstName}, your order has been successfully cancelled as requested. If you have any questions, please contact our support team.`;
+        const emailHtml = createStatusEmailHtml(emailTitle, emailMessage, orderToCancel);
+
+        const { data, error } = await resend.emails.send({
+            from: process.env.RESEND_FROM_EMAIL,
+            to: orderToCancel.customer.email,
+            subject: emailTitle,
+            html: emailHtml,
+        });
+
+        if (error) {
+            console.error(`Resend API Error for order ${orderId}:`, error);
         }
 
         res.redirect(`/account/admin/orders?message=${encodeURIComponent('Order has been cancelled.')}`);
@@ -349,6 +365,7 @@ router.post('/account/admin/orders/cancel/:id', isAdmin, async (req, res) => {
         res.status(500).send("Failed to cancel order.");
     }
 });
+
 
 // GET /account/orders - Show the user's order history
 router.get('/orders', async (req, res) => {

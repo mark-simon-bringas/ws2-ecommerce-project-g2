@@ -150,7 +150,6 @@
                                 <span>sneakslab</span>
                             </a>
                             <nav class="nav flex-column">
-                                <%# FIXED: Changed 'user' to the globally available 'currentUser' %>
                                 <% if (currentUser && currentUser.role === 'admin') { %>
                                     <h6 class="nav-heading">Admin</h6>
                                     <a class="nav-link <%= (view === 'admin-dashboard') ? 'active' : '' %>" href="/account/admin/dashboard">
@@ -160,6 +159,9 @@
                                     <a class="nav-link <%= (view === 'admin-orders') ? 'active' : '' %>" href="/account/admin/orders">
                                         <i class="bi bi-list-check"></i>
                                         <span>Orders</span>
+                                        <% if (newOrderCount > 0) { %>
+                                            <span class="badge rounded-pill bg-danger ms-auto"><%= newOrderCount %></span>
+                                        <% } %>
                                     </a>
                                     <a class="nav-link <%= (view === 'admin-users') ? 'active' : '' %>" href="/account/admin/users">
                                         <i class="bi bi-people-fill"></i>
@@ -202,7 +204,6 @@
         <% } %>
     </div>
     
-    <%# FIXED: Changed 'user' to the globally available 'currentUser' %>
     <% if (typeof isDashboard !== 'undefined' && isDashboard && currentUser) { %>
     <div class="bottom-navbar d-lg-none">
         <% if (currentUser.role === 'admin') { %>
@@ -210,9 +211,13 @@
                 <i class="bi bi-grid-1x2-fill"></i>
                 <span>Dashboard</span>
             </a>
+            <%# UPDATED: Removed the unnecessary div wrapper %>
             <a href="/account/admin/orders" class="bottom-navbar-link <%= (view === 'admin-orders') ? 'active' : '' %>">
                 <i class="bi bi-list-check"></i>
                 <span>Orders</span>
+                <% if (newOrderCount > 0) { %>
+                    <span class="badge rounded-pill bg-danger"><%= newOrderCount %></span>
+                <% } %>
             </a>
             <a href="/products/manage" class="bottom-navbar-link <%= (view === 'admin-products') ? 'active' : '' %>">
                 <i class="bi bi-box-seam-fill"></i>

@@ -37,20 +37,24 @@
         <div class="dashboard-card mb-4">
             <div class="card-body">
                 <h5 class="card-title fw-semibold mb-3">Actions</h5>
+                
+                <%# UPDATED: The entire form is now disabled if the order has been cancelled %>
                 <form action="/account/admin/orders/update-status/<%= order._id %>" method="POST" class="mb-3">
                     <label for="newStatus" class="form-label">Update Order Status</label>
-                    <div class="input-group">
-                        <select id="newStatus" name="newStatus" class="form-select">
-                            <option value="Processing" <%= order.status === 'Processing' ? 'selected' : '' %>>Processing</option>
-                            <option value="Shipped" <%= order.status === 'Shipped' ? 'selected' : '' %>>Shipped</option>
-                            <option value="Delivered" <%= order.status === 'Delivered' ? 'selected' : '' %>>Delivered</option>
-                            <option value="Cancelled" <%= order.status === 'Cancelled' ? 'selected' : '' %> disabled>Cancelled</option>
-                        </select>
-                        <button type="submit" class="btn btn-primary">Update</button>
-                    </div>
+                    <fieldset <%= (order.status === 'Cancelled') ? 'disabled' : '' %>>
+                        <div class="input-group">
+                            <select id="newStatus" name="newStatus" class="form-select">
+                                <option value="Processing" <%= order.status === 'Processing' ? 'selected' : '' %>>Processing</option>
+                                <option value="Shipped" <%= order.status === 'Shipped' ? 'selected' : '' %>>Shipped</option>
+                                <option value="Delivered" <%= order.status === 'Delivered' ? 'selected' : '' %>>Delivered</option>
+                                <option value="Cancelled" <%= order.status === 'Cancelled' ? 'selected' : '' %> disabled>Cancelled</option>
+                            </select>
+                            <button type="submit" class="btn btn-primary">Update</button>
+                        </div>
+                    </fieldset>
                 </form>
                 
-                <% if (order.status === 'Processing') { %>
+                <% if (order.status !== 'Cancelled') { %>
                 <hr>
                 <form action="/account/admin/orders/cancel/<%= order._id %>" method="POST">
                     <div class="d-grid">

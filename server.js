@@ -30,6 +30,28 @@ app.use(session({
     } 
 }));
 
+app.use(async (req, res, next) => {
+    res.locals.currentUser = req.session.user;
+    res.locals.cart = req.session.cart;
+    res.locals.path = req.path;
+    
+    // If an admin is logged in, count the number of new orders
+    if (req.session.user && req.session.user.role === 'admin') {
+        try {
+            const db = req.app.locals.client.db(req.app.locals.dbName);
+            const newOrderCount = await db.collection('orders').countDocuments({ isNew: true });
+            res.locals.newOrderCount = newOrderCount;
+        } catch (err) {
+            console.error("Error fetching new order count:", err);
+            res.locals.newOrderCount = 0;
+        }
+    } else {
+        res.locals.newOrderCount = 0;
+    }
+
+    next();
+});
+
 // Custom middleware to make user session and cart available to all views
 app.use((req, res, next) => {
     res.locals.currentUser = req.session.user;

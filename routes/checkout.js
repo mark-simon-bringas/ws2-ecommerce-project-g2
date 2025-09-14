@@ -16,7 +16,7 @@ router.get('/', (req, res) => {
     });
 });
 
-// UPDATED: /checkout/place-order to handle stock decrement with dot replacement
+// POST /checkout/place-order - Handle the order submission
 router.post('/place-order', async (req, res) => {
     if (!req.session.cart || req.session.cart.items.length === 0) {
         return res.redirect('/cart');
@@ -28,6 +28,7 @@ router.post('/place-order', async (req, res) => {
         const productsCollection = db.collection('products');
         const cart = req.session.cart;
 
+        // Create the order object
         const order = {
             customer: {
                 firstName: req.body.firstName,
@@ -43,27 +44,29 @@ router.post('/place-order', async (req, res) => {
             items: cart.items,
             total: cart.totalPrice,
             orderDate: new Date(),
-            status: 'Processing'
+            status: 'Processing',
+            isNew: true // Added: Mark every new order as 'new'
         };
 
+        // If the user is logged in, attach their ID to the order
         if (req.session.user) {
             order.userId = req.session.user.userId;
         }
 
+        // Save the order to the database
         const result = await ordersCollection.insertOne(order);
-        order._id = result.insertedId;
+        order._id = result.insertedId; // Attach the new ID to the order object for the email
 
-        // FIXED: Decrement stock using underscore format for sizes
+        // Decrement stock for each item in the order
         const stockUpdates = cart.items.map(item => {
             const safeSizeKey = item.size.replace('.', '_');
             const updateField = `stock.${safeSizeKey}`;
             return productsCollection.updateOne(
                 { _id: new ObjectId(item.productId) },
-                { $inc: { [updateField]: -item.qty } }
+                { $inc: { [updateField]: -item.qty } } 
             );
         });
         await Promise.all(stockUpdates);
-
 
         // --- AUTOMATICALLY SEND ORDER CONFIRMATION EMAIL ---
         const itemsHtml = order.items.map(item => `
