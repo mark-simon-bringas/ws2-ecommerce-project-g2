@@ -25,6 +25,7 @@ app.use(session({
     resave: false,
     saveUninitialized: false,
     cookie: { 
+        // UPDATED: Correctly sets the secure flag for production
         secure: process.env.NODE_ENV === 'production', 
         maxAge: 15 * 60 * 1000 
     } 
@@ -45,32 +46,10 @@ const client = new MongoClient(uri);
 app.locals.client = client;
 app.locals.dbName = process.env.DB_NAME || "ecommerceDB";
 
-// Function to create database indexes for performance
-async function createDbIndexes() {
-    try {
-        const db = client.db(app.locals.dbName);
-        console.log("Ensuring database indexes exist...");
-
-        await db.collection('users').createIndex({ email: 1 }, { unique: true });
-        await db.collection('users').createIndex({ userId: 1 });
-        await db.collection('products').createIndex({ sku: 1 }, { unique: true });
-        await db.collection('products').createIndex({ brand: 1 });
-        await db.collection('orders').createIndex({ userId: 1 });
-        await db.collection('activity_log').createIndex({ timestamp: -1 });
-
-        console.log("Database indexes are in place.");
-    } catch (err) {
-        console.error("Error creating database indexes:", err);
-    }
-}
-
-
 async function main() {
     try {
         await client.connect();
         console.log("Connected to MongoDB Atlas");
-
-        await createDbIndexes();
 
         const indexRoute = require('./routes/index');
         const usersRoute = require('./routes/users');
@@ -78,7 +57,7 @@ async function main() {
         const productsRoute = require('./routes/products');
         const cartRoute = require('./routes/cart');
         const checkoutRoute = require('./routes/checkout');
-        const accountRoute = require('./routes/account');
+        const accountRoute = require('./routes/account'); 
 
         app.use('/', indexRoute);
         app.use('/users', usersRoute);
