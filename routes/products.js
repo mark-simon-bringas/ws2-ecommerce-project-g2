@@ -113,7 +113,33 @@ router.get('/manage', isAdmin, async (req, res) => {
     try {
         const db = req.app.locals.client.db(req.app.locals.dbName);
         const productsCollection = db.collection('products');
-        const localProductsPromise = productsCollection.find().sort({ importedAt: -1 }).toArray();
+        
+        const { q, brand, sort } = req.query;
+        let query = {};
+        let sortQuery = { importedAt: -1 };
+
+        if (q) {
+            query.$or = [
+                { name: { $regex: q, $options: 'i' } },
+                { sku: { $regex: q, $options: 'i' } }
+            ];
+        }
+        if (brand) {
+            query.brand = brand;
+        }
+
+        if (sort) {
+            switch (sort) {
+                case 'date-asc': sortQuery = { importedAt: 1 }; break;
+                case 'name-asc': sortQuery = { name: 1 }; break;
+                case 'name-desc': sortQuery = { name: -1 }; break;
+                case 'price-asc': sortQuery = { retailPrice: 1 }; break;
+                case 'price-desc': sortQuery = { retailPrice: -1 }; break;
+                default: sortQuery = { importedAt: -1 };
+            }
+        }
+
+        const localProductsPromise = productsCollection.find(query).sort(sortQuery).toArray();
 
         const apiOptions = {
             method: 'GET',
@@ -134,7 +160,8 @@ router.get('/manage', isAdmin, async (req, res) => {
             user: req.session.user,
             currentUser: req.session.user,
             localProducts: localProducts, 
-            apiProducts: apiResponse.data.results 
+            apiProducts: apiResponse.data.results,
+            filters: req.query
         });
 
     } catch (error) {
@@ -145,12 +172,13 @@ router.get('/manage', isAdmin, async (req, res) => {
             user: req.session.user,
             currentUser: req.session.user,
             localProducts: [],
-            apiProducts: []
+            apiProducts: [],
+            filters: {}
         });
     }
 });
 
-// Route to handle search and filter out existing products
+// FIXED: Route now sends the correct product 'id' to the form
 router.post('/search', isAdmin, async (req, res) => {
     const { query, brand, gender } = req.body;
 
@@ -187,11 +215,10 @@ router.post('/search', isAdmin, async (req, res) => {
         let html = '';
         if (newProducts && newProducts.length > 0) {
             newProducts.forEach(product => {
-                const productDataString = JSON.stringify(product);
                 html += `
                     <div class="col">
                         <div class="card h-100 shadow-sm product-import-card">
-                            <input type="checkbox" name="selectedProducts" class="product-checkbox form-check-input" value='${productDataString.replace(/'/g, "&apos;")}'>
+                            <input type="checkbox" name="selectedProducts" class="product-checkbox form-check-input" value="${product.id}">
                             <img src="${product.image.thumbnail}" class="card-img-top p-3" alt="${product.name}" style="object-fit: contain; height: 250px;">
                             <div class="card-body">
                                 <h5 class="card-title small">${product.name}</h5>
@@ -213,48 +240,63 @@ router.post('/search', isAdmin, async (req, res) => {
     }
 });
 
-// Route to handle bulk importing with stock initialization ONLY
+// FIXED: Route now receives 'id's and fetches details with the correct endpoint
 router.post('/import-multiple', isAdmin, async (req, res) => {
     try {
         const db = req.app.locals.client.db(req.app.locals.dbName);
         const productsCollection = db.collection('products');
         const activityLogCollection = db.collection('activity_log');
-        let { selectedProducts } = req.body;
-        if (!selectedProducts) { return res.redirect('/products/manage'); }
-        if (!Array.isArray(selectedProducts)) { selectedProducts = [selectedProducts]; }
+        let { selectedProducts: selectedIds } = req.body; // Renamed for clarity
+        if (!selectedIds) { return res.redirect('/products/manage'); }
+        if (!Array.isArray(selectedIds)) { selectedIds = [selectedIds]; }
 
         const productsToInsert = [];
         const standardSizes = ['8', '8.5', '9', '9.5', '10', '10.5', '11', '12'];
 
-        for (const productString of selectedProducts) {
-            const product = JSON.parse(productString);
+        for (const id of selectedIds) {
+            try {
+                // Fetch full product details using the correct 'id'
+                const options = {
+                    method: 'GET',
+                    url: `https://the-sneaker-database.p.rapidapi.com/sneakers/${id}`,
+                     headers: {
+                        'X-RapidAPI-Key': process.env.SNEAKER_DB_API_KEY,
+                        'X-RapidAPI-Host': 'the-sneaker-database.p.rapidapi.com'
+                    }
+                };
+                const response = await axios.request(options);
+                const product = response.data.results[0];
 
-            const initialStock = standardSizes.reduce((acc, size) => {
-                const safeSizeKey = size.replace('.', '_');
-                acc[safeSizeKey] = 10;
-                return acc;
-            }, {});
+                if (!product) continue;
 
-            productsToInsert.push({
-                name: product.name,
-                sku: product.sku,
-                brand: product.brand,
-                gender: product.gender,
-                retailPrice: Number(product.retailPrice),
-                imageUrl: product.image.original,
-                thumbnailUrl: product.image.thumbnail,
-                importedAt: new Date(),
-                stock: initialStock
-            });
+                const initialStock = standardSizes.reduce((acc, size) => {
+                    const safeSizeKey = size.replace('.', '_');
+                    acc[safeSizeKey] = 10;
+                    return acc;
+                }, {});
+
+                productsToInsert.push({
+                    name: product.name,
+                    sku: product.sku,
+                    brand: product.brand,
+                    gender: product.gender,
+                    retailPrice: Number(product.retailPrice),
+                    imageUrl: product.image.original,
+                    thumbnailUrl: product.image.thumbnail,
+                    importedAt: new Date(),
+                    stock: initialStock,
+                    description: product.story || 'No description available.',
+                    colorway: product.colorway,
+                    releaseDate: product.releaseDate
+                });
+            } catch (err) {
+                console.warn(`Could not fetch details for ID ${id}. Skipping import. Error: ${err.message}`);
+                continue;
+            }
         }
 
-        const skusToInsert = productsToInsert.map(p => p.sku);
-        const existingProducts = await productsCollection.find({ sku: { $in: skusToInsert } }).project({ sku: 1 }).toArray();
-        const existingSkus = new Set(existingProducts.map(p => p.sku));
-        const newProducts = productsToInsert.filter(p => !existingSkus.has(p.sku));
-
-        if (newProducts.length > 0) {
-            await productsCollection.insertMany(newProducts);
+        if (productsToInsert.length > 0) {
+            await productsCollection.insertMany(productsToInsert);
 
             const logEntry = {
                 userId: req.session.user.userId,
@@ -262,7 +304,7 @@ router.post('/import-multiple', isAdmin, async (req, res) => {
                 userRole: req.session.user.role,
                 actionType: 'PRODUCT_IMPORT',
                 details: {
-                    productCount: newProducts.length
+                    productCount: productsToInsert.length
                 },
                 timestamp: new Date()
             };
@@ -270,19 +312,39 @@ router.post('/import-multiple', isAdmin, async (req, res) => {
         }
         res.redirect('/products/manage');
     } catch (err) {
-        console.error("Error importing multiple products:", err);
+        console.error("Error during the final stage of import:", err);
         res.status(500).send("An error occurred during the bulk import.");
     }
 });
 
 
-// Route to delete a single product
+// Route to delete a single product and log the action
 router.post('/delete', isAdmin, async (req, res) => {
     try {
         const db = req.app.locals.client.db(req.app.locals.dbName);
         const productsCollection = db.collection('products');
+        const activityLogCollection = db.collection('activity_log');
         const { productId } = req.body;
-        await productsCollection.deleteOne({ _id: new ObjectId(productId) });
+
+        const productToDelete = await productsCollection.findOne({ _id: new ObjectId(productId) });
+
+        if (productToDelete) {
+            await productsCollection.deleteOne({ _id: new ObjectId(productId) });
+
+            const logEntry = {
+                userId: req.session.user.userId,
+                userFirstName: req.session.user.firstName,
+                userRole: req.session.user.role,
+                actionType: 'PRODUCT_DELETE',
+                details: {
+                    productName: productToDelete.name,
+                    productSku: productToDelete.sku
+                },
+                timestamp: new Date()
+            };
+            await activityLogCollection.insertOne(logEntry);
+        }
+
         res.redirect('/products/manage');
     } catch (err) {
         console.error("Error deleting product:", err);
@@ -290,11 +352,12 @@ router.post('/delete', isAdmin, async (req, res) => {
     }
 });
 
-// Route to handle bulk deletion of multiple products
+// Route to handle bulk deletion and log the action
 router.post('/delete-multiple', isAdmin, async (req, res) => {
     try {
         const db = req.app.locals.client.db(req.app.locals.dbName);
         const productsCollection = db.collection('products');
+        const activityLogCollection = db.collection('activity_log');
         let { productIds } = req.body;
 
         if (!productIds) {
@@ -305,10 +368,25 @@ router.post('/delete-multiple', isAdmin, async (req, res) => {
         }
 
         const objectIdsToDelete = productIds.map(id => new ObjectId(id));
+        
+        const productsToDelete = await productsCollection.find({ _id: { $in: objectIdsToDelete } }).toArray();
 
-        await productsCollection.deleteMany({
-            _id: { $in: objectIdsToDelete }
-        });
+        if (productsToDelete.length > 0) {
+            await productsCollection.deleteMany({ _id: { $in: objectIdsToDelete } });
+
+            const logEntry = {
+                userId: req.session.user.userId,
+                userFirstName: req.session.user.firstName,
+                userRole: req.session.user.role,
+                actionType: 'PRODUCT_DELETE_MULTIPLE',
+                details: {
+                    productCount: productsToDelete.length,
+                    deletedProducts: productsToDelete.map(p => ({ name: p.name, sku: p.sku }))
+                },
+                timestamp: new Date()
+            };
+            await activityLogCollection.insertOne(logEntry);
+        }
 
         res.redirect('/products/manage');
 
@@ -318,7 +396,7 @@ router.post('/delete-multiple', isAdmin, async (req, res) => {
     }
 });
 
-// Route to show the edit stock page
+// Route to show the edit stock and price page
 router.get('/stock/:id', isAdmin, async (req, res) => {
     try {
         const db = req.app.locals.client.db(req.app.locals.dbName);
@@ -341,7 +419,7 @@ router.get('/stock/:id', isAdmin, async (req, res) => {
     }
 });
 
-// UPDATED: Route to handle the stock AND price update
+// Route to handle the stock and price update
 router.post('/stock/:id', isAdmin, async (req, res) => {
     const productId = req.params.id;
     const { retailPrice, stock: newStockLevels } = req.body;
@@ -350,8 +428,10 @@ router.post('/stock/:id', isAdmin, async (req, res) => {
     try {
         const db = req.app.locals.client.db(req.app.locals.dbName);
         const productsCollection = db.collection('products');
+        const activityLogCollection = db.collection('activity_log');
 
-        // Prepare stock level updates
+        const productBeforeUpdate = await productsCollection.findOne({ _id: new ObjectId(productId) });
+
         for (const size in newStockLevels) {
             const quantity = parseInt(newStockLevels[size], 10);
             if (!isNaN(quantity) && quantity >= 0) {
@@ -360,10 +440,26 @@ router.post('/stock/:id', isAdmin, async (req, res) => {
             }
         }
 
-        // Prepare retail price update
         const newRetailPrice = parseFloat(retailPrice);
-        if (!isNaN(newRetailPrice) && newRetailPrice >= 0) {
+        if (retailPrice && !isNaN(newRetailPrice) && newRetailPrice >= 0) {
             updateQuery.retailPrice = newRetailPrice;
+
+            if (productBeforeUpdate && productBeforeUpdate.retailPrice !== newRetailPrice) {
+                const logEntry = {
+                    userId: req.session.user.userId,
+                    userFirstName: req.session.user.firstName,
+                    userRole: req.session.user.role,
+                    actionType: 'PRICE_UPDATE',
+                    details: {
+                        productId: productBeforeUpdate._id,
+                        productName: productBeforeUpdate.name,
+                        oldPrice: productBeforeUpdate.retailPrice,
+                        newPrice: newRetailPrice
+                    },
+                    timestamp: new Date()
+                };
+                await activityLogCollection.insertOne(logEntry);
+            }
         }
 
         if (Object.keys(updateQuery).length > 0) {

@@ -48,7 +48,6 @@
                 <h1 class="product-title display-5 fw-bold"><%= product.name %></h1>
                 <p class="product-price h3 my-3">$<%= product.retailPrice %></p>
                 
-                <%# FIXED: Stock checking logic to handle underscore format %>
                 <% 
                     const standardSizes = ['8', '8.5', '9', '9.5', '10', '10.5', '11', '12'];
                     const isCompletelyOutOfStock = product.stock && standardSizes.every(size => {
@@ -89,7 +88,8 @@
                     <% if (currentUser) { %>
                         <form id="wishlist-toggle-form">
                             <input type="hidden" name="productId" value="<%= product._id %>">
-                            <button type="submit" class="btn btn-outline-secondary btn-lg d-flex align-items-center justify-content-center gap-2">
+                            <%# FIXED: Added w-100 class to the button %>
+                            <button type="submit" class="btn btn-outline-secondary btn-lg w-100 d-flex align-items-center justify-content-center gap-2">
                                 <span><%- isWishlisted ? 'In Favorites' : 'Favorite' %></span>
                                 <i class="bi <%- isWishlisted ? 'bi-heart-fill' : 'bi-heart' %>"></i>
                             </button>
@@ -103,10 +103,14 @@
                 </div>
 
                 <div class="mt-5">
-                    <p class="text-body-secondary">A timeless classic, redesigned for modern comfort and style. The perfect addition to any collection.</p>
+                    <% if (product.description) { %>
+                        <p class="text-body-secondary"><%= product.description %></p>
+                    <% } %>
                     <ul class="list-unstyled text-body-secondary">
-                        <li>Colour Shown: Ochre/Black/Desert</li>
-                        <li>Style: HQ1966-700</li>
+                        <% if (product.colorway) { %>
+                            <li>Colour Shown: <%= product.colorway %></li>
+                        <% } %>
+                        <li>Style: <%= product.sku %></li>
                     </ul>
                     <a href="#" class="fw-semibold text-dark view-details-link" data-bs-toggle="modal" data-bs-target="#productDetailsModal">
                         View Product Details
@@ -230,16 +234,15 @@
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body">
-        <h5 class="fw-bold">Timeless Design</h5>
-        <p>A timeless classic, redesigned for modern comfort and style. The perfect addition to any collection, this sneaker combines premium materials with iconic design elements to deliver a shoe that's as versatile as it is stylish. Whether you're hitting the streets or the court, do it in style.</p>
+        <p><%= product.description %></p>
         
         <h5 class="fw-bold mt-4">Product Details</h5>
         <ul class="list-unstyled">
             <li><strong>SKU:</strong> <%= product.sku %></li>
             <li><strong>Brand:</strong> <%= product.brand %></li>
             <li><strong>Category:</strong> <%= product.gender.charAt(0).toUpperCase() + product.gender.slice(1) %></li>
-            <li><strong>Colour Shown:</strong> Ochre/Black/Desert</li>
-            <li><strong>Style:</strong> HQ1966-700</li>
+            <li><strong>Colour Shown:</strong> <%= product.colorway %></li>
+            <li><strong>Release Date:</strong> <%= product.releaseDate %></li>
         </ul>
       </div>
     </div>

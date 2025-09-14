@@ -149,22 +149,36 @@ router.get('/wishlist', async (req, res) => {
 });
 
 
-// UPDATED: /account/admin/dashboard to include activity log
+// /account/admin/dashboard to correctly fetch all recent activity
 router.get('/admin/dashboard', isAdmin, async (req, res) => {
     try {
         const db = req.app.locals.client.db(req.app.locals.dbName);
         const usersCollection = db.collection('users');
         const productsCollection = db.collection('products');
         const ordersCollection = db.collection('orders');
-        const activityLogCollection = db.collection('activity_log');
+
+        const recentActivityPipeline = [
+            { $sort: { orderDate: -1 } },
+            { $limit: 10 },
+            { $project: { type: 'ORDER', timestamp: '$orderDate', data: '$$ROOT' } },
+            { $unionWith: { 
+                coll: 'activity_log', 
+                pipeline: [
+                    { $sort: { timestamp: -1 } },
+                    { $limit: 10 },
+                    { $project: { type: '$actionType', timestamp: '$timestamp', data: '$$ROOT' } }
+                ]
+            }},
+            { $sort: { timestamp: -1 } },
+            { $limit: 5 }
+        ];
 
         const [
             userCount, 
             productCount, 
             orderCount, 
             revenueResult,
-            recentOrders,
-            recentActivityLogs
+            recentActivity
         ] = await Promise.all([
             usersCollection.countDocuments(),
             productsCollection.countDocuments(),
@@ -172,27 +186,15 @@ router.get('/admin/dashboard', isAdmin, async (req, res) => {
             ordersCollection.aggregate([
                 { $group: { _id: null, totalRevenue: { $sum: "$total" } } }
             ]).toArray(),
-            ordersCollection.find().sort({ orderDate: -1 }).limit(5).toArray(),
-            activityLogCollection.find().sort({ timestamp: -1 }).limit(5).toArray()
+            ordersCollection.aggregate(recentActivityPipeline).toArray()
         ]);
         
-        // Combine and sort recent activities
-        const normalizedOrders = recentOrders.map(order => ({
-            type: 'ORDER',
-            timestamp: order.orderDate,
-            data: order
-        }));
-        const normalizedLogs = recentActivityLogs.map(log => ({
-            type: 'IMPORT',
-            timestamp: log.timestamp,
-            data: log
-        }));
-
-        const combinedActivity = [...normalizedOrders, ...normalizedLogs]
-            .sort((a, b) => b.timestamp - a.timestamp) // Sort descending by timestamp
-            .slice(0, 5); // Get the 5 most recent activities
-
         const totalRevenue = revenueResult.length > 0 ? revenueResult[0].totalRevenue : 0;
+
+        // ADDED: Temporary debug log to inspect the data
+        console.log("--- DEBUG: Recent Activity Data ---");
+        console.log(JSON.stringify(recentActivity, null, 2));
+        console.log("---------------------------------");
 
         res.render('account/dashboard', {
             title: "Admin Dashboard",
@@ -202,7 +204,7 @@ router.get('/admin/dashboard', isAdmin, async (req, res) => {
                 productCount,
                 orderCount,
                 totalRevenue,
-                recentActivity: combinedActivity // Pass the new combined feed
+                recentActivity: recentActivity
             }
         });
 
