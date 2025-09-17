@@ -81,8 +81,8 @@
                     <span>$<%= cart.totalPrice.toFixed(2) %></span>
                 </div>
                 <hr>
-                <%# UPDATED: Added d-none d-lg-grid to hide on mobile %>
-                <div class="d-none d-lg-grid gap-3">
+                <%# UPDATED: Added d-none and d-lg-grid to hide these buttons on mobile %>
+                <div class="d-none d-lg-grid gap-3" id="desktop-checkout-buttons">
                     <a href="/checkout" class="btn btn-primary btn-lg <%= (cart && cart.items.length > 0) ? '' : 'disabled' %>">
                         Guest Checkout
                     </a>
@@ -95,7 +95,7 @@
     </div>
 </div>
 
-<section class="product-carousel-section container-fluid mt-5 py-5">
+<section class="product-carousel-section container-fluid mt-5 py-5 border-top">
     <div class="container">
         <div class="section-header">
             <h2 class="h3 fw-bold mb-0">Favourites</h2>

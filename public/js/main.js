@@ -213,14 +213,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (mobileCheckoutBtn && checkoutOptions) {
         mobileCheckoutBtn.addEventListener('click', function() {
-            this.classList.toggle('is-active');
-            checkoutOptions.classList.toggle('is-active');
+            this.style.display = 'none'; // Hide the main button
+            checkoutOptions.classList.add('is-active');
         });
 
-        // Optional: Close the options if the user clicks outside of them
+        // Close the options if the user clicks outside of them
         document.addEventListener('click', function(event) {
             if (!mobileCheckoutBtn.contains(event.target) && !checkoutOptions.contains(event.target)) {
-                mobileCheckoutBtn.classList.remove('is-active');
+                mobileCheckoutBtn.style.display = 'block'; // Show the main button again
                 checkoutOptions.classList.remove('is-active');
             }
         });

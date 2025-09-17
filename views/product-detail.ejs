@@ -4,9 +4,13 @@
         <div class="product-detail-layout__gallery">
             <div class="product-image-container">
                 <% if (product.imageUrl) { %>
-                    <img src="<%= product.imageUrl %>" alt="<%= product.name %>" class="img-fluid">
+                    <div class="img-magnifier-container">
+                        <img id="productImage" src="<%= product.imageUrl %>" alt="<%= product.name %>" class="img-fluid">
+                    </div>
                 <% } else { %>
-                    <img src="https://via.placeholder.com/800x800.png?text=No+Image" alt="No Image Available" class="img-fluid">
+                    <div class="img-magnifier-container">
+                        <img id="productImage" src="https://via.placeholder.com/800x800.png?text=No+Image" alt="No Image Available" class="img-fluid">
+                    </div>
                 <% } %>
             </div>
 
@@ -88,7 +92,6 @@
                     <% if (currentUser) { %>
                         <form id="wishlist-toggle-form">
                             <input type="hidden" name="productId" value="<%= product._id %>">
-                            <%# FIXED: Added w-100 class to the button %>
                             <button type="submit" class="btn btn-outline-secondary btn-lg w-100 d-flex align-items-center justify-content-center gap-2">
                                 <span><%- isWishlisted ? 'In Favorites' : 'Favorite' %></span>
                                 <i class="bi <%- isWishlisted ? 'bi-heart-fill' : 'bi-heart' %>"></i>
@@ -291,3 +294,72 @@
     });
 </script>
 <% } %>
+
+
+
+<script>
+function initMagnifier(imgId) {
+    const img = document.getElementById(imgId);
+    if (!img) return;
+
+    // Remove old lens if any
+    const oldLens = img.parentElement.querySelector(".img-magnifier-lens");
+    if (oldLens) oldLens.remove();
+
+    const lens = document.createElement("div");
+    lens.setAttribute("class", "img-magnifier-lens");
+    const lensImg = document.createElement("img");
+    lensImg.src = img.src;
+    lens.appendChild(lensImg);
+    img.parentElement.appendChild(lens);
+
+    const zoom = 2; // zoom factor
+    lensImg.style.width = img.offsetWidth * zoom + "px";
+    lensImg.style.height = img.offsetHeight * zoom + "px";
+
+    function moveLens(e) {
+        e.preventDefault();
+        const rect = img.getBoundingClientRect();
+        let x = e.clientX - rect.left;
+        let y = e.clientY - rect.top;
+
+        // Position lens
+        lens.style.left = (x - lens.offsetWidth / 2) + "px";
+        lens.style.top = (y - lens.offsetHeight / 2) + "px";
+
+        // Clamp zoomed image
+        if (x < 0) x = 0;
+        if (y < 0) y = 0;
+        if (x > img.offsetWidth) x = img.offsetWidth;
+        if (y > img.offsetHeight) y = img.offsetHeight;
+
+        lensImg.style.left = -(x * zoom - lens.offsetWidth / 2) + "px";
+        lensImg.style.top = -(y * zoom - lens.offsetHeight / 2) + "px";
+    }
+
+    lens.style.display = "none";
+
+    img.addEventListener("mouseenter", () => { lens.style.display = "block"; });
+    img.addEventListener("mouseleave", () => { lens.style.display = "none"; });
+    img.addEventListener("mousemove", moveLens);
+    lens.addEventListener("mousemove", moveLens);
+}
+
+// Run when page loads
+document.addEventListener("DOMContentLoaded", function () {
+    const img = document.getElementById("productImage");
+    if (img) {
+        if (img.complete) {
+            initMagnifier("productImage");
+        } else {
+            img.addEventListener("load", () => initMagnifier("productImage"));
+        }
+    }
+});
+
+// Re-run ONLY when a new product image is swapped
+document.addEventListener("productImageChanged", function () {
+    initMagnifier("productImage");
+});
+</script>
+
