@@ -413,20 +413,67 @@ li {
     color: var(--text-color);
 }
 
-/* --- Styles for Product Detail Page --- */
-.product-detail-page {
-    /* Set overall left/right margins for the page to match Nike's aesthetic */
-    padding-left: 1.5rem;
-    padding-right: 1.5rem;
+/* --- ADDED: Styles for the new Cart Page --- */
+.cart-page-container {
+    max-width: 1200px;
 }
-.product-detail-page .product-image-container {
+.cart-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 1.5rem;
+    padding: 1.5rem 0;
+}
+.cart-item + .cart-item {
+    border-top: 1px solid var(--border-color);
+}
+.cart-item-image {
+    width: 120px;
+    height: 120px;
+    object-fit: cover;
     background-color: var(--bg-color);
-    border-radius: 18px;
-    padding: 2rem;
+    border-radius: 8px;
 }
-.product-detail-page .product-info-panel {
+.cart-item-details {
+    flex-grow: 1;
+}
+.cart-item-actions {
+    display: flex;
+    align-items: center;
+    margin-top: 1rem;
+}
+.quantity-selector {
+    display: flex;
+    align-items: center;
+    border: 1px solid var(--border-color);
+    border-radius: 980px;
+    padding: 0.25rem;
+}
+.quantity-selector .btn {
+    width: 28px;
+    height: 28px;
+}
+.summary-card-desktop {
     position: sticky;
     top: 100px;
+    padding-top: 4.5rem;
+}
+.summary-item, .summary-total {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+}
+.summary-total {
+    font-weight: 600;
+    font-size: 1.1rem;
+}
+
+
+/* --- Styles for Product Detail Page --- */
+.product-detail-layout {
+    padding: 0 1rem;
+}
+.product-image-container {
+    padding: 2rem;
 }
 .size-selector {
     display: grid;
@@ -441,6 +488,10 @@ li {
     background-color: var(--text-color);
     border-color: var(--text-color);
     color: #fff;
+}
+.view-details-link {
+    text-decoration: underline;
+    font-weight: 500;
 }
 .product-details-accordion {
     border-top: 1px solid var(--border-color);
@@ -471,7 +522,6 @@ li {
     color: var(--text-color-secondary);
 }
 
-/* Updated: Styles for Reviews Section */
 .review-list .review-card {
     padding: 1.5rem 0;
 }
@@ -495,13 +545,63 @@ li {
     color: var(--text-color-secondary);
 }
 .review-rating {
-    color: var(--nike-star-color); /* Updated: Black stars */
-    font-size: 0.9rem; /* Updated: Smaller font size for stars */
+    color: var(--nike-star-color); 
+    font-size: 0.9rem;
 }
 .review-body p {
     margin-bottom: 0;
     color: var(--text-color-secondary);
 }
+
+.modal-dialog {
+    max-width: 800px;
+}
+.modal-header {
+    border-bottom: 1px solid var(--border-color);
+}
+.product-modal-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    width: 100%;
+}
+.product-modal-header__image {
+    width: 60px;
+    height: 60px;
+    object-fit: contain;
+    background-color: var(--bg-color);
+    border-radius: 8px;
+}
+
+.product-extra-details {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+    margin-top: 2rem;
+    padding: 1.5rem;
+    background-color: var(--bg-color);
+    border-radius: 12px;
+}
+.detail-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+}
+.detail-item i {
+    font-size: 1.5rem;
+    color: var(--text-color);
+    margin-top: 2px;
+}
+.detail-item__title {
+    font-weight: 600;
+    margin-bottom: 0.1rem;
+}
+.detail-item__text {
+    font-size: 0.9rem;
+    color: var(--text-color-secondary);
+    margin-bottom: 0;
+}
+
 
 /* --- 6. Admin Page Styles --- */
 .product-import-card { 
@@ -801,5 +901,45 @@ li {
     
     .product-card-img {
         height: 250px;
+    }
+
+    .product-detail-layout {
+        display: grid;
+        grid-template-columns: 45fr 55fr;
+        gap: 5rem;
+        align-items: start;
+        max-width: 1080px; 
+        margin: 0 auto;
+        padding: 0 2rem;
+    }
+
+    .product-detail-layout__gallery {
+        position: sticky;
+        top: 100px;
+        background: radial-gradient(circle, #e8e8e9, #f5f5f7);
+        border-radius: 18px;
+    }
+
+    .product-extra-details {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .img-magnifier-lens {
+    position: absolute;
+    border: 2px solid rgba(0,0,0,0.4);
+    border-radius: 50%;
+    cursor: none;
+    width: 150px;
+    height: 150px;
+    overflow: hidden;
+    z-index: 10;
+    pointer-events: none;
+    background-color: #f5f5f7; /* same grey background as product container */
+    box-shadow: 0 4px 10px rgba(0,0,0,0.15); /* subtle shadow for realism */
+    }
+
+    .img-magnifier-lens img {
+    position: absolute;
+    transform-origin: top left;
     }
 }

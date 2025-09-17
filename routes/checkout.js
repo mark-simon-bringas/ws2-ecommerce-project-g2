@@ -25,6 +25,7 @@ router.post('/place-order', async (req, res) => {
     try {
         const db = req.app.locals.client.db(req.app.locals.dbName);
         const ordersCollection = db.collection('orders');
+        const productsCollection = db.collection('products');
         const cart = req.session.cart;
 
         // Create the order object
@@ -43,7 +44,8 @@ router.post('/place-order', async (req, res) => {
             items: cart.items,
             total: cart.totalPrice,
             orderDate: new Date(),
-            status: 'Processing'
+            status: 'Processing',
+            isNew: true // Added: Mark every new order as 'new'
         };
 
         // If the user is logged in, attach their ID to the order
@@ -55,8 +57,18 @@ router.post('/place-order', async (req, res) => {
         const result = await ordersCollection.insertOne(order);
         order._id = result.insertedId; // Attach the new ID to the order object for the email
 
+        // Decrement stock for each item in the order
+        const stockUpdates = cart.items.map(item => {
+            const safeSizeKey = item.size.replace('.', '_');
+            const updateField = `stock.${safeSizeKey}`;
+            return productsCollection.updateOne(
+                { _id: new ObjectId(item.productId) },
+                { $inc: { [updateField]: -item.qty } } 
+            );
+        });
+        await Promise.all(stockUpdates);
+
         // --- AUTOMATICALLY SEND ORDER CONFIRMATION EMAIL ---
-        // Generate HTML for the items table
         const itemsHtml = order.items.map(item => `
             <tr style="border-bottom: 1px solid #eaeaea;">
                 <td style="padding: 15px 0;">${item.name} (Size: ${item.size})</td>
@@ -65,7 +77,6 @@ router.post('/place-order', async (req, res) => {
             </tr>
         `).join('');
 
-        // Construct the full invoice email HTML
         const confirmationEmailHtml = `
             <!DOCTYPE html>
             <html>
@@ -134,12 +145,9 @@ router.post('/place-order', async (req, res) => {
             subject: `Your sneakslab Order Confirmation #${order._id.toString().slice(-6)}`,
             html: confirmationEmailHtml,
         });
-        // --- END OF EMAIL LOGIC ---
 
-        // Clear the cart from the session
         req.session.cart = null;
 
-        // Redirect to a success page, passing the new order's ID
         res.redirect(`/checkout/success/${result.insertedId}`);
 
     } catch (err) {

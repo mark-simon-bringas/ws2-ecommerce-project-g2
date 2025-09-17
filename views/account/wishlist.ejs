@@ -7,7 +7,8 @@
     <div class="row row-cols-1 row-cols-sm-2 row-cols-lg-4 g-4">
         <% products.forEach(product => { %>
             <div class="col">
-                <div class="product-card">
+                <%# UPDATED: Added data-sku attribute %>
+                <div class="product-card" data-sku="<%= product.sku %>">
                     <div class="product-card-img-container">
                         <a href="/products/<%= product.sku %>" class="product-card-img-link"></a>
                         <img src="<%= product.thumbnailUrl %>" class="product-card-img" alt="<%= product.name %>">
@@ -59,7 +60,8 @@
                         <img src="<%= product.thumbnailUrl %>" alt="<%= product.name %>" class="img-fluid rounded-3 mb-3" style="max-height: 250px;">
                         <h5 class="modal-title" id="productModalLabel-<%= product.sku %>"><%= product.name %></h5>
                         <p class="text-body-secondary"><%= product.brand %></p>
-                        <p class="h4 fw-bold">$<%= product.retailPrice %></p>
+                        <%# UPDATED: Added data-sku attribute and product-price class to the modal price %>
+                        <p class="h4 fw-bold product-price" data-sku="<%= product.sku %>">$<%= product.retailPrice %></p>
                         
                         <form action="/cart/add" method="POST" id="form-add-<%= product.sku %>">
                             <input type="hidden" name="productId" value="<%= product._id %>">
@@ -80,7 +82,7 @@
                         </form>
                     </div>
                     <div class="modal-footer border-0">
-                         <button type="submit" form="form-add-<%= product.sku %>" class="btn btn-primary btn-lg w-100">Add to Cart</button>
+                        <button type="submit" form="form-add-<%= product.sku %>" class="btn btn-primary btn-lg w-100">Add to Cart</button>
                     </div>
                 </div>
             </div>

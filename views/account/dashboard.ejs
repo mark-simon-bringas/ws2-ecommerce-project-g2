@@ -65,15 +65,30 @@
 <div class="dashboard-card mt-4">
     <div class="card-body">
         <h5 class="card-title mb-4 fw-semibold">Recent Activity</h5>
-        <% if (data.recentOrders && data.recentOrders.length > 0) { %>
+        
+        <% if (data.recentActivity && data.recentActivity.length > 0) { %>
             <ul class="list-group list-group-flush">
-                <% data.recentOrders.forEach(order => { %>
+                <% data.recentActivity.forEach(activity => { %>
                     <li class="list-group-item d-flex justify-content-between align-items-center px-0">
                         <div>
-                            <i class="bi bi-receipt text-info me-2"></i>
-                            New order #...<%= order._id.toString().slice(-4) %> placed by <%= order.customer.firstName %> for <strong><%= order.total.toLocaleString('en-US', { style: 'currency', currency: 'USD' }) %></strong>
+                            <% if (activity.type === 'ORDER') { %>
+                                <i class="bi bi-receipt text-info me-2"></i>
+                                New order #...<%= activity.data._id.toString().slice(-4) %> placed by <%= activity.data.customer.firstName %> for <strong><%= activity.data.total.toLocaleString('en-US', { style: 'currency', currency: 'USD' }) %></strong>
+                            <% } else if (activity.type === 'PRODUCT_IMPORT') { %> <%# FIXED: Changed 'IMPORT' to 'PRODUCT_IMPORT' %>
+                                <i class="bi bi-box-arrow-in-down text-success me-2"></i>
+                                Admin <strong><%= activity.data.userFirstName %></strong> imported <strong><%= activity.data.details.productCount %></strong> new products.
+                            <% } else if (activity.type === 'PRICE_UPDATE') { %>
+                                <i class="bi bi-tag-fill text-warning me-2"></i>
+                                Admin <strong><%= activity.data.userFirstName %></strong> updated the price for <%= activity.data.details.productName %> from <del>$<%= activity.data.details.oldPrice %></del> to <strong>$<%= activity.data.details.newPrice %></strong>.
+                            <% } else if (activity.type === 'PRODUCT_DELETE') { %>
+                                <i class="bi bi-trash-fill text-danger me-2"></i>
+                                Admin <strong><%= activity.data.userFirstName %></strong> deleted the product: <strong><%= activity.data.details.productName %></strong>.
+                             <% } else if (activity.type === 'PRODUCT_DELETE_MULTIPLE') { %>
+                                <i class="bi bi-trash-fill text-danger me-2"></i>
+                                Admin <strong><%= activity.data.userFirstName %></strong> deleted <strong><%= activity.data.details.productCount %></strong> products.
+                            <% } %>
                         </div>
-                        <small class="text-body-secondary"><%= new Date(order.orderDate).toLocaleDateString() %></small>
+                        <small class="text-body-secondary"><%= new Date(activity.timestamp).toLocaleDateString() %></small>
                     </li>
                 <% }) %>
             </ul>

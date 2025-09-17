@@ -1,38 +1,33 @@
 /* ==== MOBILE SPECIFIC STYLES FOR BOTTOM NAVIGATION ==== */
 
-/* This file should be linked AFTER style.css in your HTML to ensure overrides */
-
 @media (max-width: 991.98px) {
-    /* Make the dashboard layout fill the screen below the top navbar */
     .dashboard-layout {
-        height: calc(100vh - 48px); /* Full viewport height minus the top navbar */
-        overflow: hidden; /* Prevent the whole layout from scrolling */
+        height: calc(100vh - 48px);
+        overflow: hidden;
     }
 
-    /* Make the main content area the scrollable part */
     .dashboard-main-content {
         height: 100%;
         overflow-y: auto;
-        -webkit-overflow-scrolling: touch; /* for smooth scrolling on iOS */
-        padding-bottom: 100px; /* Extra padding to keep content above the bottom nav */
+        -webkit-overflow-scrolling: touch;
+        padding-bottom: 100px;
     }
 
-    /* Bottom Navigation Bar */
     .bottom-navbar {
         position: fixed;
         bottom: 0;
         left: 0;
         right: 0;
-        height: auto; /* Let padding define the height */
+        height: auto;
         background-color: rgba(255, 255, 255, 0.85);
         backdrop-filter: saturate(180%) blur(20px);
         -webkit-backdrop-filter: saturate(180%) blur(20px);
         border-top: 1px solid rgba(0, 0, 0, 0.1);
         display: flex;
         justify-content: space-around;
-        align-items: flex-start; /* Align to top for better padding control */
-        padding: 12px 0.5rem; /* UPDATED top padding */
-        padding-bottom: calc(12px + env(safe-area-inset-bottom)); /* UPDATED bottom padding */
+        align-items: flex-start;
+        padding: 12px 0.5rem;
+        padding-bottom: calc(12px + env(safe-area-inset-bottom));
         z-index: 1100;
     }
 
@@ -43,16 +38,17 @@
         justify-content: center;
         flex: 1;
         color: var(--text-color-secondary);
-        font-size: 0.7rem; /* Slightly larger font for readability */
+        font-size: 0.7rem;
         font-weight: 500;
         text-decoration: none;
         transition: color 0.2s ease;
         -webkit-tap-highlight-color: transparent;
+        position: relative;
     }
 
     .bottom-navbar-link i {
-        font-size: 1.4rem; /* Slightly smaller icon for better balance */
-        margin-bottom: 4px; /* Increased space between icon and text */
+        font-size: 1.4rem;
+        margin-bottom: 4px;
         line-height: 1; 
     }
 
@@ -61,11 +57,64 @@
     }
 
     .bottom-navbar-link.active {
-        color: var(--link-color); /* Active link color */
-        font-weight: 600; /* Make active link bolder */
+        color: var(--link-color);
+        font-weight: 600;
     }
 
     .bottom-navbar-link:hover {
         color: var(--link-color);
+    }
+
+    .bottom-navbar-link .badge {
+        position: absolute;
+        top: -2px;
+        right: 50%;
+        transform: translateX(22px);
+        font-size: 10px;
+        padding: 0.3em 0.5em;
+    }
+
+    /* --- UPDATED: Styles for Mobile Sticky Checkout --- */
+    .mobile-checkout-sticky {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background-color: #fff;
+        border-top: 1px solid var(--border-color);
+        padding: 1rem;
+        padding-bottom: calc(1rem + env(safe-area-inset-bottom));
+        z-index: 1050;
+    }
+    
+    .checkout-options {
+        position: absolute;
+        bottom: 100%;
+        left: 0;
+        right: 0;
+        background-color: #fff;
+        border-top: 1px solid var(--border-color);
+        transform: translateY(100%);
+        opacity: 0;
+        pointer-events: none; /* Prevents clicks when hidden */
+        transition: transform 0.3s ease-in-out, opacity 0.3s ease-in-out;
+    }
+    .checkout-options.is-active {
+        transform: translateY(0);
+        opacity: 1;
+        pointer-events: auto;
+    }
+    
+    #mobile-checkout-btn {
+        transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
+    }
+    .mobile-checkout-sticky.is-active #mobile-checkout-btn {
+        opacity: 0;
+        pointer-events: none;
+    }
+
+    /* Hide the desktop summary buttons on mobile */
+    .summary-card-desktop #desktop-checkout-buttons {
+        display: none !important;
     }
 }

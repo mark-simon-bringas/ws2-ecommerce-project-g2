@@ -1,21 +1,65 @@
-<div class="container my-5 product-detail-page">
-    <div class="row">
-        <div class="col-lg-7">
+<div class="my-5"> 
+    <div class="product-detail-layout">
+
+        <div class="product-detail-layout__gallery">
             <div class="product-image-container">
                 <% if (product.imageUrl) { %>
-                    <img src="<%= product.imageUrl %>" alt="<%= product.name %>" class="img-fluid">
+                    <div class="img-magnifier-container">
+                        <img id="productImage" src="<%= product.imageUrl %>" alt="<%= product.name %>" class="img-fluid">
+                    </div>
                 <% } else { %>
-                    <img src="https://via.placeholder.com/800x800.png?text=No+Image" alt="No Image Available" class="img-fluid">
+                    <div class="img-magnifier-container">
+                        <img id="productImage" src="https://via.placeholder.com/800x800.png?text=No+Image" alt="No Image Available" class="img-fluid">
+                    </div>
                 <% } %>
+            </div>
+
+            <div class="product-extra-details">
+                <div class="detail-item">
+                    <i class="bi bi-rulers"></i>
+                    <div>
+                        <h6 class="detail-item__title">True to Size</h6>
+                        <p class="detail-item__text">Fits just right.</p>
+                    </div>
+                </div>
+                <div class="detail-item">
+                    <i class="bi bi-feather"></i>
+                    <div>
+                        <h6 class="detail-item__title">Lightweight</h6>
+                        <p class="detail-item__text">Cushioned for comfort.</p>
+                    </div>
+                </div>
+                <div class="detail-item">
+                    <i class="bi bi-grip-horizontal"></i>
+                    <div>
+                        <h6 class="detail-item__title">Durable Traction</h6>
+                        <p class="detail-item__text">A sole that grips.</p>
+                    </div>
+                </div>
+                <div class="detail-item">
+                    <i class="bi bi-award"></i>
+                    <div>
+                        <h6 class="detail-item__title">Premium Materials</h6>
+                        <p class="detail-item__text">Crafted with care.</p>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <div class="col-lg-5">
+        <div class="product-detail-layout__info">
             <div class="product-info-panel">
                 <p class="text-body-secondary mb-2"><%= product.brand %></p>
                 <h1 class="product-title display-5 fw-bold"><%= product.name %></h1>
                 <p class="product-price h3 my-3">$<%= product.retailPrice %></p>
                 
+                <% 
+                    const standardSizes = ['8', '8.5', '9', '9.5', '10', '10.5', '11', '12'];
+                    const isCompletelyOutOfStock = product.stock && standardSizes.every(size => {
+                        const safeSizeKey = size.replace('.', '_');
+                        return product.stock[safeSizeKey] <= 0;
+                    });
+                %>
+
                 <form id="add-to-cart-form" action="/cart/add" method="POST" class="d-grid gap-3">
                     <input type="hidden" name="productId" value="<%= product._id %>">
                     <input type="hidden" name="sku" value="<%= product.sku %>">
@@ -26,20 +70,29 @@
                             <a href="#" class="small text-body-secondary">Size Guide</a>
                         </label>
                         <div class="size-selector">
-                            <% ['8', '8.5', '9', '9.5', '10', '10.5', '11', '12'].forEach(size => { %>
-                                <input type="radio" class="btn-check" name="size" id="size-<%= size %>" value="<%= size %>" autocomplete="off" required>
-                                <label class="btn btn-outline-secondary" for="size-<%= size %>"><%= size %></label>
+                            <% standardSizes.forEach(size => { %>
+                                <% 
+                                    const safeSizeKey = size.replace('.', '_');
+                                    const isSizeAvailable = product.stock && product.stock[safeSizeKey] > 0;
+                                %>
+                                <input type="radio" class="btn-check" name="size" id="size-<%= size %>" value="<%= size %>" autocomplete="off" required <%= !isSizeAvailable ? 'disabled' : '' %>>
+                                <label class="btn btn-outline-secondary <%= !isSizeAvailable ? 'disabled' : '' %>" for="size-<%= size %>"><%= size %></label>
                             <% }) %>
                         </div>
                     </div>
-                    <button type="submit" class="btn btn-primary btn-lg">Add to Bag</button>
+                    
+                    <% if (isCompletelyOutOfStock) { %>
+                        <button type="button" class="btn btn-primary btn-lg" disabled>Out of Stock</button>
+                    <% } else { %>
+                        <button type="submit" class="btn btn-primary btn-lg">Add to Bag</button>
+                    <% } %>
                 </form>
 
                 <div class="d-grid mt-3">
                     <% if (currentUser) { %>
                         <form id="wishlist-toggle-form">
                             <input type="hidden" name="productId" value="<%= product._id %>">
-                            <button type="submit" class="btn btn-outline-secondary btn-lg d-flex align-items-center justify-content-center gap-2">
+                            <button type="submit" class="btn btn-outline-secondary btn-lg w-100 d-flex align-items-center justify-content-center gap-2">
                                 <span><%- isWishlisted ? 'In Favorites' : 'Favorite' %></span>
                                 <i class="bi <%- isWishlisted ? 'bi-heart-fill' : 'bi-heart' %>"></i>
                             </button>
@@ -53,10 +106,14 @@
                 </div>
 
                 <div class="mt-5">
-                    <p class="text-body-secondary">A timeless classic, redesigned for modern comfort and style. The perfect addition to any collection.</p>
+                    <% if (product.description) { %>
+                        <p class="text-body-secondary"><%= product.description %></p>
+                    <% } %>
                     <ul class="list-unstyled text-body-secondary">
-                        <li>Colour Shown: Ochre/Black/Desert</li>
-                        <li>Style: HQ1966-700</li>
+                        <% if (product.colorway) { %>
+                            <li>Colour Shown: <%= product.colorway %></li>
+                        <% } %>
+                        <li>Style: <%= product.sku %></li>
                     </ul>
                     <a href="#" class="fw-semibold text-dark view-details-link" data-bs-toggle="modal" data-bs-target="#productDetailsModal">
                         View Product Details
@@ -98,6 +155,9 @@
                         </h2>
                         <div id="collapseReviews" class="accordion-collapse collapse" data-bs-parent="#deliveryAndReviewsAccordion">
                             <div class="accordion-body">
+                                <div class="text-end mb-4">
+                                    <a href="/products/<%= product.sku %>/review" class="btn btn-outline-secondary">Write a Review</a>
+                                </div>
                                 <% if (reviews && reviews.length > 0) { %>
                                     <div class="review-list">
                                         <% reviews.forEach(review => { %>
@@ -113,23 +173,21 @@
                                         <% }) %>
                                     </div>
                                 <% } else { %>
-                                    <p class="text-body-secondary">No reviews yet.</p>
+                                    <p class="text-body-secondary text-center">No reviews yet. Be the first to share your thoughts!</p>
                                 <% } %>
-                                <a href="/products/<%= product.sku %>/review" class="btn btn-outline-secondary mt-3">Write a Review</a>
                             </div>
                         </div>
                     </div>
                 </div>
-
             </div>
         </div>
     </div>
 </div>
 
 <% if (relatedProducts && relatedProducts.length > 0) { %>
-<section class="product-carousel-section container-fluid my-5 py-5>
+<section class="product-carousel-section container-fluid my-5 py-5">
     <div class="container">
-         <div class="section-header">
+        <div class="section-header">
             <h2 class="display-5 fw-bold mb-0">You Might Also Like</h2>
         </div>
     </div>
@@ -166,20 +224,28 @@
 <% } %>
 
 <div class="modal fade" id="productDetailsModal" tabindex="-1" aria-labelledby="productDetailsModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
+  <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
     <div class="modal-content">
       <div class="modal-header">
-        <h1 class="modal-title fs-5" id="productDetailsModalLabel"><%= product.name %></h1>
+        <div class="product-modal-header">
+            <img src="<%= product.thumbnailUrl %>" alt="<%= product.name %>" class="product-modal-header__image">
+            <div class="product-modal-header__info">
+                <h1 class="modal-title fs-5" id="productDetailsModalLabel"><%= product.name %></h1>
+                <p class="product-price mb-0">$<%= product.retailPrice %></p>
+            </div>
+        </div>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body">
-        <p>A timeless classic, redesigned for modern comfort and style. The perfect addition to any collection, this sneaker combines premium materials with iconic design elements to deliver a shoe that's as versatile as it is stylish. Whether you're hitting the streets or the court, do it in style.</p>
+        <p><%= product.description %></p>
+        
+        <h5 class="fw-bold mt-4">Product Details</h5>
         <ul class="list-unstyled">
             <li><strong>SKU:</strong> <%= product.sku %></li>
             <li><strong>Brand:</strong> <%= product.brand %></li>
             <li><strong>Category:</strong> <%= product.gender.charAt(0).toUpperCase() + product.gender.slice(1) %></li>
-            <li><strong>Colour Shown:</strong> Ochre/Black/Desert</li>
-            <li><strong>Style:</strong> HQ1966-700</li>
+            <li><strong>Colour Shown:</strong> <%= product.colorway %></li>
+            <li><strong>Release Date:</strong> <%= product.releaseDate %></li>
         </ul>
       </div>
     </div>
@@ -193,7 +259,6 @@
         if (wishlistForm) {
             wishlistForm.addEventListener('submit', function(event) {
                 event.preventDefault();
-                
                 const productId = this.querySelector('input[name="productId"]').value;
                 const button = this.querySelector('button');
                 const buttonSpan = button.querySelector('span');
@@ -201,9 +266,7 @@
 
                 fetch('/account/wishlist/toggle', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
+                    headers: { 'Content-Type': 'application/json', },
                     body: JSON.stringify({ productId: productId })
                 })
                 .then(response => response.json())
@@ -231,3 +294,72 @@
     });
 </script>
 <% } %>
+
+
+
+<script>
+function initMagnifier(imgId) {
+    const img = document.getElementById(imgId);
+    if (!img) return;
+
+    // Remove old lens if any
+    const oldLens = img.parentElement.querySelector(".img-magnifier-lens");
+    if (oldLens) oldLens.remove();
+
+    const lens = document.createElement("div");
+    lens.setAttribute("class", "img-magnifier-lens");
+    const lensImg = document.createElement("img");
+    lensImg.src = img.src;
+    lens.appendChild(lensImg);
+    img.parentElement.appendChild(lens);
+
+    const zoom = 2; // zoom factor
+    lensImg.style.width = img.offsetWidth * zoom + "px";
+    lensImg.style.height = img.offsetHeight * zoom + "px";
+
+    function moveLens(e) {
+        e.preventDefault();
+        const rect = img.getBoundingClientRect();
+        let x = e.clientX - rect.left;
+        let y = e.clientY - rect.top;
+
+        // Position lens
+        lens.style.left = (x - lens.offsetWidth / 2) + "px";
+        lens.style.top = (y - lens.offsetHeight / 2) + "px";
+
+        // Clamp zoomed image
+        if (x < 0) x = 0;
+        if (y < 0) y = 0;
+        if (x > img.offsetWidth) x = img.offsetWidth;
+        if (y > img.offsetHeight) y = img.offsetHeight;
+
+        lensImg.style.left = -(x * zoom - lens.offsetWidth / 2) + "px";
+        lensImg.style.top = -(y * zoom - lens.offsetHeight / 2) + "px";
+    }
+
+    lens.style.display = "none";
+
+    img.addEventListener("mouseenter", () => { lens.style.display = "block"; });
+    img.addEventListener("mouseleave", () => { lens.style.display = "none"; });
+    img.addEventListener("mousemove", moveLens);
+    lens.addEventListener("mousemove", moveLens);
+}
+
+// Run when page loads
+document.addEventListener("DOMContentLoaded", function () {
+    const img = document.getElementById("productImage");
+    if (img) {
+        if (img.complete) {
+            initMagnifier("productImage");
+        } else {
+            img.addEventListener("load", () => initMagnifier("productImage"));
+        }
+    }
+});
+
+// Re-run ONLY when a new product image is swapped
+document.addEventListener("productImageChanged", function () {
+    initMagnifier("productImage");
+});
+</script>
+

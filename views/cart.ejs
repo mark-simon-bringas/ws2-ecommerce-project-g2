@@ -1,79 +1,140 @@
-<div class="container my-5">
-    <div class="row">
+<div class="container my-5 cart-page-container">
+    <div class="row gx-lg-5">
         <div class="col-lg-8">
-            <h1 class="h2 mb-4">Your Cart</h1>
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h2 mb-0">Bag</h1>
+                <% if (cart && cart.items.length > 0) { %>
+                    <span class="text-body-secondary"><%= cart.totalQty %> items | $<%= cart.totalPrice.toFixed(2) %></span>
+                <% } %>
+            </div>
 
             <% if (cart && cart.items.length > 0) { %>
-                <div class="card shadow-sm">
-                    <div class="list-group list-group-flush">
-                        <% cart.items.forEach(item => { %>
-                            <div class="list-group-item p-3">
-                                <div class="row align-items-center">
-                                    <div class="col-2 col-md-2">
-                                        <img src="<%= item.thumbnailUrl %>" alt="<%= item.name %>" class="img-fluid rounded">
-                                    </div>
-                                    <div class="col-10 col-md-5">
+                <div class="cart-items-container">
+                    <% cart.items.forEach(item => { %>
+                        <div class="cart-item">
+                            <img src="<%= item.thumbnailUrl %>" alt="<%= item.name %>" class="cart-item-image">
+                            <div class="cart-item-details">
+                                <div>
+                                    <div class="d-flex justify-content-between">
                                         <h6 class="mb-0"><%= item.name %></h6>
-                                        <small class="text-body-secondary">Brand: <%= item.brand %></small><br>
-                                        <small class="text-body-secondary">Size: <%= item.size %></small>
+                                        <span class="cart-item-price fw-semibold">$<%= item.price.toFixed(2) %></span>
                                     </div>
-                                    <div class="col-md-3 mt-3 mt-md-0">
-                                        <form action="/cart/update" method="POST" class="d-flex">
+                                    <p class="text-body-secondary small mb-1"><%= item.brand %></p>
+                                    <p class="text-body-secondary small">Size: <%= item.size %></p>
+                                </div>
+                                <div class="cart-item-actions">
+                                    <div class="quantity-selector">
+                                        <% if (item.qty > 1) { %>
+                                            <form action="/cart/update-quantity" method="POST" class="d-inline">
+                                                <input type="hidden" name="itemId" value="<%= item.itemId %>">
+                                                <input type="hidden" name="change" value="-1">
+                                                <button type="submit" class="btn btn-sm btn-light rounded-circle">-</button>
+                                            </form>
+                                        <% } else { %>
+                                            <form action="/cart/remove" method="POST" class="d-inline">
+                                                <input type="hidden" name="itemId" value="<%= item.itemId %>">
+                                                <button type="submit" class="btn btn-sm btn-light rounded-circle" title="Remove item"><i class="bi bi-trash3"></i></button>
+                                            </form>
+                                        <% } %>
+                                        <span class="mx-2"><%= item.qty %></span>
+                                        <form action="/cart/update-quantity" method="POST" class="d-inline">
                                             <input type="hidden" name="itemId" value="<%= item.itemId %>">
-                                            <input type="number" class="form-control me-2" name="newQty" value="<%= item.qty %>" min="1">
-                                            <button type="submit" class="btn btn-sm btn-outline-secondary">Update</button>
+                                            <input type="hidden" name="change" value="1">
+                                            <button type="submit" class="btn btn-sm btn-light rounded-circle">+</button>
                                         </form>
                                     </div>
-                                    <div class="col-md-1 text-end">
-                                        <span class="fw-bold d-none d-md-block">$<%= item.price.toFixed(2) %></span>
-                                    </div>
-                                    <div class="col-md-1 text-end">
-                                        <form action="/cart/remove" method="POST" class="d-inline">
+                                    <% if (currentUser) { %>
+                                        <form action="/cart/move-to-wishlist" method="POST">
                                             <input type="hidden" name="itemId" value="<%= item.itemId %>">
-                                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Remove item">&times;</button>
+                                            <input type="hidden" name="productId" value="<%= item.productId %>">
+                                            <button type="submit" class="btn btn-sm btn-light rounded-circle ms-2" title="Move to Wishlist"><i class="bi bi-heart"></i></button>
                                         </form>
-                                    </div>
+                                    <% } %>
                                 </div>
                             </div>
-                        <% }) %>
-                    </div>
+                        </div>
+                    <% }) %>
                 </div>
             <% } else { %>
-                <div class="card shadow-sm text-center p-5">
-                    <div class="card-body">
-                        <h2 class="h4">Your cart is empty.</h2>
-                        <p class="text-body-secondary">Looks like you haven't added anything to your cart yet.</p>
-                        <a href="/" class="btn btn-primary mt-3">Continue Shopping</a>
-                    </div>
+                <div class="text-center p-5 bg-light rounded-4">
+                    <h3 class="text-body-secondary">Your bag is empty.</h3>
+                    <p class="lead text-body-secondary">Looks like you haven't added anything yet.</p>
+                    <a href="/" class="btn btn-dark mt-3">Continue Shopping</a>
                 </div>
             <% } %>
         </div>
 
         <div class="col-lg-4">
-            <div class="card shadow-sm">
-                <div class="card-body">
-                    <h5 class="card-title h4 mb-3">Order Summary</h5>
-                    <ul class="list-group list-group-flush">
-                        <li class="list-group-item d-flex justify-content-between">
-                            <span>Subtotal</span>
-                            <span>$<%= cart.totalPrice.toFixed(2) %></span>
-                        </li>
-                        <li class="list-group-item d-flex justify-content-between">
-                            <span>Shipping</span>
-                            <span>Free</span>
-                        </li>
-                        <li class="list-group-item d-flex justify-content-between fw-bold h5">
-                            <span>Total</span>
-                            <span>$<%= cart.totalPrice.toFixed(2) %></span>
-                        </li>
-                    </ul>
-                    <div class="d-grid mt-4">
-                        <a href="/checkout" class="btn btn-primary btn-lg <%= (cart && cart.items.length > 0) ? '' : 'disabled' %>">
-                            Proceed to Checkout
-                        </a>
-                    </div>
+            <div class="summary-card-desktop">
+                <h4 class="mb-3">Summary</h4>
+                <div class="summary-item">
+                    <span>Subtotal</span>
+                    <span>$<%= cart.totalPrice.toFixed(2) %></span>
+                </div>
+                <div class="summary-item">
+                    <span>Estimated Delivery & Handling</span>
+                    <span>Free</span>
+                </div>
+                <hr>
+                <div class="summary-total">
+                    <span>Total</span>
+                    <span>$<%= cart.totalPrice.toFixed(2) %></span>
+                </div>
+                <hr>
+                <%# UPDATED: Added d-none and d-lg-grid to hide these buttons on mobile %>
+                <div class="d-none d-lg-grid gap-3" id="desktop-checkout-buttons">
+                    <a href="/checkout" class="btn btn-primary btn-lg <%= (cart && cart.items.length > 0) ? '' : 'disabled' %>">
+                        Guest Checkout
+                    </a>
+                    <a href="<%= currentUser ? '/checkout' : '/users/login' %>" class="btn btn-outline-secondary btn-lg <%= (cart && cart.items.length > 0) ? '' : 'disabled' %>">
+                        Member Checkout
+                    </a>
                 </div>
             </div>
         </div>
     </div>
+</div>
+
+<section class="product-carousel-section container-fluid mt-5 py-5 border-top">
+    <div class="container">
+        <div class="section-header">
+            <h2 class="h3 fw-bold mb-0">Favourites</h2>
+        </div>
+        <% if (currentUser && wishlistProducts && wishlistProducts.length > 0) { %>
+            <div class="product-carousel">
+                <% wishlistProducts.forEach(product => { %>
+                    <div class="product-card" data-sku="<%= product.sku %>">
+                        <div class="product-card-img-container">
+                            <a href="/products/<%= product.sku %>" class="product-card-img-link"></a>
+                            <img src="<%= product.thumbnailUrl %>" class="product-card-img" alt="<%= product.name %>">
+                        </div>
+                        <div class="product-card-body">
+                            <a href="/products/<%= product.sku %>" class="text-decoration-none">
+                                <div class="product-title"><%= product.name %></div>
+                                <div class="product-price">$<%= product.retailPrice %></div>
+                            </a>
+                        </div>
+                    </div>
+                <% }) %>
+            </div>
+        <% } else { %>
+            <p class="text-body-secondary">Want to view your favourites? <a href="/users/login" class="text-dark fw-semibold">Sign in</a> or <a href="/users/register" class="text-dark fw-semibold">Join us</a>.</p>
+        <% } %>
+    </div>
+</section>
+
+<div class="mobile-checkout-sticky d-lg-none">
+    <div class="checkout-options" id="checkout-options">
+        <div class="d-grid gap-3 p-3">
+            <a href="/checkout" class="btn btn-primary btn-lg <%= (cart && cart.items.length > 0) ? '' : 'disabled' %>">
+                Guest Checkout
+            </a>
+            <a href="<%= currentUser ? '/checkout' : '/users/login' %>" class="btn btn-outline-secondary btn-lg <%= (cart && cart.items.length > 0) ? '' : 'disabled' %>">
+                Member Checkout
+            </a>
+        </div>
+    </div>
+    <button id="mobile-checkout-btn" class="btn btn-dark btn-lg w-100 <%= (cart && cart.items.length > 0) ? '' : 'disabled' %>">
+        Go to Checkout
+    </button>
 </div>

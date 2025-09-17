@@ -118,7 +118,6 @@ router.post('/wishlist/toggle', async (req, res) => {
 
 
 // GET /account/wishlist - Display the user's wishlist page
-// --- Updated ---
 router.get('/wishlist', async (req, res) => {
     try {
         const db = req.app.locals.client.db(req.app.locals.dbName);
@@ -128,7 +127,7 @@ router.get('/wishlist', async (req, res) => {
         const user = await usersCollection.findOne({ userId: req.session.user.userId });
         
         let wishlistedProducts = [];
-        let userWishlist = []; // Ensure we have the list of IDs
+        let userWishlist = [];
         if (user && user.wishlist && user.wishlist.length > 0) {
             userWishlist = user.wishlist;
             wishlistedProducts = await productsCollection.find({
@@ -140,7 +139,7 @@ router.get('/wishlist', async (req, res) => {
             title: "My Wishlist",
             view: 'wishlist',
             products: wishlistedProducts,
-            wishlist: userWishlist // Pass the list of IDs to the template
+            wishlist: userWishlist
         });
 
     } catch (err) {
@@ -150,7 +149,7 @@ router.get('/wishlist', async (req, res) => {
 });
 
 
-// GET /account/admin/dashboard
+// /account/admin/dashboard to correctly fetch all recent activity
 router.get('/admin/dashboard', isAdmin, async (req, res) => {
     try {
         const db = req.app.locals.client.db(req.app.locals.dbName);
@@ -158,12 +157,28 @@ router.get('/admin/dashboard', isAdmin, async (req, res) => {
         const productsCollection = db.collection('products');
         const ordersCollection = db.collection('orders');
 
+        const recentActivityPipeline = [
+            { $sort: { orderDate: -1 } },
+            { $limit: 10 },
+            { $project: { type: 'ORDER', timestamp: '$orderDate', data: '$$ROOT' } },
+            { $unionWith: { 
+                coll: 'activity_log', 
+                pipeline: [
+                    { $sort: { timestamp: -1 } },
+                    { $limit: 10 },
+                    { $project: { type: '$actionType', timestamp: '$timestamp', data: '$$ROOT' } }
+                ]
+            }},
+            { $sort: { timestamp: -1 } },
+            { $limit: 5 }
+        ];
+
         const [
             userCount, 
             productCount, 
             orderCount, 
             revenueResult,
-            recentOrders
+            recentActivity
         ] = await Promise.all([
             usersCollection.countDocuments(),
             productsCollection.countDocuments(),
@@ -171,7 +186,7 @@ router.get('/admin/dashboard', isAdmin, async (req, res) => {
             ordersCollection.aggregate([
                 { $group: { _id: null, totalRevenue: { $sum: "$total" } } }
             ]).toArray(),
-            ordersCollection.find().sort({ orderDate: -1 }).limit(5).toArray()
+            ordersCollection.aggregate(recentActivityPipeline).toArray()
         ]);
         
         const totalRevenue = revenueResult.length > 0 ? revenueResult[0].totalRevenue : 0;
@@ -184,7 +199,7 @@ router.get('/admin/dashboard', isAdmin, async (req, res) => {
                 productCount,
                 orderCount,
                 totalRevenue,
-                recentOrders
+                recentActivity: recentActivity
             }
         });
 
@@ -194,12 +209,15 @@ router.get('/admin/dashboard', isAdmin, async (req, res) => {
     }
 });
 
-// GET /account/admin/orders - List all orders for the admin
+// GET /account/admin/orders - Now marks orders as "read"
 router.get('/admin/orders', isAdmin, async (req, res) => {
     try {
         const db = req.app.locals.client.db(req.app.locals.dbName);
         const ordersCollection = db.collection('orders');
+        
         const allOrders = await ordersCollection.find().sort({ orderDate: -1 }).toArray();
+
+        ordersCollection.updateMany({ isNew: true }, { $set: { isNew: false } });
 
         res.render('account/admin-orders', {
             title: "Order Management",
@@ -292,35 +310,53 @@ router.post('/admin/orders/update-status/:id', isAdmin, async (req, res) => {
     }
 });
 
-// POST /account/admin/orders/cancel/:id - Cancel an order
-router.post('/account/admin/orders/cancel/:id', isAdmin, async (req, res) => {
+// FIXED: /account/admin/orders/cancel/:id - Now correctly updates status and logs activity
+router.post('/admin/orders/cancel/:id', isAdmin, async (req, res) => {
     try {
         const db = req.app.locals.client.db(req.app.locals.dbName);
         const ordersCollection = db.collection('orders');
+        const activityLogCollection = db.collection('activity_log');
         const orderId = req.params.id;
 
-        const result = await ordersCollection.findOneAndUpdate(
+        const orderToCancel = await ordersCollection.findOne({ _id: new ObjectId(orderId) });
+
+        if (!orderToCancel) {
+            return res.status(404).send("Order not found.");
+        }
+
+        await ordersCollection.updateOne(
             { _id: new ObjectId(orderId) },
-            { $set: { status: 'Cancelled' } },
-            { returnDocument: 'after' }
+            { $set: { status: 'Cancelled' } }
         );
-        
-        const cancelledOrder = result;
 
-        if (cancelledOrder) {
-            const emailTitle = 'Your Order Has Been Cancelled';
-            const emailMessage = `Hi ${cancelledOrder.customer.firstName}, your order has been successfully cancelled as requested. If you have any questions, please contact our support team.`;
-            const emailHtml = createStatusEmailHtml(emailTitle, emailMessage, cancelledOrder);
+        // Create log entry
+        const logEntry = {
+            userId: req.session.user.userId,
+            userFirstName: req.session.user.firstName,
+            userRole: req.session.user.role,
+            actionType: 'ORDER_CANCEL',
+            details: {
+                orderId: orderToCancel._id,
+                customerName: `${orderToCancel.customer.firstName} ${orderToCancel.customer.lastName}`
+            },
+            timestamp: new Date()
+        };
+        await activityLogCollection.insertOne(logEntry);
 
-            const { data, error } = await resend.emails.send({
-                from: process.env.RESEND_FROM_EMAIL,
-                to: cancelledOrder.customer.email,
-                subject: emailTitle,
-                html: emailHtml,
-            });
-            if (error) {
-                console.error(`Resend API Error for order ${orderId}:`, error);
-            }
+        // Send email
+        const emailTitle = 'Your Order Has Been Cancelled';
+        const emailMessage = `Hi ${orderToCancel.customer.firstName}, your order has been successfully cancelled as requested. If you have any questions, please contact our support team.`;
+        const emailHtml = createStatusEmailHtml(emailTitle, emailMessage, orderToCancel);
+
+        const { data, error } = await resend.emails.send({
+            from: process.env.RESEND_FROM_EMAIL,
+            to: orderToCancel.customer.email,
+            subject: emailTitle,
+            html: emailHtml,
+        });
+
+        if (error) {
+            console.error(`Resend API Error for order ${orderId}:`, error);
         }
 
         res.redirect(`/account/admin/orders?message=${encodeURIComponent('Order has been cancelled.')}`);
@@ -329,6 +365,7 @@ router.post('/account/admin/orders/cancel/:id', isAdmin, async (req, res) => {
         res.status(500).send("Failed to cancel order.");
     }
 });
+
 
 // GET /account/orders - Show the user's order history
 router.get('/orders', async (req, res) => {

@@ -3,17 +3,38 @@ const router = express.Router();
 const { ObjectId } = require('mongodb');
 
 // GET /cart - Display the shopping cart page
-router.get('/', (req, res) => {
-    if (!req.session.cart) {
-        return res.render('cart', {
+router.get('/', async (req, res) => {
+    try {
+        let wishlistProducts = [];
+        let userWishlist = [];
+        if (req.session.user) {
+            const db = req.app.locals.client.db(req.app.locals.dbName);
+            const usersCollection = db.collection('users');
+            const productsCollection = db.collection('products');
+            
+            const user = await usersCollection.findOne({ userId: req.session.user.userId });
+            
+            if (user && user.wishlist) {
+                userWishlist = user.wishlist;
+                if (user.wishlist.length > 0) {
+                    wishlistProducts = await productsCollection.find({
+                        _id: { $in: user.wishlist }
+                    }).limit(4).toArray();
+                }
+            }
+        }
+
+        res.render('cart', {
             title: "Your Cart",
-            cart: { items: [], totalQty: 0, totalPrice: 0 }
+            cart: req.session.cart || { items: [], totalQty: 0, totalPrice: 0 },
+            wishlistProducts: wishlistProducts,
+            wishlist: userWishlist
         });
+
+    } catch (err) {
+        console.error("Error fetching cart or wishlist data:", err);
+        res.status(500).send("An error occurred while loading the cart page.");
     }
-    res.render('cart', {
-        title: "Your Cart",
-        cart: req.session.cart
-    });
 });
 
 // POST /cart/add - Add an item to the shopping cart
@@ -62,7 +83,6 @@ router.post('/add', async (req, res) => {
         cart.totalQty = cart.items.reduce((total, item) => total + item.qty, 0);
         cart.totalPrice = cart.items.reduce((total, item) => total + item.price, 0);
 
-        // Redirect to checkout if "Buy Now" was clicked
         if (buyNow === 'true') {
             return res.redirect('/checkout');
         }
@@ -89,26 +109,64 @@ router.post('/remove', (req, res) => {
     res.redirect('/cart');
 });
 
-// NEW: POST /cart/update - Update an item's quantity
-router.post('/update', (req, res) => {
-    const { itemId, newQty } = req.body;
+// ADDED: POST /cart/update-quantity - Increment or decrement an item's quantity
+router.post('/update-quantity', (req, res) => {
+    const { itemId, change } = req.body; // change will be '1' or '-1'
     const cart = req.session.cart;
-    const quantity = parseInt(newQty);
+    const changeAmount = parseInt(change, 10);
 
-    if (cart && cart.items && quantity > 0) {
+    if (cart && cart.items && !isNaN(changeAmount)) {
         const itemIndex = cart.items.findIndex(item => item.itemId === itemId);
         if (itemIndex > -1) {
             const item = cart.items[itemIndex];
-            item.qty = quantity;
-            item.price = item.qty * item.unitPrice; // Recalculate price for this item
+            item.qty += changeAmount;
+
+            // Remove item if quantity drops to 0 or less
+            if (item.qty <= 0) {
+                cart.items.splice(itemIndex, 1);
+            } else {
+                item.price = item.qty * item.unitPrice;
+            }
         }
 
-        // Recalculate cart totals
         cart.totalQty = cart.items.reduce((total, item) => total + item.qty, 0);
         cart.totalPrice = cart.items.reduce((total, item) => total + item.price, 0);
     }
 
     res.redirect('/cart');
+});
+
+// ADDED: POST /cart/move-to-wishlist - Move an item from cart to wishlist
+router.post('/move-to-wishlist', async (req, res) => {
+    if (!req.session.user) {
+        return res.redirect('/users/login');
+    }
+    try {
+        const { itemId, productId } = req.body;
+        const userId = req.session.user.userId;
+        const productObjectId = new ObjectId(productId);
+        const cart = req.session.cart;
+
+        // Add to wishlist
+        const db = req.app.locals.client.db(req.app.locals.dbName);
+        await db.collection('users').updateOne(
+            { userId: userId },
+            { $addToSet: { wishlist: productObjectId } } // Use $addToSet to avoid duplicates
+        );
+
+        // Remove from cart
+        if (cart && cart.items) {
+            cart.items = cart.items.filter(item => item.itemId !== itemId);
+            cart.totalQty = cart.items.reduce((total, item) => total + item.qty, 0);
+            cart.totalPrice = cart.items.reduce((total, item) => total + item.price, 0);
+        }
+        
+        res.redirect('/cart');
+
+    } catch (err) {
+        console.error("Error moving item to wishlist:", err);
+        res.status(500).send("An error occurred.");
+    }
 });
 
 module.exports = router;
