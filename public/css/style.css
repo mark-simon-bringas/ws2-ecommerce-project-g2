@@ -791,7 +791,6 @@ li {
     .dropdown .con-1.dropdown-search-panel {
         left: 50%;
         transform: translateX(-50%);
-        width: 850px;
         max-width: 90vw;
         top: 1rem;
         padding: 1.5rem;
@@ -941,5 +940,111 @@ li {
     .img-magnifier-lens img {
     position: absolute;
     transform-origin: top left;
+    }
+}
+
+/* --- 8. Site Footer --- */
+.site-footer {
+    background-color: var(--bg-color);
+    color: var(--text-color-secondary);
+    font-size: 12px;
+    padding: 2rem 0;
+    margin-top: 3rem;
+}
+.site-footer .footer-content {
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid var(--border-color);
+}
+.site-footer .footer-links {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+}
+.site-footer .footer-list {
+    padding-left: 0;
+    margin-bottom: 0;
+}
+.site-footer .footer-list li {
+    margin-bottom: 0.5rem;
+}
+.site-footer .footer-list a {
+    color: var(--text-color-secondary);
+}
+.site-footer .footer-list a:hover {
+    color: var(--text-color);
+}
+.site-footer .footer-bottom {
+    padding-top: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+.site-footer .footer-copyright {
+    margin-bottom: 0;
+}
+.site-footer .footer-legal {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+.site-footer .footer-legal a {
+    color: var(--text-color-secondary);
+    padding-right: 1rem;
+    border-right: 1px solid var(--border-color);
+}
+.site-footer .footer-legal a:last-child {
+    border-right: none;
+    padding-right: 0;
+}
+.site-footer .footer-country {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+
+/* Footer Accordion Base Styles */
+.site-footer .accordion-header {
+    margin-bottom: 0;
+}
+.site-footer .accordion-button {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-color);
+    background-color: transparent;
+    box-shadow: none;
+    padding: 0;
+    margin-bottom: 0.8rem;
+}
+.site-footer .accordion-button:not(.collapsed) {
+    color: var(--text-color);
+}
+.site-footer .accordion-button::after {
+    display: none; /* Hide default Bootstrap icon on all screen sizes */
+}
+
+@media (min-width: 768px) {
+    .site-footer {
+        padding: 3rem 0;
+    }
+    .site-footer .footer-links {
+        grid-template-columns: repeat(3, 1fr);
+    }
+    .site-footer .footer-bottom {
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .site-footer .footer-legal {
+        justify-content: flex-end;
+    }
+
+    /* Make accordions look like static headings on desktop */
+    .site-footer .accordion-button {
+        pointer-events: none; /* Disables click */
+    }
+    .site-footer .accordion-collapse {
+        display: block !important; /* Force content to be visible */
+        height: auto !important;
+        visibility: visible !important;
     }
 }

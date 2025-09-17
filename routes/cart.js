@@ -1,12 +1,18 @@
+// routes/cart.js
+
 const express = require('express');
 const router = express.Router();
 const { ObjectId } = require('mongodb');
+const { convertCurrency } = require('./currency');
 
 // GET /cart - Display the shopping cart page
 router.get('/', async (req, res) => {
     try {
+        const currency = res.locals.currency;
         let wishlistProducts = [];
         let userWishlist = [];
+        let cart = req.session.cart || { items: [], totalQty: 0, totalPrice: 0 };
+
         if (req.session.user) {
             const db = req.app.locals.client.db(req.app.locals.dbName);
             const usersCollection = db.collection('users');
@@ -24,11 +30,28 @@ router.get('/', async (req, res) => {
             }
         }
 
+        // Perform currency conversions before rendering
+        if (cart.items.length > 0) {
+            cart.items = await Promise.all(cart.items.map(async (item) => {
+                item.convertedPrice = await convertCurrency(item.price, currency);
+                return item;
+            }));
+            cart.convertedTotalPrice = await convertCurrency(cart.totalPrice, currency);
+        }
+
+        if (wishlistProducts.length > 0) {
+            wishlistProducts = await Promise.all(wishlistProducts.map(async (product) => {
+                product.convertedPrice = await convertCurrency(product.retailPrice, currency);
+                return product;
+            }));
+        }
+
         res.render('cart', {
             title: "Your Cart",
-            cart: req.session.cart || { items: [], totalQty: 0, totalPrice: 0 },
+            cart: cart,
             wishlistProducts: wishlistProducts,
-            wishlist: userWishlist
+            wishlist: userWishlist,
+            currency: currency
         });
 
     } catch (err) {

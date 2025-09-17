@@ -1,10 +1,21 @@
+<% 
+    const currencySymbols = {
+        'USD': '$',
+        'PHP': '₱',
+        'GBP': '£',
+        'EUR': '€',
+        'JPY': '¥'
+    };
+    const symbol = currencySymbols[currency] || '$';
+%>
+
 <div class="container my-5 cart-page-container">
     <div class="row gx-lg-5">
         <div class="col-lg-8">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h1 class="h2 mb-0">Bag</h1>
                 <% if (cart && cart.items.length > 0) { %>
-                    <span class="text-body-secondary"><%= cart.totalQty %> items | $<%= cart.totalPrice.toFixed(2) %></span>
+                    <span class="text-body-secondary"><%= cart.totalQty %> items | <%= symbol %><%= cart.convertedTotalPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></span>
                 <% } %>
             </div>
 
@@ -17,7 +28,7 @@
                                 <div>
                                     <div class="d-flex justify-content-between">
                                         <h6 class="mb-0"><%= item.name %></h6>
-                                        <span class="cart-item-price fw-semibold">$<%= item.price.toFixed(2) %></span>
+                                        <span class="cart-item-price fw-semibold"><%= symbol %><%= item.convertedPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></span>
                                     </div>
                                     <p class="text-body-secondary small mb-1"><%= item.brand %></p>
                                     <p class="text-body-secondary small">Size: <%= item.size %></p>
@@ -69,7 +80,7 @@
                 <h4 class="mb-3">Summary</h4>
                 <div class="summary-item">
                     <span>Subtotal</span>
-                    <span>$<%= cart.totalPrice.toFixed(2) %></span>
+                    <span><%= symbol %><%= (cart.convertedTotalPrice || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></span>
                 </div>
                 <div class="summary-item">
                     <span>Estimated Delivery & Handling</span>
@@ -78,10 +89,9 @@
                 <hr>
                 <div class="summary-total">
                     <span>Total</span>
-                    <span>$<%= cart.totalPrice.toFixed(2) %></span>
+                    <span><%= symbol %><%= (cart.convertedTotalPrice || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></span>
                 </div>
                 <hr>
-                <%# UPDATED: Added d-none and d-lg-grid to hide these buttons on mobile %>
                 <div class="d-none d-lg-grid gap-3" id="desktop-checkout-buttons">
                     <a href="/checkout" class="btn btn-primary btn-lg <%= (cart && cart.items.length > 0) ? '' : 'disabled' %>">
                         Guest Checkout
@@ -111,7 +121,7 @@
                         <div class="product-card-body">
                             <a href="/products/<%= product.sku %>" class="text-decoration-none">
                                 <div class="product-title"><%= product.name %></div>
-                                <div class="product-price">$<%= product.retailPrice %></div>
+                                <div class="product-price"><%= symbol %><%= product.convertedPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></div>
                             </a>
                         </div>
                     </div>

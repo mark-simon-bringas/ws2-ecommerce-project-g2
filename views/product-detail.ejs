@@ -1,3 +1,14 @@
+<% 
+    const currencySymbols = {
+        'USD': '$',
+        'PHP': '₱',
+        'GBP': '£',
+        'EUR': '€',
+        'JPY': '¥'
+    };
+    const symbol = currencySymbols[currency] || '$';
+%>
+
 <div class="my-5"> 
     <div class="product-detail-layout">
 
@@ -50,7 +61,7 @@
             <div class="product-info-panel">
                 <p class="text-body-secondary mb-2"><%= product.brand %></p>
                 <h1 class="product-title display-5 fw-bold"><%= product.name %></h1>
-                <p class="product-price h3 my-3">$<%= product.retailPrice %></p>
+                <p class="product-price h3 my-3"><%= symbol %><%= product.convertedPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></p>
                 
                 <% 
                     const standardSizes = ['8', '8.5', '9', '9.5', '10', '10.5', '11', '12'];
@@ -214,7 +225,7 @@
                 <div class="product-card-body">
                     <a href="/products/<%= relatedProduct.sku %>" class="text-decoration-none">
                         <div class="product-title"><%= relatedProduct.name %></div>
-                        <div class="product-price">$<%= relatedProduct.retailPrice %></div>
+                        <div class="product-price"><%= symbol %><%= relatedProduct.convertedPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></div>
                     </a>
                 </div>
             </div>
@@ -231,7 +242,7 @@
             <img src="<%= product.thumbnailUrl %>" alt="<%= product.name %>" class="product-modal-header__image">
             <div class="product-modal-header__info">
                 <h1 class="modal-title fs-5" id="productDetailsModalLabel"><%= product.name %></h1>
-                <p class="product-price mb-0">$<%= product.retailPrice %></p>
+                <p class="product-price mb-0"><%= symbol %><%= product.convertedPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></p>
             </div>
         </div>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -305,7 +316,7 @@ function initMagnifier(imgId) {
     // Remove old lens if any
     const oldLens = img.parentElement.querySelector(".img-magnifier-lens");
     if (oldLens) oldLens.remove();
-
+    
     const lens = document.createElement("div");
     lens.setAttribute("class", "img-magnifier-lens");
     const lensImg = document.createElement("img");
@@ -322,7 +333,7 @@ function initMagnifier(imgId) {
         const rect = img.getBoundingClientRect();
         let x = e.clientX - rect.left;
         let y = e.clientY - rect.top;
-
+        
         // Position lens
         lens.style.left = (x - lens.offsetWidth / 2) + "px";
         lens.style.top = (y - lens.offsetHeight / 2) + "px";
@@ -338,7 +349,6 @@ function initMagnifier(imgId) {
     }
 
     lens.style.display = "none";
-
     img.addEventListener("mouseenter", () => { lens.style.display = "block"; });
     img.addEventListener("mouseleave", () => { lens.style.display = "none"; });
     img.addEventListener("mousemove", moveLens);
@@ -362,4 +372,3 @@ document.addEventListener("productImageChanged", function () {
     initMagnifier("productImage");
 });
 </script>
-

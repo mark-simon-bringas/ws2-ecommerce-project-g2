@@ -88,7 +88,7 @@
     <div class="overlay" id="search-overlay">
         <button class="overlay-close-btn" id="search-overlay-close-btn">&times;</button>
         <form action="/products/search" method="GET">
-           <div class="search-content">
+            <div class="search-content">
                 <div class="search-input-group">
                     <span class="iconify" data-icon="material-symbols:search-rounded" data-width="28" data-height="28"></span>
                     <input type="text" name="q" placeholder="Search sneakslab.com" required>
@@ -204,6 +204,70 @@
         <% } %>
     </div>
     
+    <footer class="site-footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="accordion footer-links" id="footerAccordion">
+                    <div class="footer-column">
+                        <h2 class="accordion-header" id="headingOne">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="false" aria-controls="collapseOne">
+                                Shop
+                            </button>
+                        </h2>
+                        <div id="collapseOne" class="accordion-collapse collapse" aria-labelledby="headingOne" data-bs-parent="#footerAccordion">
+                            <ul class="footer-list">
+                                <li><a href="/products">Shop All</a></li>
+                                <li><a href="/products?category=men">Men's</a></li>
+                                <li><a href="/products?category=women">Women's</a></li>
+                                <li><a href="/products?new=true">New Arrivals</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="footer-column">
+                        <h2 class="accordion-header" id="headingTwo">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
+                                Support
+                            </button>
+                        </h2>
+                        <div id="collapseTwo" class="accordion-collapse collapse" aria-labelledby="headingTwo" data-bs-parent="#footerAccordion">
+                            <ul class="footer-list">
+                                <li><a href="#">Contact Us</a></li>
+                                <li><a href="#">Order Status</a></li>
+                                <li><a href="#">Shipping & Delivery</a></li>
+                                <li><a href="#">Returns</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="footer-column">
+                        <h2 class="accordion-header" id="headingThree">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseThree" aria-expanded="false" aria-controls="collapseThree">
+                                Company
+                            </button>
+                        </h2>
+                        <div id="collapseThree" class="accordion-collapse collapse" aria-labelledby="headingThree" data-bs-parent="#footerAccordion">
+                            <ul class="footer-list">
+                                <li><a href="#">About Sneakslab</a></li>
+                                <li><a href="#">News</a></li>
+                                <li><a href="#">Careers</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p class="footer-copyright">&copy; <%= new Date().getFullYear() %> Sneakslab Inc. All rights reserved.</p>
+                <div class="footer-legal">
+                    <a href="#">Privacy Policy</a>
+                    <a href="#">Terms & Agreements</a>
+                    <a href="#" class="footer-country">
+                        <i class="bi bi-globe"></i>
+                        <span><%= country %></span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
     <% if (typeof isDashboard !== 'undefined' && isDashboard && currentUser) { %>
     <div class="bottom-navbar d-lg-none">
         <% if (currentUser.role === 'admin') { %>
@@ -211,7 +275,6 @@
                 <i class="bi bi-grid-1x2-fill"></i>
                 <span>Dashboard</span>
             </a>
-            <%# UPDATED: Removed the unnecessary div wrapper %>
             <a href="/account/admin/orders" class="bottom-navbar-link <%= (view === 'admin-orders') ? 'active' : '' %>">
                 <i class="bi bi-list-check"></i>
                 <span>Orders</span>

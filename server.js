@@ -4,6 +4,8 @@ const { MongoClient } = require('mongodb');
 const session = require('express-session'); 
 const path = require('path');
 const ejsLayouts = require('express-ejs-layouts');
+const geoip = require('geoip-lite');
+const { getCurrency } = require('./utils/currencyMap');
 require('dotenv').config();
 
 const app = express();
@@ -25,16 +27,23 @@ app.use(session({
     resave: false,
     saveUninitialized: false,
     cookie: { 
-        secure: false, 
+        secure: process.env.NODE_ENV === 'production', 
         maxAge: 15 * 60 * 1000 
     } 
 }));
 
+// UPDATED: Custom middleware now fetches new order count for admins, detects country, and sets currency
 app.use(async (req, res, next) => {
     res.locals.currentUser = req.session.user;
     res.locals.cart = req.session.cart;
     res.locals.path = req.path;
     
+    // Country and Currency Detection
+    const ip = req.ip === '::1' || req.ip === '127.0.0.1' ? '122.54.69.1' : req.ip;
+    const geo = geoip.lookup(ip);
+    res.locals.country = geo ? geo.country : 'US'; 
+    res.locals.currency = getCurrency(res.locals.country);
+
     // If an admin is logged in, count the number of new orders
     if (req.session.user && req.session.user.role === 'admin') {
         try {
@@ -49,14 +58,6 @@ app.use(async (req, res, next) => {
         res.locals.newOrderCount = 0;
     }
 
-    next();
-});
-
-// Custom middleware to make user session and cart available to all views
-app.use((req, res, next) => {
-    res.locals.currentUser = req.session.user;
-    res.locals.cart = req.session.cart;
-    res.locals.path = req.path;
     next();
 });
 

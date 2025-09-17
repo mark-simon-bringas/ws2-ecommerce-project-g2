@@ -1,7 +1,10 @@
+// routes/products.js
+
 const express = require('express');
 const router = express.Router();
 const axios = require('axios');
 const { ObjectId } = require('mongodb');
+const { convertCurrency } = require('./currency');
 
 // Middleware to check if the user is logged in
 const isLoggedIn = (req, res, next) => {
@@ -25,6 +28,7 @@ router.get('/', async (req, res) => {
         const db = req.app.locals.client.db(req.app.locals.dbName);
         const productsCollection = db.collection('products');
         const usersCollection = db.collection('users');
+        const currency = res.locals.currency;
 
         let userWishlist = [];
         if (req.session.user) {
@@ -55,11 +59,18 @@ router.get('/', async (req, res) => {
 
         const products = await productsCollection.find(query).sort(sort).toArray();
         
+        // Perform currency conversion before rendering
+        const productsWithConvertedPrices = await Promise.all(products.map(async (product) => {
+            product.convertedPrice = await convertCurrency(product.retailPrice, currency);
+            return product;
+        }));
+
         res.render('shop', { 
             title: pageTitle,
             pageTitle: pageTitle,
-            products: products,
-            wishlist: userWishlist
+            products: productsWithConvertedPrices,
+            wishlist: userWishlist,
+            currency: currency
         });
 
     } catch (err) {
@@ -75,6 +86,7 @@ router.get('/search', async (req, res) => {
         const productsCollection = db.collection('products');
         const usersCollection = db.collection('users');
         const searchQuery = req.query.q || "";
+        const currency = res.locals.currency;
 
         let userWishlist = [];
         if (req.session.user) {
@@ -94,11 +106,17 @@ router.get('/search', async (req, res) => {
         const products = await productsCollection.find(query).toArray();
         const pageTitle = `Search results for "${searchQuery}"`;
 
+        const productsWithConvertedPrices = await Promise.all(products.map(async (product) => {
+            product.convertedPrice = await convertCurrency(product.retailPrice, currency);
+            return product;
+        }));
+
         res.render('shop', {
             title: pageTitle,
             pageTitle: pageTitle,
-            products: products,
-            wishlist: userWishlist
+            products: productsWithConvertedPrices,
+            wishlist: userWishlist,
+            currency: currency
         });
 
     } catch (err) {
@@ -557,6 +575,7 @@ router.get('/:sku', async (req, res) => {
         const usersCollection = db.collection('users');
         const reviewsCollection = db.collection('reviews');
         const { sku } = req.params;
+        const currency = res.locals.currency;
 
         if (['men', 'women', 'search'].includes(sku.toLowerCase())) {
             return res.status(404).send("Page not found.");
@@ -587,13 +606,21 @@ router.get('/:sku', async (req, res) => {
         const isWishlisted = user && user.wishlist && user.wishlist.some(id => id.equals(product._id));
         const userWishlist = user ? user.wishlist : [];
 
+        // Convert all prices before rendering
+        product.convertedPrice = await convertCurrency(product.retailPrice, currency);
+        const relatedProductsWithConvertedPrices = await Promise.all(relatedProducts.map(async (p) => {
+            p.convertedPrice = await convertCurrency(p.retailPrice, currency);
+            return p;
+        }));
+
         res.render('product-detail', {
             title: product.name,
             product: product,
             isWishlisted: isWishlisted,
             reviews: reviews,
-            relatedProducts: relatedProducts,
-            wishlist: userWishlist
+            relatedProducts: relatedProductsWithConvertedPrices,
+            wishlist: userWishlist,
+            currency: currency
         });
 
     } catch (err) {
