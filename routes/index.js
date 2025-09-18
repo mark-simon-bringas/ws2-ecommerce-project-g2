@@ -4,6 +4,20 @@ const express = require('express');
 const router = express.Router();
 const { convertCurrency } = require('./currency');
 
+// Fisher-Yates (aka Knuth) Shuffle function
+function shuffleArray(array) {
+    let currentIndex = array.length, randomIndex;
+    // While there remain elements to shuffle.
+    while (currentIndex != 0) {
+        // Pick a remaining element.
+        randomIndex = Math.floor(Math.random() * currentIndex);
+        currentIndex--;
+        // And swap it with the current element.
+        [array[currentIndex], array[randomIndex]] = [
+            array[randomIndex], array[currentIndex]];
+    }
+    return array;
+}
 
 router.get('/', async (req, res) => {
     try {
@@ -12,7 +26,6 @@ router.get('/', async (req, res) => {
         const usersCollection = db.collection('users');
         const currency = res.locals.locationData.currency;
 
-        // Fetch user's wishlist if they are logged in
         let userWishlist = [];
         if (req.session.user) {
             const user = await usersCollection.findOne({ userId: req.session.user.userId });
@@ -21,16 +34,15 @@ router.get('/', async (req, res) => {
             }
         }
 
-        // Fetch all data required for the new dynamic homepage in parallel
-        const [
-            newArrivals,
-            topKicks,
-            jordanCollection
-        ] = await Promise.all([
-            productsCollection.find().sort({ importedAt: -1 }).limit(8).toArray(),
-            productsCollection.find().sort({ importedAt: -1 }).skip(8).limit(8).toArray(),
-            productsCollection.find({ brand: 'Jordan' }).limit(8).toArray()
+        const [allProducts, jordanProducts] = await Promise.all([
+            productsCollection.find().sort({ importedAt: -1 }).toArray(),
+            productsCollection.find({ brand: 'Jordan' }).toArray()
         ]);
+        
+        // Shuffle and slice the arrays to get random assortments
+        const newArrivals = shuffleArray([...allProducts]).slice(0, 8);
+        const topKicks = shuffleArray([...allProducts]).slice(0, 8);
+        const jordanCollection = shuffleArray([...jordanProducts]).slice(0, 8);
 
         // Helper function to convert prices for an array of products
         const convertPrices = (products) => {
@@ -54,14 +66,14 @@ router.get('/', async (req, res) => {
         [...convertedNewArrivals, ...convertedTopKicks, ...convertedJordanCollection].forEach(product => {
             allProductsMap.set(product._id.toString(), product);
         });
-        const allProducts = Array.from(allProductsMap.values());
+        const allProductsForModal = Array.from(allProductsMap.values());
 
         res.render('index', { 
             title: "Find Your Perfect Pair",
             newArrivals: convertedNewArrivals,
             topKicks: convertedTopKicks,
             jordanCollection: convertedJordanCollection,
-            allProducts: allProducts,
+            allProducts: allProductsForModal,
             wishlist: userWishlist
         });
 
@@ -71,7 +83,7 @@ router.get('/', async (req, res) => {
     }
 });
 
-// ADDED: Route for the about page
+// Route for the about page
 router.get('/about', (req, res) => {
     res.render('about', {
         title: 'About Us'
