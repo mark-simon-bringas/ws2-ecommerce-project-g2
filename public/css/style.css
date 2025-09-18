@@ -1,3 +1,4 @@
+
 /* ==== GLOBAL THEME AND STYLES ==== */
 
 /* --- 1. Premium Theme Variables --- */
@@ -825,8 +826,8 @@ li {
 .mini-cart-body .cart-item-details h6 {
     color: #fff;
 }
-.mini-cart-body .cart-item-details p {
-    color: rgba(255,255,255,0.8);
+.mini-cart-body .text-body-secondary {
+    color: rgba(255,255,255,0.7) !important;
 }
 .mini-cart-footer {
     padding: 1.5rem;
@@ -1145,7 +1146,7 @@ li {
         visibility: visible;
     }
     .mini-cart-overlay {
-        background-color: transparent; /* Remove overlay on desktop */
+        background-color: transparent;
     }
 }
 
