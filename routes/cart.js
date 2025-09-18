@@ -37,6 +37,8 @@ router.get('/', async (req, res) => {
                 return item;
             }));
             cart.convertedTotalPrice = await convertCurrency(cart.totalPrice, currency);
+        } else {
+            cart.convertedTotalPrice = 0; // Explicitly set to 0 if cart is empty
         }
 
         if (wishlistProducts.length > 0) {
