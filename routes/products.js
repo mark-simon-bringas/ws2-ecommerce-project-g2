@@ -1,4 +1,5 @@
 // routes/products.js
+
 const express = require('express');
 const router = express.Router();
 const axios = require('axios');
@@ -192,9 +193,9 @@ router.get('/manage', isAdmin, async (req, res) => {
     }
 });
 
-// FIXED: Route now sends the correct product 'id' to the form
+// UPDATED: Route now handles the hasDescription filter
 router.post('/search', isAdmin, async (req, res) => {
-    const { query, brand, gender } = req.body;
+    const { query, brand, gender, hasDescription } = req.body;
 
     let fullQuery = query;
     if (brand) {
@@ -207,7 +208,7 @@ router.post('/search', isAdmin, async (req, res) => {
     const options = {
         method: 'GET',
         url: 'https://the-sneaker-database.p.rapidapi.com/search',
-        params: { limit: '20', query: fullQuery },
+        params: { limit: '50', query: fullQuery },
         headers: {
             'X-RapidAPI-Key': process.env.SNEAKER_DB_API_KEY,
             'X-RapidAPI-Host': 'the-sneaker-database.p.rapidapi.com'
@@ -219,7 +220,12 @@ router.post('/search', isAdmin, async (req, res) => {
         const productsCollection = db.collection('products');
 
         const response = await axios.request(options);
-        const apiProducts = response.data.results;
+        let apiProducts = response.data.results;
+
+        // Filter results if the checkbox was checked
+        if (hasDescription === 'true') {
+            apiProducts = apiProducts.filter(product => product.story && product.story.trim() !== '');
+        }
 
         const existingProducts = await productsCollection.find().project({ sku: 1, _id: 0 }).toArray();
         const existingSkus = new Set(existingProducts.map(p => p.sku));
@@ -254,7 +260,7 @@ router.post('/search', isAdmin, async (req, res) => {
     }
 });
 
-// FIXED: Route now receives 'id's and fetches details with the correct endpoint
+// Route now receives 'id's and fetches details with the correct endpoint
 router.post('/import-multiple', isAdmin, async (req, res) => {
     try {
         const db = req.app.locals.client.db(req.app.locals.dbName);
