@@ -21,7 +21,7 @@
                 <a href="/products" class="btn btn-light btn-lg">Shop the Collection</a>
             </div>
         </div>
-        <div class="carousel-item" style="background-image: url('https://images.unsplash.com/photo-1543508282-6319a3e2621f?q=80&w=2030&auto=format&fit=crop');">
+        <div class="carousel-item" style="background-image: url('https://images.unsplash.com/photo-1543508282-6319a3e2621f?q=80&w=2030&auto=format&fit=crop')">
             <div class="carousel-caption text-center pb-5">
                 <h1 class="display-3 fw-bold">Up to 40% Off</h1>
                 <p class="lead my-3">Limited time only.</p>
@@ -55,39 +55,47 @@
 <% if (newArrivals && newArrivals.length > 0) { %>
 <section class="product-carousel-section container-fluid mb-5">
     <div class="container">
-        <div class="section-header d-flex justify-content-between align-items-center">
+        <div class="section-header">
             <h2 class="display-5 fw-bold mb-0">New Arrivals</h2>
-            <a href="/products?new=true" class="btn btn-outline-dark">View All</a>
-        </div>
-    </div>
-    <div class="product-carousel">
-        <% newArrivals.forEach(product => { %>
-            <div class="product-card" data-sku="<%= product.sku %>">
-                <div class="product-card-img-container">
-                    <a href="/products/<%= product.sku %>" class="product-card-img-link"></a>
-                    <img src="<%= product.thumbnailUrl %>" class="product-card-img" alt="<%= product.name %>">
-                    <div class="product-card-actions">
-                        <% if (currentUser) { %>
-                            <button type="button" class="btn-action wishlist-toggle-btn" title="Toggle Wishlist" data-product-id="<%= product._id %>">
-                                <% const isWishlisted = wishlist.some(id => id.equals(product._id)); %>
-                                <i class="bi <%= isWishlisted ? 'bi-heart-fill' : 'bi-heart' %>"></i>
-                            </button>
-                        <% } else { %>
-                            <a href="/users/login" class="btn-action" title="Login to Add to Wishlist">
-                                <i class="bi bi-heart"></i>
-                            </a>
-                        <% } %>
-                        <button type="button" class="btn-action" title="Add to Cart" data-bs-toggle="modal" data-bs-target="#productModal-<%= product.sku %>"><i class="bi bi-bag-plus"></i></button>
-                    </div>
-                </div>
-                <div class="product-card-body">
-                    <a href="/products/<%= product.sku %>" class="text-decoration-none">
-                        <div class="product-title"><%= product.name %></div>
-                        <div class="product-price">$<%= product.retailPrice %></div>
-                    </a>
+            <div class="section-header-actions">
+                <a href="/products?new=true" class="btn btn-outline-dark d-none d-lg-inline-block">View All</a>
+                <div class="carousel-nav-buttons">
+                    <button class="carousel-nav-btn prev" aria-label="Previous slide"><i class="bi bi-chevron-left"></i></button>
+                    <button class="carousel-nav-btn next" aria-label="Next slide"><i class="bi bi-chevron-right"></i></button>
                 </div>
             </div>
-        <% }) %>
+        </div>
+    </div>
+    <div class="product-carousel-wrapper">
+        <div class="product-carousel">
+            <% newArrivals.forEach(product => { %>
+                <div class="product-card" data-sku="<%= product.sku %>">
+                    <div class="product-card-img-container">
+                        <a href="/products/<%= product.sku %>" class="product-card-img-link"></a>
+                        <img src="<%= product.thumbnailUrl %>" class="product-card-img" alt="<%= product.name %>">
+                        <div class="product-card-actions">
+                            <% if (currentUser) { %>
+                                <button type="button" class="btn-action wishlist-toggle-btn" title="Toggle Wishlist" data-product-id="<%= product._id %>">
+                                    <% const isWishlisted = wishlist.some(id => id.equals(product._id)); %>
+                                    <i class="bi <%= isWishlisted ? 'bi-heart-fill' : 'bi-heart' %>"></i>
+                                </button>
+                            <% } else { %>
+                                <a href="/users/login" class="btn-action" title="Login to Add to Wishlist">
+                                    <i class="bi bi-heart"></i>
+                                </a>
+                            <% } %>
+                            <button type="button" class="btn-action" title="Add to Cart" data-bs-toggle="modal" data-bs-target="#productModal-<%= product.sku %>"><i class="bi bi-bag-plus"></i></button>
+                        </div>
+                    </div>
+                    <div class="product-card-body">
+                        <a href="/products/<%= product.sku %>" class="text-decoration-none">
+                            <div class="product-title"><%= product.name %></div>
+                            <div class="product-price"><%= locationData.symbol %><%= product.convertedPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></div>
+                        </a>
+                    </div>
+                </div>
+            <% }) %>
+        </div>
     </div>
 </section>
 <% } %>
@@ -95,39 +103,47 @@
 <% if (topKicks && topKicks.length > 0) { %>
 <section class="product-carousel-section container-fluid mb-5 py-5 bg-light">
     <div class="container">
-        <div class="section-header d-flex justify-content-between align-items-center">
+        <div class="section-header">
             <h2 class="display-5 fw-bold mb-0">Top Kicks</h2>
-            <a href="/products" class="btn btn-outline-dark">View All</a>
-        </div>
-    </div>
-    <div class="product-carousel">
-        <% topKicks.forEach(product => { %>
-            <div class="product-card" data-sku="<%= product.sku %>">
-                <div class="product-card-img-container">
-                    <a href="/products/<%= product.sku %>" class="product-card-img-link"></a>
-                    <img src="<%= product.thumbnailUrl %>" class="product-card-img" alt="<%= product.name %>">
-                    <div class="product-card-actions">
-                        <% if (currentUser) { %>
-                            <button type="button" class="btn-action wishlist-toggle-btn" title="Toggle Wishlist" data-product-id="<%= product._id %>">
-                                <% const isWishlisted = wishlist.some(id => id.equals(product._id)); %>
-                                <i class="bi <%= isWishlisted ? 'bi-heart-fill' : 'bi-heart' %>"></i>
-                            </button>
-                        <% } else { %>
-                            <a href="/users/login" class="btn-action" title="Login to Add to Wishlist">
-                                <i class="bi bi-heart"></i>
-                            </a>
-                        <% } %>
-                        <button type="button" class="btn-action" title="Add to Cart" data-bs-toggle="modal" data-bs-target="#productModal-<%= product.sku %>"><i class="bi bi-bag-plus"></i></button>
-                    </div>
-                </div>
-                <div class="product-card-body">
-                    <a href="/products/<%= product.sku %>" class="text-decoration-none">
-                        <div class="product-title"><%= product.name %></div>
-                        <div class="product-price">$<%= product.retailPrice %></div>
-                    </a>
+            <div class="section-header-actions">
+                <a href="/products" class="btn btn-outline-dark d-none d-lg-inline-block">View All</a>
+                <div class="carousel-nav-buttons">
+                    <button class="carousel-nav-btn prev" aria-label="Previous slide"><i class="bi bi-chevron-left"></i></button>
+                    <button class="carousel-nav-btn next" aria-label="Next slide"><i class="bi bi-chevron-right"></i></button>
                 </div>
             </div>
-        <% }) %>
+        </div>
+    </div>
+    <div class="product-carousel-wrapper">
+        <div class="product-carousel">
+            <% topKicks.forEach(product => { %>
+                <div class="product-card" data-sku="<%= product.sku %>">
+                    <div class="product-card-img-container">
+                        <a href="/products/<%= product.sku %>" class="product-card-img-link"></a>
+                        <img src="<%= product.thumbnailUrl %>" class="product-card-img" alt="<%= product.name %>">
+                        <div class="product-card-actions">
+                            <% if (currentUser) { %>
+                                <button type="button" class="btn-action wishlist-toggle-btn" title="Toggle Wishlist" data-product-id="<%= product._id %>">
+                                    <% const isWishlisted = wishlist.some(id => id.equals(product._id)); %>
+                                    <i class="bi <%= isWishlisted ? 'bi-heart-fill' : 'bi-heart' %>"></i>
+                                </button>
+                            <% } else { %>
+                                <a href="/users/login" class="btn-action" title="Login to Add to Wishlist">
+                                    <i class="bi bi-heart"></i>
+                                </a>
+                            <% } %>
+                            <button type="button" class="btn-action" title="Add to Cart" data-bs-toggle="modal" data-bs-target="#productModal-<%= product.sku %>"><i class="bi bi-bag-plus"></i></button>
+                        </div>
+                    </div>
+                    <div class="product-card-body">
+                        <a href="/products/<%= product.sku %>" class="text-decoration-none">
+                            <div class="product-title"><%= product.name %></div>
+                            <div class="product-price"><%= locationData.symbol %><%= product.convertedPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></div>
+                        </a>
+                    </div>
+                </div>
+            <% }) %>
+        </div>
     </div>
 </section>
 <% } %>
@@ -152,39 +168,47 @@
 <% if (jordanCollection && jordanCollection.length > 0) { %>
 <section class="product-carousel-section container-fluid mb-5 py-5">
     <div class="container">
-        <div class="section-header d-flex justify-content-between align-items-center">
+        <div class="section-header">
             <h2 class="display-5 fw-bold mb-0">Jordan Collection</h2>
-            <a href="/products?brand=Jordan" class="btn btn-outline-dark">View All</a>
-        </div>
-    </div>
-    <div class="product-carousel">
-        <% jordanCollection.forEach(product => { %>
-            <div class="product-card" data-sku="<%= product.sku %>">
-                <div class="product-card-img-container">
-                    <a href="/products/<%= product.sku %>" class="product-card-img-link"></a>
-                    <img src="<%= product.thumbnailUrl %>" class="product-card-img" alt="<%= product.name %>">
-                    <div class="product-card-actions">
-                        <% if (currentUser) { %>
-                            <button type="button" class="btn-action wishlist-toggle-btn" title="Toggle Wishlist" data-product-id="<%= product._id %>">
-                                <% const isWishlisted = wishlist.some(id => id.equals(product._id)); %>
-                                <i class="bi <%= isWishlisted ? 'bi-heart-fill' : 'bi-heart' %>"></i>
-                            </button>
-                        <% } else { %>
-                            <a href="/users/login" class="btn-action" title="Login to Add to Wishlist">
-                                <i class="bi bi-heart"></i>
-                            </a>
-                        <% } %>
-                        <button type="button" class="btn-action" title="Add to Cart" data-bs-toggle="modal" data-bs-target="#productModal-<%= product.sku %>"><i class="bi bi-bag-plus"></i></button>
-                    </div>
-                </div>
-                <div class="product-card-body">
-                    <a href="/products/<%= product.sku %>" class="text-decoration-none">
-                        <div class="product-title"><%= product.name %></div>
-                        <div class="product-price">$<%= product.retailPrice %></div>
-                    </a>
+            <div class="section-header-actions">
+                <a href="/products?brand=Jordan" class="btn btn-outline-dark d-none d-lg-inline-block">View All</a>
+                <div class="carousel-nav-buttons">
+                    <button class="carousel-nav-btn prev" aria-label="Previous slide"><i class="bi bi-chevron-left"></i></button>
+                    <button class="carousel-nav-btn next" aria-label="Next slide"><i class="bi bi-chevron-right"></i></button>
                 </div>
             </div>
-        <% }) %>
+        </div>
+    </div>
+    <div class="product-carousel-wrapper">
+        <div class="product-carousel">
+            <% jordanCollection.forEach(product => { %>
+                <div class="product-card" data-sku="<%= product.sku %>">
+                    <div class="product-card-img-container">
+                        <a href="/products/<%= product.sku %>" class="product-card-img-link"></a>
+                        <img src="<%= product.thumbnailUrl %>" class="product-card-img" alt="<%= product.name %>">
+                        <div class="product-card-actions">
+                            <% if (currentUser) { %>
+                                <button type="button" class="btn-action wishlist-toggle-btn" title="Toggle Wishlist" data-product-id="<%= product._id %>">
+                                    <% const isWishlisted = wishlist.some(id => id.equals(product._id)); %>
+                                    <i class="bi <%= isWishlisted ? 'bi-heart-fill' : 'bi-heart' %>"></i>
+                                </button>
+                            <% } else { %>
+                                <a href="/users/login" class="btn-action" title="Login to Add to Wishlist">
+                                    <i class="bi bi-heart"></i>
+                                </a>
+                            <% } %>
+                            <button type="button" class="btn-action" title="Add to Cart" data-bs-toggle="modal" data-bs-target="#productModal-<%= product.sku %>"><i class="bi bi-bag-plus"></i></button>
+                        </div>
+                    </div>
+                    <div class="product-card-body">
+                        <a href="/products/<%= product.sku %>" class="text-decoration-none">
+                            <div class="product-title"><%= product.name %></div>
+                            <div class="product-price"><%= locationData.symbol %><%= product.convertedPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></div>
+                        </a>
+                    </div>
+                </div>
+            <% }) %>
+        </div>
     </div>
 </section>
 <% } %>
@@ -244,7 +268,7 @@
                         <img src="<%= product.thumbnailUrl %>" alt="<%= product.name %>" class="img-fluid rounded-3 mb-3" style="max-height: 250px;">
                         <h5 class="modal-title" id="productModalLabel-<%= product.sku %>"><%= product.name %></h5>
                         <p class="text-body-secondary"><%= product.brand %></p>
-                        <p class="h4 fw-bold product-price" data-sku="<%= product.sku %>">$<%= product.retailPrice %></p>
+                        <p class="h4 fw-bold product-price" data-sku="<%= product.sku %>"><%= locationData.symbol %><%= product.convertedPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></p>
                         
                         <form action="/cart/add" method="POST" id="form-add-<%= product.sku %>">
                             <input type="hidden" name="productId" value="<%= product._id %>">

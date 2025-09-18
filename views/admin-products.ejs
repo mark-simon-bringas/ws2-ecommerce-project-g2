@@ -109,7 +109,6 @@
                     <p class="text-body-secondary p-4 text-center">No products found for your current filter.</p>
                 <% } %>
                 
-                <%# REMOVED: Client-side pagination is no longer needed %>
             </div>
         </div>
     </div>
@@ -124,7 +123,7 @@
                 </div>
                 <form id="search-form" action="/products/search" method="POST">
                     <div class="row g-3">
-                        <div class="col-lg-6">
+                        <div class="col-lg-5">
                             <input type="text" class="form-control form-control-lg form-control-clean" name="query" placeholder="e.g., Jordan 1 Retro High OG" required>
                         </div>
                         <div class="col-lg-2">
@@ -146,11 +145,17 @@
                                 <option>unisex</option>
                             </select>
                         </div>
-                        <div class="col-lg-2 d-grid">
+                        <div class="col-lg-3 d-grid">
                             <button class="btn btn-primary btn-lg" type="submit" id="search-button">
                                 <i class="bi bi-search"></i> Search
                             </button>
                         </div>
+                    </div>
+                    <div class="form-check mt-3">
+                        <input class="form-check-input" type="checkbox" name="hasDescription" value="true" id="hasDescriptionCheck">
+                        <label class="form-check-label" for="hasDescriptionCheck">
+                            Must have description
+                        </label>
                     </div>
                 </form>
             </div>

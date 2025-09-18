@@ -3,8 +3,15 @@
         <div class="text-center">
             <h1 class="h2 mb-4">Create an Account</h1>
         </div>
+        <% if (typeof errors !== 'undefined' && errors.length > 0) { %>
+            <% errors.forEach(function(error) { %>
+                <div class="alert alert-danger text-center" role="alert">
+                    <%= error.msg %>
+                </div>
+            <% }); %>
+        <% } %>
 
-        <form action="/users/register" method="POST">
+      <form action="/users/register" method="POST">
             <div class="row">
                 <div class="col-md-6 mb-3">
                     <label for="firstName" class="form-label">First Name</label>
@@ -50,6 +57,8 @@
     document.addEventListener('DOMContentLoaded', function() {
         const passwordInput = document.getElementById('password');
         const confirmPasswordInput = document.getElementById('confirmPassword');
+        const createAccountButton = document.querySelector('.btn-primary');
+        const form = document.querySelector('form');
 
         const checks = {
             length: { el: document.getElementById('length-check'), regex: /.{8,}/ },
@@ -59,8 +68,9 @@
             special: { el: document.getElementById('special-check'), regex: /[!@#$%^&*()_\+\-=\[\]{};':"\\|,.<>\/?`~]/ }
         };
 
-        const validate = () => {
+        const validatePasswordCriteria = () => {
             const password = passwordInput.value;
+            let allCriteriaMet = true;
             for (const key in checks) {
                 const check = checks[key];
                 const icon = check.el.querySelector('.iconify');
@@ -73,11 +83,38 @@
                     check.el.classList.remove('valid');
                     check.el.classList.add('invalid');
                     icon.dataset.icon = 'material-symbols:cancel-outline-rounded';
+                    allCriteriaMet = false;
                 }
+            }
+            return allCriteriaMet;
+        };
+
+        const validatePasswordsMatch = () => {
+            const password = passwordInput.value;
+            const confirmPassword = confirmPasswordInput.value;
+            return password === confirmPassword && password.length > 0;
+        };
+
+        const updateButtonState = () => {
+            const passwordCriteriaMet = validatePasswordCriteria();
+            const passwordsMatch = validatePasswordsMatch();
+            
+            if (passwordCriteriaMet && passwordsMatch) {
+                createAccountButton.removeAttribute('disabled');
+            } else {
+                createAccountButton.setAttribute('disabled', 'disabled');
             }
         };
 
-        passwordInput.addEventListener('input', validate);
-        validate();
+        passwordInput.addEventListener('input', updateButtonState);
+        confirmPasswordInput.addEventListener('input', updateButtonState);
+   
+        updateButtonState();
+
+        form.addEventListener('submit', function(event) {
+            if (createAccountButton.hasAttribute('disabled')) {
+                event.preventDefault();
+            }
+        });
     });
 </script>

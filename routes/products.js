@@ -1,7 +1,10 @@
+// routes/products.js
+
 const express = require('express');
 const router = express.Router();
 const axios = require('axios');
 const { ObjectId } = require('mongodb');
+const { convertCurrency } = require('./currency');
 
 // Middleware to check if the user is logged in
 const isLoggedIn = (req, res, next) => {
@@ -25,6 +28,7 @@ router.get('/', async (req, res) => {
         const db = req.app.locals.client.db(req.app.locals.dbName);
         const productsCollection = db.collection('products');
         const usersCollection = db.collection('users');
+        const currency = res.locals.locationData.currency;
 
         let userWishlist = [];
         if (req.session.user) {
@@ -55,10 +59,15 @@ router.get('/', async (req, res) => {
 
         const products = await productsCollection.find(query).sort(sort).toArray();
         
+        const productsWithConvertedPrices = await Promise.all(products.map(async (product) => {
+            product.convertedPrice = await convertCurrency(product.retailPrice, currency);
+            return product;
+        }));
+
         res.render('shop', { 
             title: pageTitle,
             pageTitle: pageTitle,
-            products: products,
+            products: productsWithConvertedPrices,
             wishlist: userWishlist
         });
 
@@ -75,6 +84,7 @@ router.get('/search', async (req, res) => {
         const productsCollection = db.collection('products');
         const usersCollection = db.collection('users');
         const searchQuery = req.query.q || "";
+        const currency = res.locals.locationData.currency;
 
         let userWishlist = [];
         if (req.session.user) {
@@ -94,10 +104,15 @@ router.get('/search', async (req, res) => {
         const products = await productsCollection.find(query).toArray();
         const pageTitle = `Search results for "${searchQuery}"`;
 
+        const productsWithConvertedPrices = await Promise.all(products.map(async (product) => {
+            product.convertedPrice = await convertCurrency(product.retailPrice, currency);
+            return product;
+        }));
+
         res.render('shop', {
             title: pageTitle,
             pageTitle: pageTitle,
-            products: products,
+            products: productsWithConvertedPrices,
             wishlist: userWishlist
         });
 
@@ -178,9 +193,9 @@ router.get('/manage', isAdmin, async (req, res) => {
     }
 });
 
-// FIXED: Route now sends the correct product 'id' to the form
+// UPDATED: Route now handles the hasDescription filter
 router.post('/search', isAdmin, async (req, res) => {
-    const { query, brand, gender } = req.body;
+    const { query, brand, gender, hasDescription } = req.body;
 
     let fullQuery = query;
     if (brand) {
@@ -193,7 +208,7 @@ router.post('/search', isAdmin, async (req, res) => {
     const options = {
         method: 'GET',
         url: 'https://the-sneaker-database.p.rapidapi.com/search',
-        params: { limit: '20', query: fullQuery },
+        params: { limit: '50', query: fullQuery },
         headers: {
             'X-RapidAPI-Key': process.env.SNEAKER_DB_API_KEY,
             'X-RapidAPI-Host': 'the-sneaker-database.p.rapidapi.com'
@@ -205,7 +220,12 @@ router.post('/search', isAdmin, async (req, res) => {
         const productsCollection = db.collection('products');
 
         const response = await axios.request(options);
-        const apiProducts = response.data.results;
+        let apiProducts = response.data.results;
+
+        // Filter results if the checkbox was checked
+        if (hasDescription === 'true') {
+            apiProducts = apiProducts.filter(product => product.story && product.story.trim() !== '');
+        }
 
         const existingProducts = await productsCollection.find().project({ sku: 1, _id: 0 }).toArray();
         const existingSkus = new Set(existingProducts.map(p => p.sku));
@@ -240,7 +260,7 @@ router.post('/search', isAdmin, async (req, res) => {
     }
 });
 
-// FIXED: Route now receives 'id's and fetches details with the correct endpoint
+// Route now receives 'id's and fetches details with the correct endpoint
 router.post('/import-multiple', isAdmin, async (req, res) => {
     try {
         const db = req.app.locals.client.db(req.app.locals.dbName);
@@ -557,6 +577,7 @@ router.get('/:sku', async (req, res) => {
         const usersCollection = db.collection('users');
         const reviewsCollection = db.collection('reviews');
         const { sku } = req.params;
+        const currency = res.locals.locationData.currency;
 
         if (['men', 'women', 'search'].includes(sku.toLowerCase())) {
             return res.status(404).send("Page not found.");
@@ -587,12 +608,19 @@ router.get('/:sku', async (req, res) => {
         const isWishlisted = user && user.wishlist && user.wishlist.some(id => id.equals(product._id));
         const userWishlist = user ? user.wishlist : [];
 
+        // Convert all prices before rendering
+        product.convertedPrice = await convertCurrency(product.retailPrice, currency);
+        const relatedProductsWithConvertedPrices = await Promise.all(relatedProducts.map(async (p) => {
+            p.convertedPrice = await convertCurrency(p.retailPrice, currency);
+            return p;
+        }));
+
         res.render('product-detail', {
             title: product.name,
             product: product,
             isWishlisted: isWishlisted,
             reviews: reviews,
-            relatedProducts: relatedProducts,
+            relatedProducts: relatedProductsWithConvertedPrices,
             wishlist: userWishlist
         });
 

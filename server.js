@@ -1,9 +1,13 @@
+// server.js
+
 const express = require('express');
 const bodyParser = require('body-parser');
 const { MongoClient } = require('mongodb');
 const session = require('express-session'); 
 const path = require('path');
 const ejsLayouts = require('express-ejs-layouts');
+const geoip = require('geoip-lite');
+const { getCountryData, countryData } = require('./utils/currencyMap');
 require('dotenv').config();
 
 const app = express();
@@ -25,16 +29,28 @@ app.use(session({
     resave: false,
     saveUninitialized: false,
     cookie: { 
-        secure: false, 
+        secure: process.env.NODE_ENV === 'production', 
+        secure: false,
         maxAge: 15 * 60 * 1000 
     } 
 }));
 
+// UPDATED: Middleware now passes the current country code explicitly
 app.use(async (req, res, next) => {
     res.locals.currentUser = req.session.user;
     res.locals.cart = req.session.cart;
     res.locals.path = req.path;
     
+    // Country and Currency Detection
+    const ip = req.ip === '::1' || req.ip === '127.0.0.1' ? '122.54.69.1' : req.ip;
+    const geo = geoip.lookup(ip);
+    
+    const countryCode = req.session.country_override || (geo ? geo.country : 'US');
+    
+    res.locals.currentCountryCode = countryCode; // Pass the active code for the dropdown
+    res.locals.locationData = getCountryData(countryCode);
+    res.locals.countryData = countryData; 
+
     // If an admin is logged in, count the number of new orders
     if (req.session.user && req.session.user.role === 'admin') {
         try {
@@ -49,14 +65,6 @@ app.use(async (req, res, next) => {
         res.locals.newOrderCount = 0;
     }
 
-    next();
-});
-
-// Custom middleware to make user session and cart available to all views
-app.use((req, res, next) => {
-    res.locals.currentUser = req.session.user;
-    res.locals.cart = req.session.cart;
-    res.locals.path = req.path;
     next();
 });
 
@@ -79,6 +87,15 @@ async function main() {
         const cartRoute = require('./routes/cart');
         const checkoutRoute = require('./routes/checkout');
         const accountRoute = require('./routes/account'); 
+
+        // ADDED: Route to handle currency change
+        app.post('/currency/change', (req, res) => {
+            const { country } = req.body;
+            if (country && countryData[country]) {
+                req.session.country_override = country;
+            }
+            res.redirect(req.header('Referer') || '/');
+        });
 
         app.use('/', indexRoute);
         app.use('/users', usersRoute);

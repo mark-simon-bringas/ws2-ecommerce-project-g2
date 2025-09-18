@@ -18,7 +18,7 @@
     <script src="https://code.iconify.design/2/2.2.1/iconify.min.js"></script>
     <title><%= title %> | sneakslab</title>
 </head>
-<body class="<%- (path === '/') ? 'homepage' : '' %>">
+<body class="<%- (path === '/') ? 'homepage' : '' %>" data-location='<%- JSON.stringify(locationData) %>'>
 
     <div class="navbar-desktop">
       <ul>
@@ -27,14 +27,15 @@
         <li><a class="list-menu" href="/products?category=men">Men</a></li>
         <li><a class="list-menu" href="/products?category=women">Women</a></li>
         <li><a class="list-menu" href="/products?new=true">New Arrivals</a></li>
+        <li><a href="/about">About</a></li>
         <li><a href="#">Contact</a></li>
         <li><a href="#" id="desktop-search-btn"><span class="iconify" data-icon="material-symbols:search-rounded" style="color: white;" data-width="20" data-height="20"></span></a></li>
         <li class="cart-icon-container">
             <a href="/cart">
                 <span class="iconify" data-icon="material-symbols:shopping-bag-outline" style="color: white;" data-width="20" data-height="20"></span>
-                <% if (typeof cart !== 'undefined' && cart && cart.totalQty > 0) { %>
-                    <span class="cart-badge"><%= cart.totalQty %></span>
-                <% } %>
+                <span class="cart-badge" style="display: <%= (typeof cart !== 'undefined' && cart && cart.totalQty > 0) ? 'flex' : 'none' %>;">
+                    <%= (typeof cart !== 'undefined' && cart) ? cart.totalQty : '0' %>
+                </span>
             </a>
         </li>
         
@@ -64,9 +65,9 @@
             <a href="#" class="navbar-mobile-link" id="mobile-search-btn"><span class="iconify" data-icon="material-symbols:search-rounded" style="color: white;" data-width="24" data-height="24"></span></a>
             <a href="/cart" class="navbar-mobile-link cart-icon-container">
                 <span class="iconify" data-icon="material-symbols:shopping-bag-outline" style="color: white;" data-width="24" data-height="24"></span>
-                <% if (typeof cart !== 'undefined' && cart && cart.totalQty > 0) { %>
-                    <span class="cart-badge"><%= cart.totalQty %></span>
-                <% } %>
+                <span class="cart-badge" style="display: <%= (typeof cart !== 'undefined' && cart && cart.totalQty > 0) ? 'flex' : 'none' %>;">
+                    <%= (typeof cart !== 'undefined' && cart) ? cart.totalQty : '0' %>
+                </span>
             </a>
             <a href="#" class="navbar-mobile-link" id="mobile-menu-btn"><div class="hamburger-icon"><span></span><span></span></div></a>
         </div>
@@ -75,7 +76,7 @@
     <div class="overlay" id="mobile-menu-overlay">
         <button class="overlay-close-btn" id="mobile-menu-close-btn">&times;</button>
         <ul>
-            <li><a href="/products">Shop</a></li><li><a href="/products?category=men">Men</a></li><li><a href="/products?category=women">Women</a></li><li><a href="/products?new=true">New Arrivals</a></li><li><a href="#">Contact</a></li>
+            <li><a href="/products">Shop</a></li><li><a href="/products?category=men">Men</a></li><li><a href="/products?category=women">Women</a></li><li><a href="/products?new=true">New Arrivals</a></li><li><a href="/about">About</a></li><li><a href="#">Contact</a></li>
             <% if (currentUser) { %>
                 <li><a href="/account">My Account</a></li>
                 <li><a href="/users/logout">Logout</a></li>
@@ -88,7 +89,7 @@
     <div class="overlay" id="search-overlay">
         <button class="overlay-close-btn" id="search-overlay-close-btn">&times;</button>
         <form action="/products/search" method="GET">
-           <div class="search-content">
+            <div class="search-content">
                 <div class="search-input-group">
                     <span class="iconify" data-icon="material-symbols:search-rounded" data-width="28" data-height="28"></span>
                     <input type="text" name="q" placeholder="Search sneakslab.com" required>
@@ -97,7 +98,7 @@
                 <div class="quick-links">
                     <span>Quick Links</span>
                     <ul>
-                        <li><a href="/products/search?q=New Arrivals">→ New Arrivals</a></li>
+                        <li><a href="/products?new=true">→ New Arrivals</a></li>
                         <li><a href="/products/search?q=Jordan">→ Jordan</a></li>
                         <li><a href="/products/search?q=Nike Dunk">→ Nike Dunk</a></li>
                     </ul>
@@ -108,9 +109,9 @@
     
     <div class="dropdown">
       <div class="con-1"><ul class="main"><span>Shop</span><li><a href="/products">Shop the Latest</a></li><li><a href="/products?category=men">Shop Men's</a></li><li><a href="/products?category=women">Shop Women's</a></li><li><a href="/products?new=true">Shop New Arrivals</a></li></ul><ul><span>Quick Links</span><li><a href="#">Find a Store</a></li><li><a href="#">Order Status</a></li><li><a href="#">Financing</a></li></ul></div>
-      <div class="con-1"><ul class="main"><span>Shop Men's</span><li><a href="/products?new=true&category=men">New Releases</a></li><li><a href="/products?brand=Nike&category=men">Nike</a></li><li><a href="/products?brand=Jordan&category=men">Jordan</a></li><li><a href="/products?brand=adidas&category=men">Adidas</a></li></ul><ul><span>Featured</span><li><a href="#">Bestsellers</a></li><li><a href="#">Clearance</a></li></ul></div>
-      <div class="con-1"><ul class="main"><span>Shop Women's</span><li><a href="/products?new=true&category=women">New Releases</a></li><li><a href="/products?brand=Nike&category=women">Nike</a></li><li><a href="/products?brand=Jordan&category=women">Jordan</a></li><li><a href="/products?brand=adidas&category=women">Adidas</a></li></ul><ul><span>Featured</span><li><a href="#">Bestsellers</a></li><li><a href="#">Clearance</a></li></ul></div>
-      <div class="con-1"><ul class="main"><span>New Arrivals</span><li><a href="/products?new=true">Shop All New Arrivals</a></li><li><a href="/products?new=true&category=men">Latest Men's</a></li><li><a href="/products?new=true&category=women">Latest Women's</a></li></ul><ul><span>Featured</span><li><a href="#">Hottest Releases</a></li></ul></div>
+      <div class="con-1"><ul class="main"><span>Shop Men's</span><li><a href="/products?new=true&category=men">New Releases</a></li><li><a href="/products?brand=Nike&category=men">Nike</a></li><li><a href="/products?brand=Jordan&category=men">Jordan</a></li><li><a href="/products?brand=adidas&category=men">Adidas</a></li></ul><ul><span>Featured</span><li><a href="/products?category=men">Bestsellers</a></li><li><a href="/products?category=men">Clearance</a></li></ul></div>
+      <div class="con-1"><ul class="main"><span>Shop Women's</span><li><a href="/products?new=true&category=women">New Releases</a></li><li><a href="/products?brand=Nike&category=women">Nike</a></li><li><a href="/products?brand=Jordan&category=women">Jordan</a></li><li><a href="/products?brand=adidas&category=women">Adidas</a></li></ul><ul><span>Featured</span><li><a href="/products?category=women">Bestsellers</a></li><li><a href="/products?category=women">Clearance</a></li></ul></div>
+      <div class="con-1"><ul class="main"><span>New Arrivals</span><li><a href="/products?new=true">Shop All New Arrivals</a></li><li><a href="/products?new=true&category=men">Latest Men's</a></li><li><a href="/products?new=true&category=women">Latest Women's</a></li></ul><ul><span>Featured</span><li><a href="/products?new=true">Hottest Releases</a></li></ul></div>
       <div class="con-1 dropdown-search-panel">
         <form action="/products/search" method="GET">
             <div class="search-content">
@@ -122,14 +123,11 @@
                     <span>Quick Links</span>
                     <ul>
                         <li><a href="/products/search?q=Jordan">Jordan</a></li>
-                        <li><a href="/products/search?q=Nike+Dunk">Nike Dunk</a></li>
-                        <li><a href="/products/search?q=New+Arrivals">New Arrivals</a></li>
-                        <li><a href="/products/search?q=Adidas+Samba">Adidas Samba</a></li>
-                        <li><a href="/products/search?q=New+Balance+550">New Balance 550</a></li>
-                        <li><a href="/products/search?q=Nike+Air+Force+1">Nike Air Force 1</a></li>
-                        <li><a href="/products/search?q=Lifestyle">Lifestyle</a></li>
-                        <li><a href="/products/search?q=Running">Running</a></li>
-                        <li><a href="/products/search?q=Converse">Converse</a></li>
+                        <li><a href="/products/search?q=Nike Dunk">Nike Dunk</a></li>
+                        <li><a href="/products/search?q=New Arrivals">New Arrivals</a></li>
+                        <li><a href="/products/search?q=Adidas Samba">Adidas Samba</a></li>
+                        <li><a href="/products/search?q=New Balance 550">New Balance 550</a></li>
+                        <li><a href="/products/search?q=Nike Air Force 1">Nike Air Force 1</a></li>
                     </ul>
                 </div>
             </div>
@@ -204,6 +202,76 @@
         <% } %>
     </div>
     
+    <footer class="site-footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="accordion footer-links" id="footerAccordion">
+                    <div class="footer-column">
+                        <h2 class="accordion-header" id="headingOne">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="false" aria-controls="collapseOne">
+                                Shop
+                            </button>
+                        </h2>
+                        <div id="collapseOne" class="accordion-collapse collapse" aria-labelledby="headingOne" data-bs-parent="#footerAccordion">
+                            <ul class="footer-list">
+                                <li><a href="/products">Shop All</a></li>
+                                <li><a href="/products?category=men">Men's</a></li>
+                                <li><a href="/products?category=women">Women's</a></li>
+                                <li><a href="/products?new=true">New Arrivals</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="footer-column">
+                        <h2 class="accordion-header" id="headingTwo">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
+                                Support
+                            </button>
+                        </h2>
+                        <div id="collapseTwo" class="accordion-collapse collapse" aria-labelledby="headingTwo" data-bs-parent="#footerAccordion">
+                            <ul class="footer-list">
+                                <li><a href="#">Contact Us</a></li>
+                                <li><a href="#">Order Status</a></li>
+                                <li><a href="#">Shipping & Delivery</a></li>
+                                <li><a href="#">Returns</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="footer-column">
+                        <h2 class="accordion-header" id="headingThree">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseThree" aria-expanded="false" aria-controls="collapseThree">
+                                Company
+                            </button>
+                        </h2>
+                        <div id="collapseThree" class="accordion-collapse collapse" aria-labelledby="headingThree" data-bs-parent="#footerAccordion">
+                            <ul class="footer-list">
+                                <li><a href="/about">About Sneakslab</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p class="footer-copyright">&copy; <%= new Date().getFullYear() %> Sneakslab Inc. All rights reserved.</p>
+                <div class="footer-legal">
+                    <a href="/legal#privacy">Privacy Policy</a>
+                    <a href="/legal#terms">Terms of Use</a>
+                    <div class="footer-country">
+                        <i class="bi bi-globe"></i>
+                        <form action="/currency/change" method="POST" id="currency-form">
+                            <select name="country" onchange="this.form.submit()" class="form-select-sm" aria-label="Country selector">
+                                <% for (const countryCode in countryData) { %>
+                                    <option value="<%= countryCode %>" <%= currentCountryCode === countryCode ? 'selected' : '' %>>
+                                        <%= countryData[countryCode].name %>
+                                    </option>
+                                <% } %>
+                            </select>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
+
     <% if (typeof isDashboard !== 'undefined' && isDashboard && currentUser) { %>
     <div class="bottom-navbar d-lg-none">
         <% if (currentUser.role === 'admin') { %>
@@ -211,7 +279,6 @@
                 <i class="bi bi-grid-1x2-fill"></i>
                 <span>Dashboard</span>
             </a>
-            <%# UPDATED: Removed the unnecessary div wrapper %>
             <a href="/account/admin/orders" class="bottom-navbar-link <%= (view === 'admin-orders') ? 'active' : '' %>">
                 <i class="bi bi-list-check"></i>
                 <span>Orders</span>
@@ -239,6 +306,22 @@
         <% } %>
     </div>
     <% } %>
+
+    <div class="mini-cart-overlay"></div>
+    <div class="mini-cart">
+        <div class="mini-cart-header">
+            <h5 class="mb-0"><i class="bi bi-check-circle-fill"></i> Added to Bag</h5>
+            <button type="button" class="btn-close" aria-label="Close"></button>
+        </div>
+        <div class="mini-cart-body">
+            </div>
+        <div class="mini-cart-footer">
+            <div class="d-grid gap-2">
+                <a href="/cart" class="btn btn-outline-secondary">View Bag (<span class="mini-cart-count">0</span>)</a>
+                <a href="/checkout" class="btn btn-primary">Checkout</a>
+            </div>
+        </div>
+    </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
     <script src="/js/main.js"></script>

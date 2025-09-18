@@ -1,18 +1,34 @@
+// routes/checkout.js
+
 const express = require('express');
 const router = express.Router();
 const { ObjectId } = require('mongodb');
 const { Resend } = require('resend');
+const { convertCurrency } = require('./currency');
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 // GET /checkout - Display the main checkout page
-router.get('/', (req, res) => {
+router.get('/', async (req, res) => {
     if (!req.session.cart || req.session.cart.items.length === 0) {
         return res.redirect('/cart');
     }
+
+    const currency = res.locals.locationData.currency;
+    const cart = req.session.cart;
+
+    // Perform currency conversion before rendering
+    if (cart.items.length > 0) {
+        cart.items = await Promise.all(cart.items.map(async (item) => {
+            item.convertedPrice = await convertCurrency(item.price, currency);
+            return item;
+        }));
+        cart.convertedTotalPrice = await convertCurrency(cart.totalPrice, currency);
+    }
+
     res.render('checkout', {
         title: "Checkout",
-        cart: req.session.cart
+        cart: cart
     });
 });
 
@@ -27,6 +43,7 @@ router.post('/place-order', async (req, res) => {
         const ordersCollection = db.collection('orders');
         const productsCollection = db.collection('products');
         const cart = req.session.cart;
+        const currency = res.locals.locationData.currency;
 
         // Create the order object
         const order = {
@@ -42,10 +59,12 @@ router.post('/place-order', async (req, res) => {
                 zip: req.body.zip
             },
             items: cart.items,
-            total: cart.totalPrice,
+            total: cart.totalPrice, // Store total in base currency (USD)
+            currency: currency, // Store the currency of the transaction
+            convertedTotal: await convertCurrency(cart.totalPrice, currency), // Store the converted total for records
             orderDate: new Date(),
             status: 'Processing',
-            isNew: true // Added: Mark every new order as 'new'
+            isNew: true 
         };
 
         // If the user is logged in, attach their ID to the order
@@ -68,12 +87,17 @@ router.post('/place-order', async (req, res) => {
         });
         await Promise.all(stockUpdates);
 
-        // --- AUTOMATICALLY SEND ORDER CONFIRMATION EMAIL ---
-        const itemsHtml = order.items.map(item => `
+        // --- AUTOMATICALLY SEND ORDER CONFIRMATION EMAIL (with converted currency) ---
+        const itemsWithConvertedPrice = await Promise.all(order.items.map(async item => {
+            const convertedPrice = await convertCurrency(item.price, currency);
+            return { ...item, convertedPrice };
+        }));
+
+        const itemsHtml = itemsWithConvertedPrice.map(item => `
             <tr style="border-bottom: 1px solid #eaeaea;">
                 <td style="padding: 15px 0;">${item.name} (Size: ${item.size})</td>
                 <td style="padding: 15px 0; text-align: center;">${item.qty}</td>
-                <td style="padding: 15px 0; text-align: right;">${item.price.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}</td>
+                <td style="padding: 15px 0; text-align: right;">${item.convertedPrice.toLocaleString(undefined, { style: 'currency', currency: currency })}</td>
             </tr>
         `).join('');
 
@@ -119,7 +143,7 @@ router.post('/place-order', async (req, res) => {
                         <tfoot>
                             <tr>
                                 <td colspan="2" style="padding: 20px 0 0; text-align: right;"><strong>Total</strong></td>
-                                <td style="padding: 20px 0 0; text-align: right;"><strong>${order.total.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}</strong></td>
+                                <td style="padding: 20px 0 0; text-align: right;"><strong>${order.convertedTotal.toLocaleString(undefined, { style: 'currency', currency: currency })}</strong></td>
                             </tr>
                         </tfoot>
                     </table>
@@ -132,7 +156,7 @@ router.post('/place-order', async (req, res) => {
                         </p>
                     </div>
                     <div class="footer">
-                        <p>&copy; ${new Date().getFullYear()} sneakslab. All rights reserved.</p>
+                        <p>&copy; ${new Date().getFullYear()} Sneakslab. All rights reserved.</p>
                     </div>
                 </div>
             </body>

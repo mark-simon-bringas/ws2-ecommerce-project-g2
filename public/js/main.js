@@ -1,4 +1,7 @@
+// public/js/main.js
+
 document.addEventListener('DOMContentLoaded', function() {
+    const locationData = JSON.parse(document.body.dataset.location || '{}');
 
     // --- Desktop Navbar Dropdown Logic ---
     const desktopNavLinks = document.querySelectorAll(".navbar-desktop .list-menu");
@@ -70,6 +73,32 @@ document.addEventListener('DOMContentLoaded', function() {
     if (mobileSearchBtn) { mobileSearchBtn.addEventListener('click', (e) => { e.preventDefault(); openOverlay(searchOverlay); }); }
     if (mobileMenuCloseBtn) { mobileMenuCloseBtn.addEventListener('click', (e) => { e.preventDefault(); closeAllOverlays(); }); }
     if (searchOverlayCloseBtn) { searchOverlayCloseBtn.addEventListener('click', (e) => { e.preventDefault(); closeAllOverlays(); }); }
+
+    // --- Product Carousel Navigation Logic ---
+    const carouselSections = document.querySelectorAll('.product-carousel-section');
+    carouselSections.forEach(section => {
+        const carousel = section.querySelector('.product-carousel');
+        const prevBtn = section.querySelector('.carousel-nav-btn.prev');
+        const nextBtn = section.querySelector('.carousel-nav-btn.next');
+
+        if (carousel && prevBtn && nextBtn) {
+            nextBtn.addEventListener('click', () => {
+                const firstCard = carousel.querySelector('.product-card');
+                if (firstCard) {
+                    const scrollAmount = firstCard.offsetWidth + 24; // Card width + gap
+                    carousel.scrollLeft += scrollAmount;
+                }
+            });
+
+            prevBtn.addEventListener('click', () => {
+                const firstCard = carousel.querySelector('.product-card');
+                if (firstCard) {
+                    const scrollAmount = firstCard.offsetWidth + 24; // Card width + gap
+                    carousel.scrollLeft -= scrollAmount;
+                }
+            });
+        }
+    });
 
     // --- Global Wishlist Toggle Logic ---
     document.body.addEventListener('click', function(event) {
@@ -207,7 +236,81 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // --- ADDED: Mobile Cart Checkout Button Logic ---
+    // --- Mini-Cart Logic ---
+    const miniCart = document.querySelector('.mini-cart');
+    const miniCartOverlay = document.querySelector('.mini-cart-overlay');
+    const miniCartBody = document.querySelector('.mini-cart-body');
+    const miniCartCount = document.querySelector('.mini-cart-count');
+    const closeBtn = document.querySelector('.mini-cart .btn-close');
+
+    const showMiniCart = () => {
+        miniCart.classList.add('is-active');
+        miniCartOverlay.classList.add('is-active');
+    };
+
+    const hideMiniCart = () => {
+        miniCart.classList.remove('is-active');
+        miniCartOverlay.classList.remove('is-active');
+    };
+
+    if (closeBtn) closeBtn.addEventListener('click', hideMiniCart);
+    if (miniCartOverlay) miniCartOverlay.addEventListener('click', hideMiniCart);
+
+    document.body.addEventListener('submit', function(e) {
+        if (e.target && e.target.matches('form[action="/cart/add"]')) {
+            e.preventDefault();
+            const form = e.target;
+            const formData = new FormData(form);
+
+            fetch('/cart/add', {
+                method: 'POST',
+                body: new URLSearchParams(formData),
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Update main cart badges
+                    const mainCartBadges = document.querySelectorAll('.cart-badge');
+                    mainCartBadges.forEach(badge => {
+                        badge.textContent = data.cart.totalQty;
+                        badge.style.display = data.cart.totalQty > 0 ? 'flex' : 'none';
+                    });
+                    
+                    // Update mini cart
+                    const item = data.addedItem;
+                    miniCartBody.innerHTML = `
+                        <div class="d-flex align-items-center">
+                            <img src="${item.thumbnailUrl}" alt="${item.name}" class="img-fluid rounded-2 me-3" style="width: 80px; height: 80px; object-fit: contain; background-color: var(--bg-color);">
+                            <div>
+                                <h6 class="mb-1">${item.name}</h6>
+                                <p class="text-body-secondary small mb-1">Size: ${item.size}</p>
+                                <p class="fw-semibold mb-0">${locationData.symbol}${item.convertedPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                            </div>
+                        </div>
+                    `;
+                    if (miniCartCount) miniCartCount.textContent = data.cart.totalQty;
+                    
+                    // Show mini cart
+                    showMiniCart();
+
+                    // Close any open modals
+                    const openModal = document.querySelector('.modal.show');
+                    if (openModal) {
+                        const modalInstance = bootstrap.Modal.getInstance(openModal);
+                        if (modalInstance) {
+                            modalInstance.hide();
+                        }
+                    }
+                }
+            })
+            .catch(error => console.error('Error adding to cart:', error));
+        }
+    });
+
+    // --- Mobile Cart Checkout Button Logic ---
     const mobileCheckoutBtn = document.getElementById('mobile-checkout-btn');
     const checkoutOptions = document.getElementById('checkout-options');
 

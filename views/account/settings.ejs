@@ -27,6 +27,11 @@
                     <i class="bi bi-shield-lock"></i> Security
                 </button>
             </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="more-detail-tab " data-bs-toggle="tab" data-bs-target="#more-detail-tab-pane" type="button" role="tab" aria-controls="more-detail-tab-pane" aria-selected="false">
+                    <i class="bi bi-file-lock2"></i>More Detail
+                </button>
+            </li>
         </ul>
     </div>
 
@@ -73,6 +78,30 @@
                                 <input type="password" class="form-control" id="confirmPassword" name="confirmPassword" required>
                             </div>
                             <button type="submit" class="btn btn-primary">Update Password</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <div class="tab-pane fade" id="more-detail-tab-pane" role="tabpanel" aria-labelledby="more-detail-tab" tabindex="0">
+                <div class="row g-5 py-4">
+                    <div class="col-lg-6">
+                        <h5 class="card-title mb-4">Change Password</h5>
+                        <form action="/account/settings/update-password" method="POST">
+                             <div class="mb-3">
+                                <label for="User ID" class="form-label">User ID</label>
+                                <input type="email" class="form-control" value="<%= user.userId %>" disabled>
+                                <div class="form-text">Your User ID cannot be changed.</div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="User ID" class="form-label">Role</label>
+                                <input type="email" class="form-control" value="<%= user.role %>" disabled>
+                                <div class="form-text">Your Role cannot be changed.</div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="User ID" class="form-label">Verified</label>
+                                <input type="email" class="form-control" value="<%= user.isEmailVerified %>" disabled>
+                                <div class="form-text">Your User status cannot be changed.</div>
+                            </div>
                         </form>
                     </div>
                 </div>
