@@ -1,3 +1,4 @@
+
 /* ==== MOBILE SPECIFIC STYLES FOR BOTTOM NAVIGATION ==== */
 
 @media (max-width: 991.98px) {
@@ -154,5 +155,10 @@
     .site-footer .accordion-collapse .footer-list {
         padding-top: 0.5rem;
         padding-bottom: 1rem;
+    }
+
+    /* --- Added: Styles for Legal Page on Mobile --- */
+    .legal-page-content h1 {
+        font-size: 2.25rem;
     }
 }

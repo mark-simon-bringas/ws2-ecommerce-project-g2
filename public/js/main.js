@@ -71,6 +71,32 @@ document.addEventListener('DOMContentLoaded', function() {
     if (mobileMenuCloseBtn) { mobileMenuCloseBtn.addEventListener('click', (e) => { e.preventDefault(); closeAllOverlays(); }); }
     if (searchOverlayCloseBtn) { searchOverlayCloseBtn.addEventListener('click', (e) => { e.preventDefault(); closeAllOverlays(); }); }
 
+    // --- Product Carousel Navigation Logic ---
+    const carouselSections = document.querySelectorAll('.product-carousel-section');
+    carouselSections.forEach(section => {
+        const carousel = section.querySelector('.product-carousel');
+        const prevBtn = section.querySelector('.carousel-nav-btn.prev');
+        const nextBtn = section.querySelector('.carousel-nav-btn.next');
+
+        if (carousel && prevBtn && nextBtn) {
+            nextBtn.addEventListener('click', () => {
+                const firstCard = carousel.querySelector('.product-card');
+                if (firstCard) {
+                    const scrollAmount = firstCard.offsetWidth + 24; // Card width + gap
+                    carousel.scrollLeft += scrollAmount;
+                }
+            });
+
+            prevBtn.addEventListener('click', () => {
+                const firstCard = carousel.querySelector('.product-card');
+                if (firstCard) {
+                    const scrollAmount = firstCard.offsetWidth + 24; // Card width + gap
+                    carousel.scrollLeft -= scrollAmount;
+                }
+            });
+        }
+    });
+
     // --- Global Wishlist Toggle Logic ---
     document.body.addEventListener('click', function(event) {
         const wishlistBtn = event.target.closest('.wishlist-toggle-btn');

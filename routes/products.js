@@ -1,5 +1,4 @@
 // routes/products.js
-
 const express = require('express');
 const router = express.Router();
 const axios = require('axios');
@@ -28,7 +27,7 @@ router.get('/', async (req, res) => {
         const db = req.app.locals.client.db(req.app.locals.dbName);
         const productsCollection = db.collection('products');
         const usersCollection = db.collection('users');
-        const currency = res.locals.currency;
+        const currency = res.locals.locationData.currency;
 
         let userWishlist = [];
         if (req.session.user) {
@@ -59,7 +58,6 @@ router.get('/', async (req, res) => {
 
         const products = await productsCollection.find(query).sort(sort).toArray();
         
-        // Perform currency conversion before rendering
         const productsWithConvertedPrices = await Promise.all(products.map(async (product) => {
             product.convertedPrice = await convertCurrency(product.retailPrice, currency);
             return product;
@@ -69,8 +67,7 @@ router.get('/', async (req, res) => {
             title: pageTitle,
             pageTitle: pageTitle,
             products: productsWithConvertedPrices,
-            wishlist: userWishlist,
-            currency: currency
+            wishlist: userWishlist
         });
 
     } catch (err) {
@@ -86,7 +83,7 @@ router.get('/search', async (req, res) => {
         const productsCollection = db.collection('products');
         const usersCollection = db.collection('users');
         const searchQuery = req.query.q || "";
-        const currency = res.locals.currency;
+        const currency = res.locals.locationData.currency;
 
         let userWishlist = [];
         if (req.session.user) {
@@ -115,8 +112,7 @@ router.get('/search', async (req, res) => {
             title: pageTitle,
             pageTitle: pageTitle,
             products: productsWithConvertedPrices,
-            wishlist: userWishlist,
-            currency: currency
+            wishlist: userWishlist
         });
 
     } catch (err) {
@@ -575,7 +571,7 @@ router.get('/:sku', async (req, res) => {
         const usersCollection = db.collection('users');
         const reviewsCollection = db.collection('reviews');
         const { sku } = req.params;
-        const currency = res.locals.currency;
+        const currency = res.locals.locationData.currency;
 
         if (['men', 'women', 'search'].includes(sku.toLowerCase())) {
             return res.status(404).send("Page not found.");
@@ -619,8 +615,7 @@ router.get('/:sku', async (req, res) => {
             isWishlisted: isWishlisted,
             reviews: reviews,
             relatedProducts: relatedProductsWithConvertedPrices,
-            wishlist: userWishlist,
-            currency: currency
+            wishlist: userWishlist
         });
 
     } catch (err) {

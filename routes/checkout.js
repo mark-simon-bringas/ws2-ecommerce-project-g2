@@ -14,7 +14,7 @@ router.get('/', async (req, res) => {
         return res.redirect('/cart');
     }
 
-    const currency = res.locals.currency;
+    const currency = res.locals.locationData.currency;
     const cart = req.session.cart;
 
     // Perform currency conversion before rendering
@@ -28,8 +28,7 @@ router.get('/', async (req, res) => {
 
     res.render('checkout', {
         title: "Checkout",
-        cart: cart,
-        currency: currency
+        cart: cart
     });
 });
 
@@ -44,7 +43,7 @@ router.post('/place-order', async (req, res) => {
         const ordersCollection = db.collection('orders');
         const productsCollection = db.collection('products');
         const cart = req.session.cart;
-        const currency = res.locals.currency;
+        const currency = res.locals.locationData.currency;
 
         // Create the order object
         const order = {
@@ -143,7 +142,7 @@ router.post('/place-order', async (req, res) => {
                         </tbody>
                         <tfoot>
                             <tr>
-                                <td colspan="2" style="padding: 20px 0 0; text-align: right;"><strong>Total </strong></td>
+                                <td colspan="2" style="padding: 20px 0 0; text-align: right;"><strong>Total</strong></td>
                                 <td style="padding: 20px 0 0; text-align: right;"><strong>${order.convertedTotal.toLocaleString(undefined, { style: 'currency', currency: currency })}</strong></td>
                             </tr>
                         </tfoot>

@@ -1,38 +1,37 @@
-// utils/currencyMap.js
-
-const countryToCurrency = {
-    'US': 'USD', // United States (Dollar)
-    'PH': 'PHP', // Philippines (Peso)
-    'ID' : 'IDR', // Indonesia (Rupiah)
-    'MY' : 'MYR', // Malaysia (Ringgit)
-    'TH' : 'THB', // Thailand (Baht)
-    'SG' : 'SGD', // Singapore (Jianne)
-    'VN' : 'VND', // Vietnam (Dong)
-    'CA': 'CAD', // Canada (Dollar)
-    'GB': 'GBP', // United Kingdom (Pound)
-    'AU': 'AUD', // Australia (Dollar)
-    'JP': 'JPY', // Japan (Yen)
-    'DE': 'EUR', // Germany (Euro)
-    'FR': 'EUR', // France (Euro)
-    'RU' : 'RUB', // Russia (Ruble)
-    'CN' : 'CNY', // China (Yuan)
-    'IN': 'INR', // India (Rupee)
-    'KR' : 'KRW', // South Korea (Won)
-    'UAE' : 'AED', // UAE (Dirham)
-    'MX' : 'MXN', // Mexico (Peso)
-    'GR' : 'EUR', // Greece (Euro)
-    'SWE' : 'SEK', // Sweden (Krona)
-    'CH' : 'CHF', // Switzerland (Franc)
-    'NZ' : 'NZD', // New Zealand (Dollar)
-    'BR' : 'BRL', // Brazil (Real)
-    'ZA' : 'ZAR', // South Africa (Rand)
-    'MH' : 'MHW', // Maharlika (Wampipty)
+const countryData = {
+    'US': { name: 'United States', currency: 'USD', symbol: '$' },
+    'PH': { name: 'Philippines', currency: 'PHP', symbol: '₱' },
+    'ID': { name: 'Indonesia', currency: 'IDR', symbol: 'Rp' },
+    'MY': { name: 'Malaysia', currency: 'MYR', symbol: 'RM' },
+    'TH': { name: 'Thailand', currency: 'THB', symbol: '฿' },
+    'SG': { name: 'Singapore', currency: 'SGD', symbol: 'S$' },
+    'VN': { name: 'Vietnam', currency: 'VND', symbol: '₫' },
+    'CA': { name: 'Canada', currency: 'CAD', symbol: 'C$' },
+    'GB': { name: 'United Kingdom', currency: 'GBP', symbol: '£' },
+    'AU': { name: 'Australia', currency: 'AUD', symbol: 'A$' },
+    'JP': { name: 'Japan', currency: 'JPY', symbol: '¥' },
+    'DE': { name: 'Germany', currency: 'EUR', symbol: '€' },
+    'FR': { name: 'France', currency: 'EUR', symbol: '€' },
+    'RU': { name: 'Russia', currency: 'RUB', symbol: '₽' },
+    'CN': { name: 'China', currency: 'CNY', symbol: '¥' },
+    'IN': { name: 'India', currency: 'INR', symbol: '₹' },
+    'KR': { name: 'South Korea', currency: 'KRW', symbol: '₩' },
+    'UAE': { name: 'United Arab Emirates', currency: 'AED', symbol: 'د.إ' },
+    'MX': { name: 'Mexico', currency: 'MXN', symbol: 'MEX$' },
+    'GR': { name: 'Greece', currency: 'EUR', symbol: '€' },
+    'SWE': { name: 'Sweden', currency: 'SEK', symbol: 'kr' },
+    'CH': { name: 'Switzerland', currency: 'CHF', symbol: 'Fr' },
+    'NZ': { name: 'New Zealand', currency: 'NZD', symbol: 'NZ$' },
+    'BR': { name: 'Brazil', currency: 'BRL', symbol: 'R$' },
+    'ZA': { name: 'South Africa', currency: 'ZAR', symbol: 'R' },
 };
 
-const getCurrency = (countryCode) => {
-    return countryToCurrency[countryCode] || 'USD';
+// Updated helper function to get the full country data object
+const getCountryData = (countryCode) => {
+    return countryData[countryCode] || countryData['US']; // Default to US data
 };
 
 module.exports = {
-    getCurrency
+    getCountryData,
+    countryData 
 };

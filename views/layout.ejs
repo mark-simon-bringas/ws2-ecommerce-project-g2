@@ -257,12 +257,20 @@
             <div class="footer-bottom">
                 <p class="footer-copyright">&copy; <%= new Date().getFullYear() %> Sneakslab Inc. All rights reserved.</p>
                 <div class="footer-legal">
-                    <a href="#">Privacy Policy</a>
-                    <a href="#">Terms & Agreements</a>
-                    <a href="#" class="footer-country">
+                    <a href="/legal#privacy">Privacy Policy</a>
+                    <a href="/legal#terms">Terms of Use</a>
+                    <div class="footer-country">
                         <i class="bi bi-globe"></i>
-                        <span><%= country %></span>
-                    </a>
+                        <form action="/currency/change" method="POST" id="currency-form">
+                            <select name="country" onchange="this.form.submit()" class="form-select-sm" aria-label="Country selector">
+                                <% for (const countryCode in countryData) { %>
+                                    <option value="<%= countryCode %>" <%= currentCountryCode === countryCode ? 'selected' : '' %>>
+                                        <%= countryData[countryCode].name %>
+                                    </option>
+                                <% } %>
+                            </select>
+                        </form>
+                    </div>
                 </div>
             </div>
         </div>

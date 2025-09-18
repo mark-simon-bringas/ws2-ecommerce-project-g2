@@ -1,16 +1,3 @@
-
-
-<% 
-    const currencySymbols = {
-        'USD': '$',
-        'PHP': '₱',
-        'GBP': '£',
-        'EUR': '€',
-        'JPY': '¥'
-    };
-    const symbol = currencySymbols[currency] || '$';
-%>
-
 <div class="container my-5 py-5">
     <h1 class="display-4 fw-bold text-center mb-5"><%= pageTitle %></h1>
     <% if (products && products.length > 0) { %>
@@ -40,7 +27,7 @@
                         <div class="product-card-body">
                             <a href="/products/<%= product.sku %>" class="text-decoration-none">
                                 <div class="product-title"><%= product.name %></div>
-                                <div class="product-price"><%= symbol %><%= product.convertedPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></div>
+                                <div class="product-price"><%= locationData.symbol %><%= product.convertedPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></div>
                             </a>
                         </div>
                     </div>
@@ -68,7 +55,7 @@
                         <img src="<%= product.thumbnailUrl %>" alt="<%= product.name %>" class="img-fluid rounded-3 mb-3" style="max-height: 250px;">
                         <h5 class="modal-title" id="productModalLabel-<%= product.sku %>"><%= product.name %></h5>
                         <p class="text-body-secondary"><%= product.brand %></p>
-                        <p class="h4 fw-bold product-price" data-sku="<%= product.sku %>"><%= symbol %><%= product.convertedPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></p>
+                        <p class="h4 fw-bold product-price" data-sku="<%= product.sku %>"><%= locationData.symbol %><%= product.convertedPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></p>
                         
                         <form action="/cart/add" method="POST" id="form-add-<%= product.sku %>">
                             <input type="hidden" name="productId" value="<%= product._id %>">

@@ -8,7 +8,7 @@ const { convertCurrency } = require('./currency');
 // GET /cart - Display the shopping cart page
 router.get('/', async (req, res) => {
     try {
-        const currency = res.locals.currency;
+        const currency = res.locals.locationData.currency;
         let wishlistProducts = [];
         let userWishlist = [];
         let cart = req.session.cart || { items: [], totalQty: 0, totalPrice: 0 };
@@ -50,8 +50,7 @@ router.get('/', async (req, res) => {
             title: "Your Cart",
             cart: cart,
             wishlistProducts: wishlistProducts,
-            wishlist: userWishlist,
-            currency: currency
+            wishlist: userWishlist
         });
 
     } catch (err) {

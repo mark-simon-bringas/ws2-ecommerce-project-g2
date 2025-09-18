@@ -1,4 +1,4 @@
-// routes/index.js
+
 
 const express = require('express');
 const router = express.Router();
@@ -10,7 +10,7 @@ router.get('/', async (req, res) => {
         const db = req.app.locals.client.db(req.app.locals.dbName);
         const productsCollection = db.collection('products');
         const usersCollection = db.collection('users');
-        const currency = res.locals.currency;
+        const currency = res.locals.locationData.currency;
 
         // Fetch user's wishlist if they are logged in
         let userWishlist = [];
@@ -62,14 +62,20 @@ router.get('/', async (req, res) => {
             topKicks: convertedTopKicks,
             jordanCollection: convertedJordanCollection,
             allProducts: allProducts,
-            wishlist: userWishlist,
-            currency: currency
+            wishlist: userWishlist
         });
 
     } catch (err) {
         console.error("Error fetching products for homepage:", err);
         res.status(500).send("Error loading the homepage.");
     }
+});
+
+// ADDED: Route for the legal page
+router.get('/legal', (req, res) => {
+    res.render('legal', {
+        title: 'Terms & Privacy'
+    });
 });
 
 module.exports = router;
