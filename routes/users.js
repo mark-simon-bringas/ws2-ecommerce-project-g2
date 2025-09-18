@@ -16,6 +16,7 @@ router.get('/register', (req, res) => {
 });
 
 // Handle registration form submission
+// Handle registration form submission
 router.post('/register', async (req, res) => {
     try {
         const { v4: uuidv4 } = await import('uuid');
@@ -24,25 +25,38 @@ router.post('/register', async (req, res) => {
 
         const existingUser = await usersCollection.findOne({ email: req.body.email });
         if (existingUser) {
-            return res.status(400).send("User already exists with this email.");
+            // Render the page with an error message
+            return res.status(400).render('register', {
+                title: "Register",
+                errors: [{ msg: "An account with this email already exists." }],
+                page: 'auth',
+                // Keep the form data so the user doesn't have to re-enter everything
+                firstName: req.body.firstName,
+                lastName: req.body.lastName,
+                email: req.body.email
+            });
         }
 
         let pwdStrength = [];
         const userPassword = (req.body.password || '').toString().trim();
         const confirmPassword = (req.body.confirmPassword || '').toString().trim();
 
-        if (userPassword.length < 8) { pwdStrength.push("Password length should be greater than 8.") }
-        if (!/[A-Z]/.test(userPassword)) { pwdStrength.push("Password must contain at least one uppercase letter."); }
-        if (!/[a-z]/.test(userPassword)) { pwdStrength.push("Password must contain at least one lowercase letter."); }
-        if (!/[0-9]/.test(userPassword)) { pwdStrength.push("Password must contain at least one number."); }
-        if (!/[!@#$%^&*()_\+\-=\[\]{};':\"\\|,.<>\/?`~]/.test(userPassword)) { pwdStrength.push("Password must contain at least one special character."); }
-        if (userPassword !== confirmPassword) { pwdStrength.push("Passwords do not match."); }
+        if (userPassword.length < 8) { pwdStrength.push({ msg: "Password length should be at least 8 characters." }) }
+        if (!/[A-Z]/.test(userPassword)) { pwdStrength.push({ msg: "Password must contain at least one uppercase letter." }); }
+        if (!/[a-z]/.test(userPassword)) { pwdStrength.push({ msg: "Password must contain at least one lowercase letter." }); }
+        if (!/[0-9]/.test(userPassword)) { pwdStrength.push({ msg: "Password must contain at least one number." }); }
+        if (!/[!@#$%^&*()_\+\-=\[\]{};':\"\\|,.<>\/?`~]/.test(userPassword)) { pwdStrength.push({ msg: "Password must contain at least one special character." }); }
+        if (userPassword !== confirmPassword) { pwdStrength.push({ msg: "Passwords do not match." }); }
 
         if (pwdStrength.length > 0) {
             return res.status(400).render('register', {
                 title: "Register",
                 errors: pwdStrength,
-                page: 'auth'
+                page: 'auth',
+                // Keep the form data
+                firstName: req.body.firstName,
+                lastName: req.body.lastName,
+                email: req.body.email
             });
         }
 
@@ -188,7 +202,7 @@ router.get('/dashboard', (req, res) => {
 // UPDATED: Old admin route now redirects to the admin section of the account page
 router.get('/admin', (req, res) => {
     if (!req.session.user || req.session.user.role !== 'admin') {
-        return res.status(403).send("Access denied. Admins only.");
+        return res.redirect('/users/login');
     }
     // We'll build this route in account.js later
     res.redirect('/account/admin'); 

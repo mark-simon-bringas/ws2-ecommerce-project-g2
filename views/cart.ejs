@@ -82,12 +82,18 @@
                 </div>
                 <hr>
                 <div class="d-none d-lg-grid gap-3" id="desktop-checkout-buttons">
-                    <a href="/checkout" class="btn btn-primary btn-lg <%= (cart && cart.items.length > 0) ? '' : 'disabled' %>">
-                        Guest Checkout
-                    </a>
-                    <a href="<%= currentUser ? '/checkout' : '/users/login' %>" class="btn btn-outline-secondary btn-lg <%= (cart && cart.items.length > 0) ? '' : 'disabled' %>">
-                        Member Checkout
-                    </a>
+                    <% if (currentUser) { %>
+                        <a href="/checkout" class="btn btn-primary btn-lg <%= (cart && cart.items.length > 0) ? '' : 'disabled' %>">
+                            Member Checkout
+                        </a>
+                    <% } else { %>
+                        <a href="/checkout" class="btn btn-primary btn-lg <%= (cart && cart.items.length > 0) ? '' : 'disabled' %>">
+                            Guest Checkout
+                        </a>
+                        <a href="/users/login" class="btn btn-outline-secondary btn-lg <%= (cart && cart.items.length > 0) ? '' : 'disabled' %>">
+                            Member Login
+                        </a>
+                    <% } %>
                 </div>
             </div>
         </div>
@@ -125,12 +131,18 @@
 <div class="mobile-checkout-sticky d-lg-none">
     <div class="checkout-options" id="checkout-options">
         <div class="d-grid gap-3 p-3">
-            <a href="/checkout" class="btn btn-primary btn-lg <%= (cart && cart.items.length > 0) ? '' : 'disabled' %>">
-                Guest Checkout
-            </a>
-            <a href="<%= currentUser ? '/checkout' : '/users/login' %>" class="btn btn-outline-secondary btn-lg <%= (cart && cart.items.length > 0) ? '' : 'disabled' %>">
-                Member Checkout
-            </a>
+             <% if (currentUser) { %>
+                <a href="/checkout" class="btn btn-primary btn-lg <%= (cart && cart.items.length > 0) ? '' : 'disabled' %>">
+                    Member Checkout
+                </a>
+            <% } else { %>
+                <a href="/checkout" class="btn btn-primary btn-lg <%= (cart && cart.items.length > 0) ? '' : 'disabled' %>">
+                    Guest Checkout
+                </a>
+                <a href="/users/login" class="btn btn-outline-secondary btn-lg <%= (cart && cart.items.length > 0) ? '' : 'disabled' %>">
+                    Member Login
+                </a>
+            <% } %>
         </div>
     </div>
     <button id="mobile-checkout-btn" class="btn btn-dark btn-lg w-100 <%= (cart && cart.items.length > 0) ? '' : 'disabled' %>">

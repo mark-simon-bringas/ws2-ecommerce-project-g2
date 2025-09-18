@@ -693,6 +693,47 @@ li {
     color: var(--text-color);
 }
 
+/* --- Checkout Page Styles --- */
+.checkout-container {
+    padding: 0;
+}
+.checkout-main {
+    padding: 1.5rem;
+}
+.checkout-summary {
+    background-color: var(--bg-color);
+    padding: 1.5rem;
+}
+.checkout-form-container {
+    max-width: 550px;
+    margin: 0 auto;
+}
+.checkout-radio-group {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+.checkout-radio-group label {
+    padding: 1rem;
+    border-radius: 12px;
+    font-weight: 600;
+    text-align: center;
+    border-width: 2px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+.checkout-radio-group .btn-check:checked+.btn {
+    border-color: var(--nike-black);
+    background-color: var(--card-bg-color);
+    color: var(--nike-black);
+    box-shadow: 0 0 0 1px var(--nike-black);
+}
+.payment-methods {
+    grid-template-columns: 1fr;
+}
+
 
 /* --- 7. Dashboard Layout & Components --- */
 .dashboard-layout { display: flex; flex-direction: column; }
@@ -944,6 +985,7 @@ li {
     .dropdown .con-1.dropdown-search-panel {
         left: 50%;
         transform: translateX(-50%);
+        width: 850px;
         max-width: 90vw;
         top: 1rem;
         padding: 1.5rem;
