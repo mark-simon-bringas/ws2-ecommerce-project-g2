@@ -27,6 +27,7 @@
         <li><a class="list-menu" href="/products?category=men">Men</a></li>
         <li><a class="list-menu" href="/products?category=women">Women</a></li>
         <li><a class="list-menu" href="/products?new=true">New Arrivals</a></li>
+        <li><a href="/about">About</a></li>
         <li><a href="#">Contact</a></li>
         <li><a href="#" id="desktop-search-btn"><span class="iconify" data-icon="material-symbols:search-rounded" style="color: white;" data-width="20" data-height="20"></span></a></li>
         <li class="cart-icon-container">
@@ -75,7 +76,7 @@
     <div class="overlay" id="mobile-menu-overlay">
         <button class="overlay-close-btn" id="mobile-menu-close-btn">&times;</button>
         <ul>
-            <li><a href="/products">Shop</a></li><li><a href="/products?category=men">Men</a></li><li><a href="/products?category=women">Women</a></li><li><a href="/products?new=true">New Arrivals</a></li><li><a href="#">Contact</a></li>
+            <li><a href="/products">Shop</a></li><li><a href="/products?category=men">Men</a></li><li><a href="/products?category=women">Women</a></li><li><a href="/products?new=true">New Arrivals</a></li><li><a href="/about">About</a></li><li><a href="#">Contact</a></li>
             <% if (currentUser) { %>
                 <li><a href="/account">My Account</a></li>
                 <li><a href="/users/logout">Logout</a></li>
@@ -246,9 +247,8 @@
                         </h2>
                         <div id="collapseThree" class="accordion-collapse collapse" aria-labelledby="headingThree" data-bs-parent="#footerAccordion">
                             <ul class="footer-list">
-                                <li><a href="#">About Sneakslab</a></li>
-                                <li><a href="#">News</a></li>
-                                <li><a href="#">Careers</a></li>
+                                <li><a href="/about">About Sneakslab</a></li>
+                               
                             </ul>
                         </div>
                     </div>

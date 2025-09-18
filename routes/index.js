@@ -1,4 +1,4 @@
-
+// routes/index.js
 
 const express = require('express');
 const router = express.Router();
@@ -71,7 +71,14 @@ router.get('/', async (req, res) => {
     }
 });
 
-// ADDED: Route for the legal page
+// ADDED: Route for the about page
+router.get('/about', (req, res) => {
+    res.render('about', {
+        title: 'About Us'
+    });
+});
+
+// Route for the legal page
 router.get('/legal', (req, res) => {
     res.render('legal', {
         title: 'Terms & Privacy'

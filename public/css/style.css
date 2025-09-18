@@ -1,3 +1,4 @@
+
 /* ==== GLOBAL THEME AND STYLES ==== */
 
 /* --- 1. Premium Theme Variables --- */
@@ -653,19 +654,36 @@ li {
     bottom: 24px;
 }
 
-/* --- Styles for Legal Page --- */
-.legal-page-content {
-    max-width: 720px;
+/* --- Styles for Legal & About Pages --- */
+.legal-page-content, .about-page-content {
+    max-width: 800px;
     margin: 0 auto;
 }
-.legal-page-content h3 {
+.legal-page-content h3, .about-page-content h2, .about-page-content h3 {
     font-weight: 600;
     margin-top: 2rem;
     margin-bottom: 1rem;
 }
-.legal-page-content p {
+.legal-page-content p, .about-page-content p {
     color: var(--text-color-secondary);
-    line-height: 1.6;
+    line-height: 1.7;
+    max-width: 720px;
+}
+.about-hero {
+    padding: 3rem 0;
+}
+.about-body {
+    max-width: 720px;
+    margin: 0 auto;
+}
+.about-section {
+    padding: 3rem 0;
+}
+.developer-card {
+    background-color: var(--bg-color);
+    padding: 2rem;
+    border-radius: 16px;
+    height: 100%;
 }
 
 
@@ -986,22 +1004,22 @@ li {
     }
 
     .img-magnifier-lens {
-    position: absolute;
-    border: 2px solid rgba(0,0,0,0.4);
-    border-radius: 50%;
-    cursor: none;
-    width: 150px;
-    height: 150px;
-    overflow: hidden;
-    z-index: 10;
-    pointer-events: none;
-    background-color: #f5f5f7; /* same grey background as product container */
-    box-shadow: 0 4px 10px rgba(0,0,0,0.15); /* subtle shadow for realism */
+        position: absolute;
+        border: 2px solid rgba(0,0,0,0.4);
+        border-radius: 50%;
+        cursor: none;
+        width: 150px;
+        height: 150px;
+        overflow: hidden;
+        z-index: 10;
+        pointer-events: none;
+        background-color: #f5f5f7;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.15);
     }
 
     .img-magnifier-lens img {
-    position: absolute;
-    transform-origin: top left;
+        position: absolute;
+        transform-origin: top left;
     }
 }
 
