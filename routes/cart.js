@@ -59,10 +59,11 @@ router.get('/', async (req, res) => {
     }
 });
 
-// POST /cart/add - Add an item to the shopping cart
+// UPDATED: POST /cart/add - Now returns JSON instead of redirecting
 router.post('/add', async (req, res) => {
     try {
-        const { productId, sku, size, buyNow } = req.body;
+        const { productId, sku, size } = req.body;
+        const currency = res.locals.locationData.currency;
 
         if (!req.session.cart) {
             req.session.cart = {
@@ -78,17 +79,19 @@ router.post('/add', async (req, res) => {
         const product = await productsCollection.findOne({ _id: new ObjectId(productId) });
 
         if (!product) {
-            return res.status(404).send('Product not found');
+            return res.status(404).json({ success: false, message: 'Product not found' });
         }
 
         const itemId = `${sku}_${size}`;
         const existingItemIndex = cart.items.findIndex(item => item.itemId === itemId);
+        let addedItem;
 
         if (existingItemIndex > -1) {
             cart.items[existingItemIndex].qty++;
             cart.items[existingItemIndex].price = cart.items[existingItemIndex].qty * product.retailPrice;
+            addedItem = cart.items[existingItemIndex];
         } else {
-            cart.items.push({
+            addedItem = {
                 itemId: itemId,
                 productId: product._id,
                 sku: product.sku,
@@ -99,21 +102,28 @@ router.post('/add', async (req, res) => {
                 unitPrice: product.retailPrice,
                 qty: 1,
                 price: product.retailPrice
-            });
+            };
+            cart.items.push(addedItem);
         }
 
         cart.totalQty = cart.items.reduce((total, item) => total + item.qty, 0);
         cart.totalPrice = cart.items.reduce((total, item) => total + item.price, 0);
+        
+        const convertedPrice = await convertCurrency(addedItem.price, currency);
 
-        if (buyNow === 'true') {
-            return res.redirect('/checkout');
-        }
-
-        res.redirect('/cart');
+        res.json({
+            success: true,
+            message: 'Item added to cart!',
+            cart: cart,
+            addedItem: {
+                ...addedItem,
+                convertedPrice: convertedPrice
+            }
+        });
 
     } catch (err) {
         console.error("Error adding to cart:", err);
-        res.status(500).send("An error occurred while adding the item to your cart.");
+        res.status(500).json({ success: false, message: 'An error occurred.' });
     }
 });
 

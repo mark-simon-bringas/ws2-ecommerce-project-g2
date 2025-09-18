@@ -1,4 +1,3 @@
-
 /* ==== GLOBAL THEME AND STYLES ==== */
 
 /* --- 1. Premium Theme Variables --- */
@@ -685,6 +684,13 @@ li {
     border-radius: 16px;
     height: 100%;
 }
+.developer-social-link {
+    font-size: 1.5rem;
+    color: var(--text-color-secondary);
+}
+.developer-social-link:hover {
+    color: var(--text-color);
+}
 
 
 /* --- 7. Dashboard Layout & Components --- */
@@ -754,6 +760,99 @@ li {
     --bs-pagination-active-color: #fff;
     font-weight: 500;
 }
+
+/* --- Mini-Cart Styles --- */
+.mini-cart-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.4);
+    z-index: 1050;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
+}
+.mini-cart-overlay.is-active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.mini-cart {
+    position: fixed;
+    top: 48px; /* Below mobile navbar */
+    left: 0;
+    right: 0;
+    width: 100%;
+    background-color: #1d1d1f;
+    color: #fff;
+    z-index: 1051;
+    display: flex;
+    flex-direction: column;
+    transform: translateY(-120%);
+    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+}
+
+.mini-cart.is-active {
+    transform: translateY(0);
+}
+
+.mini-cart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid rgba(255,255,255,0.15);
+}
+.mini-cart-header h5 {
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+.mini-cart-header h5 .bi {
+    color: #34c759;
+}
+.mini-cart-header .btn-close {
+    filter: invert(1) grayscale(100%) brightness(200%);
+}
+.mini-cart-body {
+    padding: 1.5rem;
+    overflow-y: auto;
+}
+.mini-cart-body .cart-item-details h6 {
+    color: #fff;
+}
+.mini-cart-body .cart-item-details p {
+    color: rgba(255,255,255,0.8);
+}
+.mini-cart-footer {
+    padding: 1.5rem;
+    margin-top: auto;
+    border-top: 1px solid rgba(255,255,255,0.15);
+    background-color: #333;
+}
+.mini-cart-footer .btn-outline-secondary {
+    background-color: transparent;
+    border-color: #fff;
+    color: #fff;
+}
+.mini-cart-footer .btn-outline-secondary:hover {
+    background-color: #fff;
+    color: #1d1d1f;
+}
+ .mini-cart-footer .btn-primary {
+    background-color: #fff;
+    border-color: #fff;
+    color: #1d1d1f;
+}
+.mini-cart-footer .btn-primary:hover {
+    background-color: #e5e5e5;
+    border-color: #e5e5e5;
+}
+
 
 /* =================================================================
    DESKTOP STYLES
@@ -1003,22 +1102,50 @@ li {
     }
 
     .img-magnifier-lens {
-        position: absolute;
-        border: 2px solid rgba(0,0,0,0.4);
-        border-radius: 50%;
-        cursor: none;
-        width: 150px;
-        height: 150px;
-        overflow: hidden;
-        z-index: 10;
-        pointer-events: none;
-        background-color: #f5f5f7;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+        display: none; /* Hide by default */
+    }
+    
+    @media (pointer: fine) {
+        .img-magnifier-lens {
+            display: block; /* Show only on devices with fine pointers (mice) */
+            position: absolute;
+            border: 2px solid rgba(0,0,0,0.4);
+            border-radius: 50%;
+            cursor: none;
+            width: 150px;
+            height: 150px;
+            overflow: hidden;
+            z-index: 10;
+            pointer-events: none;
+            background-color: #f5f5f7;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+        }
+        .img-magnifier-lens img {
+            position: absolute;
+            transform-origin: top left;
+        }
     }
 
-    .img-magnifier-lens img {
-        position: absolute;
-        transform-origin: top left;
+    .mini-cart {
+        top: 44px;
+        left: auto;
+        right: 1.5rem;
+        width: 380px;
+        height: auto;
+        border-radius: 0 0 16px 16px;
+        overflow: hidden;
+        transform: translateY(-20px);
+        opacity: 0;
+        visibility: hidden;
+        transition: transform 0.3s ease-in-out, opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
+    }
+    .mini-cart.is-active {
+        transform: translateY(0);
+        opacity: 1;
+        visibility: visible;
+    }
+    .mini-cart-overlay {
+        background-color: transparent; /* Remove overlay on desktop */
     }
 }
 
