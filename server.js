@@ -39,7 +39,7 @@ app.use(session({
 app.use(async (req, res, next) => {
     res.locals.currentUser = req.session.user;
     res.locals.cart = req.session.cart;
-    res.locals.path = req.path;
+    res.locals.path = req.originalUrl; // Use originalUrl to capture query params
     
     // Country and Currency Detection
     const ip = req.ip === '::1' || req.ip === '127.0.0.1' ? '122.54.69.1' : req.ip;

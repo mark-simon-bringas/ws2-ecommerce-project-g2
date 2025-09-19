@@ -1522,3 +1522,61 @@ li {
       max-width: 100%;
     }
 }
+
+/* Add these new rules to the end of your existing style.css file */
+
+/* --- Custom Styles for Checkout Address Selector --- */
+.address-selector-group {
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    overflow: hidden;
+}
+.address-selector-group .list-group-item {
+    padding: 1rem 1.25rem;
+    border: none;
+    border-top: 1px solid var(--border-color);
+    cursor: pointer;
+    transition: background-color 0.2s ease-in-out;
+}
+.address-selector-group .list-group-item:first-child {
+    border-top: none;
+}
+.address-selector-group .list-group-item:hover {
+    background-color: var(--bg-color);
+}
+.address-selector-group input[type="radio"] {
+    /* Custom radio button appearance */
+    -webkit-appearance: none;
+    appearance: none;
+    background-color: #fff;
+    margin: 0;
+    font: inherit;
+    color: currentColor;
+    width: 1.15em;
+    height: 1.15em;
+    border: 0.15em solid currentColor;
+    border-radius: 50%;
+    transform: translateY(-0.075em);
+    display: grid;
+    place-content: center;
+}
+.address-selector-group input[type="radio"]::before {
+    content: "";
+    width: 0.65em;
+    height: 0.65em;
+    border-radius: 50%;
+    transform: scale(0);
+    transition: 120ms transform ease-in-out;
+    box-shadow: inset 1em 1em var(--nike-black);
+}
+.address-selector-group input[type="radio"]:checked::before {
+    transform: scale(1);
+}
+.address-selector-group .list-group-item.active {
+    background-color: var(--card-bg-color);
+    border-color: var(--nike-black);
+    color: var(--nike-black);
+    box-shadow: 0 0 0 1px var(--nike-black);
+    z-index: 2;
+}
+

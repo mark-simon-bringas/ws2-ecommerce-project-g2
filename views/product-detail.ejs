@@ -98,7 +98,7 @@
                             </button>
                         </form>
                     <% } else { %>
-                        <a href="/users/login" class="btn btn-outline-secondary btn-lg d-flex align-items-center justify-content-center gap-2">
+                        <a href="/users/login?redirect=<%= path %>" class="btn btn-outline-secondary btn-lg d-flex align-items-center justify-content-center gap-2">
                             <span>Favorite</span>
                             <i class="bi bi-heart"></i>
                         </a>
@@ -204,7 +204,7 @@
                                 <i class="bi <%= isWishlisted ? 'bi-heart-fill' : 'bi-heart' %>"></i>
                             </button>
                         <% } else { %>
-                            <a href="/users/login" class="btn-action" title="Login to Add to Wishlist">
+                            <a href="/users/login?redirect=<%= path %>" class="btn-action" title="Login to Add to Wishlist">
                                 <i class="bi bi-heart"></i>
                             </a>
                         <% } %>
@@ -295,8 +295,6 @@
 </script>
 <% } %>
 
-
-
 <script>
 document.addEventListener("DOMContentLoaded", function () {
     // Only initialize the magnifier on screens wider than 992px
@@ -311,14 +309,12 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     }
 });
-
 function initMagnifier(imgId) {
     const img = document.getElementById(imgId);
     if (!img) return;
 
     const oldLens = img.parentElement.querySelector(".img-magnifier-lens");
     if (oldLens) oldLens.remove();
-    
     const lens = document.createElement("div");
     lens.setAttribute("class", "img-magnifier-lens");
     const lensImg = document.createElement("img");
@@ -329,21 +325,17 @@ function initMagnifier(imgId) {
     const zoom = 2;
     lensImg.style.width = img.offsetWidth * zoom + "px";
     lensImg.style.height = img.offsetHeight * zoom + "px";
-
     function moveLens(e) {
         e.preventDefault();
         const rect = img.getBoundingClientRect();
         let x = e.clientX - rect.left;
         let y = e.clientY - rect.top;
-        
         lens.style.left = (x - lens.offsetWidth / 2) + "px";
         lens.style.top = (y - lens.offsetHeight / 2) + "px";
-
         if (x < 0) x = 0;
         if (y < 0) y = 0;
         if (x > img.offsetWidth) x = img.offsetWidth;
         if (y > img.offsetHeight) y = img.offsetHeight;
-
         lensImg.style.left = -(x * zoom - lens.offsetWidth / 2) + "px";
         lensImg.style.top = -(y * zoom - lens.offsetHeight / 2) + "px";
     }

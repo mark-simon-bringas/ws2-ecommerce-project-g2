@@ -15,7 +15,7 @@
                                         <i class="bi <%= isWishlisted ? 'bi-heart-fill' : 'bi-heart' %>"></i>
                                     </button>
                                 <% } else { %>
-                                    <a href="/users/login" class="btn-action" title="Login to Add to Wishlist">
+                                    <a href="/users/login?redirect=<%= path %>" class="btn-action" title="Login to Add to Wishlist">
                                         <i class="bi bi-heart"></i>
                                     </a>
                                 <% } %>
