@@ -328,4 +328,77 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
+
+    // --- Checkout Page Interactivity ---
+    const checkoutContainer = document.querySelector('.checkout-container');
+    if (checkoutContainer) {
+        // Delivery method toggle
+        const deliveryRadios = document.querySelectorAll('input[name="delivery-method"]');
+        const shippingForm = document.getElementById('shipping-form');
+        const pickupForm = document.getElementById('pickup-form');
+        deliveryRadios.forEach(radio => {
+            radio.addEventListener('change', function() {
+                if (this.value === 'ship') {
+                    shippingForm.classList.remove('d-none');
+                    pickupForm.classList.add('d-none');
+                } else {
+                    shippingForm.classList.add('d-none');
+                    pickupForm.classList.remove('d-none');
+                }
+            });
+        });
+
+        // Payment method toggle
+        const paymentRadios = document.querySelectorAll('input[name="payment-method"]');
+        const paymentDetails = document.querySelectorAll('.payment-details-content');
+        const ccFields = document.querySelectorAll('#payment-details-cc [name^="cc-"]');
+
+        paymentRadios.forEach(radio => {
+            radio.addEventListener('change', function() {
+                paymentDetails.forEach(detail => detail.classList.add('d-none'));
+                const selectedDetail = document.getElementById(`payment-details-${this.value}`);
+                if (selectedDetail) {
+                    selectedDetail.classList.remove('d-none');
+                }
+                const isCCSelected = this.value === 'cc';
+                ccFields.forEach(field => {
+                    field.required = isCCSelected;
+                });
+            });
+        });
+        document.querySelector('input[name="payment-method"]:checked').dispatchEvent(new Event('change'));
+
+        // Phone number field initialization
+        const phoneInput = document.querySelector("#phone");
+        if (phoneInput) {
+            window.intlTelInput(phoneInput, {
+                initialCountry: "auto",
+                geoIpLookup: function(callback) {
+                    fetch("https://ipapi.co/json")
+                        .then(res => res.json())
+                        .then(data => callback(data.country_code))
+                        .catch(() => callback("us"));
+                },
+                utilsScript: "https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/js/utils.js",
+            });
+        }
+
+        // Billing address checkbox logic
+        const sameAsShippingCheckbox = document.getElementById('sameAsShipping');
+        const billingAddressForm = document.getElementById('billing-address-form');
+        const billingInputs = billingAddressForm.querySelectorAll('input, select');
+
+        const toggleBillingForm = () => {
+            if (sameAsShippingCheckbox.checked) {
+                billingAddressForm.classList.add('d-none');
+                billingInputs.forEach(input => input.required = false);
+            } else {
+                billingAddressForm.classList.remove('d-none');
+                billingInputs.forEach(input => input.required = true);
+            }
+        };
+
+        sameAsShippingCheckbox.addEventListener('change', toggleBillingForm);
+        toggleBillingForm(); // Set initial state on page load
+    }
 });

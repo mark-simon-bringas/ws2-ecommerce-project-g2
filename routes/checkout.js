@@ -8,6 +8,10 @@ const { convertCurrency } = require('./currency');
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
+// Define shipping constants
+const SHIPPING_COST = 250; // Example cost in PHP
+const FREE_SHIPPING_THRESHOLD = 7500; // Threshold for free shipping in PHP
+
 // GET /checkout - Display the main checkout page
 router.get('/', async (req, res) => {
     if (!req.session.cart || req.session.cart.items.length === 0) {
@@ -17,20 +21,42 @@ router.get('/', async (req, res) => {
     const currency = res.locals.locationData.currency;
     const cart = req.session.cart;
 
-    // Perform currency conversion before rendering
+    // --- New Shipping Logic ---
+    let shippingCost = SHIPPING_COST;
+    let amountNeededForFreeShipping = FREE_SHIPPING_THRESHOLD - cart.totalPrice;
+    
+    if (cart.totalPrice >= FREE_SHIPPING_THRESHOLD) {
+        shippingCost = 0;
+        amountNeededForFreeShipping = 0;
+    }
+    
+    const totalWithShipping = cart.totalPrice + shippingCost;
+    const freeShippingProgress = (cart.totalPrice / FREE_SHIPPING_THRESHOLD) * 100;
+
+    // Perform currency conversion for all cart and summary items
     if (cart.items.length > 0) {
         cart.items = await Promise.all(cart.items.map(async (item) => {
             item.convertedPrice = await convertCurrency(item.price, currency);
             return item;
         }));
         cart.convertedTotalPrice = await convertCurrency(cart.totalPrice, currency);
+        shippingCost = await convertCurrency(shippingCost, currency);
+        amountNeededForFreeShipping = await convertCurrency(amountNeededForFreeShipping, currency);
     }
 
     res.render('checkout', {
         title: "Checkout",
-        cart: cart
+        cart: cart,
+        shipping: {
+            cost: shippingCost,
+            threshold: await convertCurrency(FREE_SHIPPING_THRESHOLD, currency),
+            amountNeeded: amountNeededForFreeShipping,
+            progress: freeShippingProgress
+        },
+        totalWithShipping: await convertCurrency(totalWithShipping, currency)
     });
 });
+
 
 // POST /checkout/place-order - Handle the order submission
 router.post('/place-order', async (req, res) => {
@@ -44,6 +70,10 @@ router.post('/place-order', async (req, res) => {
         const productsCollection = db.collection('products');
         const cart = req.session.cart;
         const currency = res.locals.locationData.currency;
+
+        // Recalculate shipping on the backend to ensure accuracy
+        let finalShippingCost = (cart.totalPrice >= FREE_SHIPPING_THRESHOLD) ? 0 : SHIPPING_COST;
+        const finalTotal = cart.totalPrice + finalShippingCost;
 
         // Create the order object
         const order = {
@@ -59,9 +89,11 @@ router.post('/place-order', async (req, res) => {
                 zip: req.body.zip
             },
             items: cart.items,
-            total: cart.totalPrice, // Store total in base currency (USD)
+            subtotal: cart.totalPrice, // Store subtotal in base currency (USD)
+            shippingCost: finalShippingCost, // Store shipping cost in base currency
+            total: finalTotal, // Store final total in base currency
             currency: currency, // Store the currency of the transaction
-            convertedTotal: await convertCurrency(cart.totalPrice, currency), // Store the converted total for records
+            convertedTotal: await convertCurrency(finalTotal, currency), // Store the converted total for records
             orderDate: new Date(),
             status: 'Processing',
             isNew: true 
@@ -200,7 +232,7 @@ router.get('/success/:orderId', async (req, res) => {
 
     } catch (err) {
         console.error("Error fetching order confirmation:", err);
-        res.status(500).send("Could not retrieve order confirmation.");
+        res.status(500).send("An error occurred while retrieving order confirmation.");
     }
 });
 

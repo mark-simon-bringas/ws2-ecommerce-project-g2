@@ -1,4 +1,3 @@
-
 /* ==== GLOBAL THEME AND STYLES ==== */
 
 /* --- 1. Premium Theme Variables --- */
@@ -693,47 +692,6 @@ li {
     color: var(--text-color);
 }
 
-/* --- Checkout Page Styles --- */
-.checkout-container {
-    padding: 0;
-}
-.checkout-main {
-    padding: 1.5rem;
-}
-.checkout-summary {
-    background-color: var(--bg-color);
-    padding: 1.5rem;
-}
-.checkout-form-container {
-    max-width: 550px;
-    margin: 0 auto;
-}
-.checkout-radio-group {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1rem;
-}
-.checkout-radio-group label {
-    padding: 1rem;
-    border-radius: 12px;
-    font-weight: 600;
-    text-align: center;
-    border-width: 2px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-}
-.checkout-radio-group .btn-check:checked+.btn {
-    border-color: var(--nike-black);
-    background-color: var(--card-bg-color);
-    color: var(--nike-black);
-    box-shadow: 0 0 0 1px var(--nike-black);
-}
-.payment-methods {
-    grid-template-columns: 1fr;
-}
-
 
 /* --- 7. Dashboard Layout & Components --- */
 .dashboard-layout { display: flex; flex-direction: column; }
@@ -1318,4 +1276,185 @@ li {
         height: auto !important;
         visibility: visible !important;
     }
+}
+
+/* --- Checkout Page Styles --- */
+.checkout-container {
+    padding: 0;
+    background-color: #fff;
+}
+.checkout-main {
+    padding: 1.5rem;
+}
+.checkout-summary {
+    background-color: #fff; /* Updated from var(--bg-color) */
+    padding: 2.5rem 3.5rem; /* Increased horizontal padding */
+}
+.checkout-form-container {
+    max-width: 550px;
+    margin: 0 auto;
+}
+.checkout-radio-group {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+.checkout-radio-group label {
+    padding: 1rem;
+    border-radius: 12px;
+    font-weight: 500;
+    text-align: center;
+    border: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+}
+.checkout-radio-group .btn-check:checked+.btn {
+    border-color: var(--nike-black);
+    background-color: var(--card-bg-color);
+    color: var(--nike-black);
+    box-shadow: 0 0 0 1px var(--nike-black);
+}
+.payment-methods {
+    grid-template-columns: 1fr;
+}
+.checkout-main .form-label {
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+.checkout-main .form-control, .checkout-main .form-select {
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+}
+
+/* Mobile Summary Accordion */
+.mobile-summary {
+    background-color: var(--bg-color);
+    border-bottom: 1px solid var(--border-color);
+}
+.mobile-summary .accordion-item {
+    background-color: transparent;
+    border: none;
+}
+.mobile-summary .accordion-button {
+    background-color: transparent;
+    box-shadow: none;
+    font-size: 0.95rem;
+}
+.mobile-summary .accordion-button:not(.collapsed) {
+    color: var(--text-color);
+}
+.mobile-summary .accordion-button::after {
+    transform: rotate(-180deg);
+    transition: transform 0.2s ease-in-out;
+}
+.mobile-summary .accordion-button:not(.collapsed)::after {
+    transform: rotate(0deg);
+}
+
+/* Desktop Summary Card */
+.summary-card {
+    position: sticky;
+    top: 44px; /* Height of the desktop navbar */
+}
+.summary-card .badge.translate-middle {
+    top: 10px;
+    left: 10px;
+    font-size: 0.7rem;
+    padding: 0.3em 0.5em;
+    border: 2px solid var(--bg-color);
+}
+
+/* --- Fix for intl-tel-input styling --- */
+.iti {
+    width: 100%; /* Make the wrapper take full width */
+}
+.iti__tel-input {
+    /* Force our custom form control styles onto the library's input */
+    padding: 0.75rem 1rem !important;
+    height: calc(1.5em + 1.5rem + 2px); /* Match Bootstrap's default height for this padding */
+    border-radius: 8px !important;
+    border: 1px solid var(--border-color) !important;
+    width: 100%;
+    font-size: 1rem;
+}
+.iti--allow-dropdown input {
+    /* Add padding to the left to make space for the flag dropdown */
+    padding-left: 58px !important;
+}
+
+/* --- Styles for New Order Summary --- */
+.summary-card .list-group-item, .accordion-body .list-group-item {
+    background-color: transparent;
+    border: none;
+    padding: 0.5rem 0; /* Adjusted padding */
+}
+.summary-card .list-group-item span:first-child,
+.accordion-body .list-group-item span:first-child {
+    color: var(--text-color);
+}
+.summary-card .list-group-item span i,
+.accordion-body .list-group-item span i {
+    font-size: 0.8em;
+    vertical-align: middle;
+    color: var(--text-color-secondary);
+}
+.summary-card .list-group-item strong, .accordion-body .list-group-item strong {
+    color: var(--text-color);
+    font-weight: 400;
+}
+.summary-card .list-group-item.fs-5, .accordion-body .list-group-item.fs-5 {
+    padding-top: 1rem;
+    margin-top: 0.5rem;
+    border-top: 1px solid var(--border-color);
+}
+.summary-card .list-group-item.fs-5 strong, .accordion-body .list-group-item.fs-5 strong {
+    font-weight: 700 !important;
+}
+.free-shipping-progress .progress {
+    border-radius: 99px;
+    background-color: #e5e5e5;
+    height: 6px !important;
+}
+.free-shipping-progress .progress-bar {
+    background-color: #34c759;
+}
+.summary-arrival-date {
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border-color);
+}
+.summary-product-item {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 1rem;
+    align-items: flex-start;
+    margin-top: 1.5rem;
+}
+.summary-product-item img {
+    width: 80px; /* Increased size */
+    height: 80px; /* Increased size */
+    object-fit: cover;
+    border-radius: 8px;
+    background-color: #fff;
+    border: 1px solid var(--border-color);
+}
+.summary-product-title {
+    font-weight: 500;
+    margin-bottom: 0.25rem;
+    line-height: 1.3;
+    font-size: 0.9rem;
+}
+.summary-product-meta {
+    font-size: 0.85rem;
+    color: var(--text-color-secondary);
+    margin-bottom: 0;
+}
+.summary-product-price {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--text-color-secondary);
 }

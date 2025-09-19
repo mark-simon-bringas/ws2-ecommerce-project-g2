@@ -1,29 +1,100 @@
-
 <div class="checkout-container container-fluid">
     <div class="row">
+        <%# Mobile Order Summary (Hidden on Desktop) %>
+        <div class="col-12 d-lg-none">
+            <div class="mobile-summary">
+                <div class="accordion" id="orderSummaryAccordion">
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="headingOne">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="false" aria-controls="collapseOne">
+                                <span class="d-flex justify-content-between w-100 pe-3">
+                                    <span>Show order summary</span>
+                                    <strong class="fw-semibold"><%= locationData.symbol %><%= totalWithShipping.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></strong>
+                                </span>
+                            </button>
+                        </h2>
+                        <div id="collapseOne" class="accordion-collapse collapse" aria-labelledby="headingOne" data-bs-parent="#orderSummaryAccordion">
+                            <div class="accordion-body">
+                                <%# --- Start Inlined Order Summary --- %>
+                                <h4 class="mb-3">Order Summary</h4>
+                                <ul class="list-group list-group-flush mb-3">
+                                    <li class="list-group-item d-flex justify-content-between px-0">
+                                        <span>Subtotal <i class="bi bi-question-circle-fill"></i></span>
+                                        <strong><%= locationData.symbol %><%= cart.convertedTotalPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></strong>
+                                    </li>
+                                    <li class="list-group-item d-flex justify-content-between px-0">
+                                        <span>Delivery/Shipping</span>
+                                        <strong><%= shipping.cost > 0 ? locationData.symbol + shipping.cost.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : 'Free' %></strong>
+                                    </li>
+
+                                    <% if (shipping.amountNeeded > 0) { %>
+                                        <li class="list-group-item px-0">
+                                            <div class="free-shipping-progress">
+                                                <p class="small text-body-secondary mb-1">Add <strong><%= locationData.symbol %><%= shipping.amountNeeded.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></strong> more to earn Free Shipping!</p>
+                                                <div class="progress" style="height: 6px;">
+                                                    <div class="progress-bar" role="progressbar" style="width: <%= shipping.progress %>%;" aria-valuenow="<%= shipping.progress %>" aria-valuemin="0" aria-valuemax="100"></div>
+                                                </div>
+                                                <div class="d-flex justify-content-between small text-body-secondary mt-1">
+                                                    <span><%= locationData.symbol %>0</span>
+                                                    <span><%= locationData.symbol %><%= shipping.threshold.toLocaleString(undefined, { minimumFractionDigits: 0 }) %></span>
+                                                </div>
+                                            </div>
+                                        </li>
+                                    <% } %>
+
+                                    <li class="list-group-item d-flex justify-content-between px-0 fs-5 border-top pt-3">
+                                        <strong class="fw-bold">Total</strong>
+                                        <strong class="fw-bold"><%= locationData.symbol %><%= totalWithShipping.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></strong>
+                                    </li>
+                                </ul>
+                                 <div class="summary-arrival-date border-top pt-3">
+                                    <p class="fw-bold mb-1">Arrives Fri, Sep 26 - Tue, Sep 30</p>
+                                </div>
+                                <% cart.items.forEach(item => { %>
+                                    <div class="summary-product-item">
+                                        <img src="<%= item.thumbnailUrl %>" alt="<%= item.name %>">
+                                        <div class="summary-product-details">
+                                            <p class="summary-product-title"><%= item.name %></p>
+                                            <p class="summary-product-meta">Qty: <%= item.qty %></p>
+                                            <p class="summary-product-meta">Size: <%= item.size %></p>
+                                        </div>
+                                        <p class="summary-product-price"><%= locationData.symbol %><%= item.convertedPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></p>
+                                    </div>
+                                <% }) %>
+                                <%# --- End Inlined Order Summary --- %>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <%# Main Content: Shipping and Payment Forms %>
         <div class="col-lg-7 checkout-main">
             <div class="checkout-form-container">
+                <div class="text-center py-3 d-lg-none">
+                    <a href="/" class="h3 text-dark text-decoration-none fw-bold">sneakslab</a>
+                </div>
+
                 <% if (currentUser) { %>
-                    <div class="d-flex justify-content-between align-items-center mb-4">
-                        <h4 class="mb-0">Contact</h4>
+                    <div class="d-flex justify-content-between align-items-center mb-4 pt-4 border-top">
+                        <h4 class="mb-0 h6">Contact</h4>
                         <p class="mb-0 small text-body-secondary">Logged in as <%= currentUser.email %></p>
                     </div>
                 <% } %>
 
                 <div id="delivery-options" class="mb-4">
-                    <h4 class="mb-3">How would you like to get your order?</h4>
+                    <h4 class="mb-3 h6 fw-semibold">How would you like to get your order?</h4>
                     <div class="checkout-radio-group">
                         <input type="radio" class="btn-check" name="delivery-method" id="delivery-method-ship" value="ship" checked autocomplete="off">
                         <label class="btn btn-outline-secondary" for="delivery-method-ship">
                             <i class="bi bi-truck"></i>
                             <span>Deliver It</span>
                         </label>
-
                         <input type="radio" class="btn-check" name="delivery-method" id="delivery-method-pickup" value="pickup" autocomplete="off">
                         <label class="btn btn-outline-secondary" for="delivery-method-pickup">
                             <i class="bi bi-shop"></i>
-                            <span>Pick Up</span>
+                            <span>Pick It Up</span>
                         </label>
                     </div>
                 </div>
@@ -36,9 +107,11 @@
                                 <input type="email" class="form-control" name="email" id="email" required>
                                 <small class="form-text text-body-secondary">Become a member for faster checkout. <a href="/users/login?redirect=/checkout">Log in</a> or <a href="/users/register">Sign up now</a>.</small>
                             </div>
+                        <% } else { %>
+                            <input type="hidden" name="email" value="<%= currentUser.email %>">
                         <% } %>
 
-                        <h4 class="mt-5 mb-3">Shipping Address</h4>
+                        <h4 class="mt-4 mb-3 h6 fw-semibold">Shipping Address</h4>
                         <div class="row g-3">
                             <div class="col-sm-6">
                                 <label for="firstName" class="form-label">First name</label>
@@ -66,19 +139,57 @@
                                 <label for="zip" class="form-label">Zip</label>
                                 <input type="text" class="form-control" name="zip" id="zip" required>
                             </div>
+                            <div class="col-12">
+                                <label for="phone" class="form-label">Phone Number</label>
+                                <input type="tel" class="form-control" name="phone" id="phone" required>
+                                <small class="form-text text-body-secondary">A carrier might contact you to confirm delivery.</small>
+                            </div>
+                        </div>
+
+                        <hr class="my-4">
+
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="sameAsShipping" checked>
+                            <label class="form-check-label" for="sameAsShipping">
+                                Billing address is the same as my shipping address
+                            </label>
+                        </div>
+
+                        <div id="billing-address-form" class="d-none mt-4">
+                            <h4 class="mb-3 h6 fw-semibold">Billing Address</h4>
+                            <div class="row g-3">
+                                <div class="col-12">
+                                    <label for="billing-address" class="form-label">Address</label>
+                                    <input type="text" class="form-control" name="billing-address" id="billing-address" placeholder="1234 Main St">
+                                </div>
+                                <div class="col-md-5">
+                                    <label for="billing-country" class="form-label">Country</label>
+                                    <select class="form-select" id="billing-country" name="billing-country">
+                                        <option>Philippines</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="billing-state" class="form-label">State/Region</label>
+                                    <input type="text" class="form-control" name="billing-state" id="billing-state" placeholder="e.g. CAR">
+                                </div>
+                                <div class="col-md-3">
+                                    <label for="billing-zip" class="form-label">Zip</label>
+                                    <input type="text" class="form-control" name="billing-zip" id="billing-zip">
+                                </div>
+                            </div>
                         </div>
                     </form>
                 </div>
 
                 <div id="pickup-form" class="d-none">
-                    <h4 class="mb-3">Where would you like to pick up your order?</h4>
+                    <h4 class="mb-3 h6 fw-semibold">Where would you like to pick up your order?</h4>
                     <p class="text-body-secondary">Pickup locations are currently unavailable. Please select "Deliver It" to proceed.</p>
                 </div>
                 
-                <hr class="my-5">
+                <hr class="my-4">
 
                 <div id="payment-section">
-                    <h4 class="mb-3">How would you like to pay?</h4>
+                    <h4 class="mb-3 h6 fw-semibold">How would you like to pay?</h4>
                     <div class="checkout-radio-group payment-methods">
                         <input type="radio" class="btn-check" name="payment-method" id="payment-cc" value="cc" checked autocomplete="off">
                         <label class="btn btn-outline-secondary" for="payment-cc">Credit or Debit Card</label>
@@ -88,72 +199,109 @@
                         
                         <input type="radio" class="btn-check" name="payment-method" id="payment-gpay" value="gpay" autocomplete="off">
                         <label class="btn btn-outline-secondary" for="payment-gpay">G Pay</label>
+                        
+                        <input type="radio" class="btn-check" name="payment-method" id="payment-gcash" value="gcash" autocomplete="off">
+                        <label class="btn btn-outline-secondary" for="payment-gcash">GCash</label>
+                        
+                        <input type="radio" class="btn-check" name="payment-method" id="payment-grabpay" value="grabpay" autocomplete="off">
+                        <label class="btn btn-outline-secondary" for="payment-grabpay">GrabPay</label>
                     </div>
 
                     <div id="payment-details-cc" class="payment-details-content mt-4">
                         <div class="row g-3">
                             <div class="col-12">
                                 <label for="cc-name" class="form-label">Name on card</label>
-                                <input type="text" class="form-control" id="cc-name" name="cc-name" form="checkout-form">
+                                <input type="text" class="form-control" id="cc-name" name="cc-name" form="checkout-form" required>
                             </div>
                             <div class="col-12">
                                 <label for="cc-number" class="form-label">Card number</label>
-                                <input type="text" class="form-control" id="cc-number" name="cc-number" form="checkout-form">
+                                <input type="text" class="form-control" id="cc-number" name="cc-number" form="checkout-form" required>
                             </div>
-                            <div class="col-sm-4">
+                            <div class="col-sm-6">
                                 <label for="cc-expiration" class="form-label">Expiration</label>
-                                <input type="text" class="form-control" id="cc-expiration" name="cc-expiration" placeholder="MM/YY" form="checkout-form">
+                                <input type="text" class="form-control" id="cc-expiration" name="cc-expiration" placeholder="MM/YY" form="checkout-form" required>
                             </div>
-                            <div class="col-sm-4">
+                            <div class="col-sm-6">
                                 <label for="cc-cvv" class="form-label">CVV</label>
-                                <input type="text" class="form-control" id="cc-cvv" name="cc-cvv" placeholder="123" form="checkout-form">
+                                <input type="text" class="form-control" id="cc-cvv" name="cc-cvv" placeholder="123" form="checkout-form" required>
                             </div>
                         </div>
                     </div>
-                     <div id="payment-details-paypal" class="payment-details-content mt-4 d-none">
-                        <p class="text-body-secondary text-center">You will be redirected to PayPal to complete your payment.</p>
+
+                    <div id="payment-details-paypal" class="payment-details-content mt-4 d-none text-center">
+                        <p class="text-body-secondary">You will be redirected to PayPal to complete your payment.</p>
                     </div>
-                     <div id="payment-details-gpay" class="payment-details-content mt-4 d-none">
-                        <p class="text-body-secondary text-center">You will be redirected to Google Pay to complete your payment.</p>
+                    <div id="payment-details-gpay" class="payment-details-content mt-4 d-none text-center">
+                        <p class="text-body-secondary">You will be redirected to Google Pay to complete your payment.</p>
+                    </div>
+                    <div id="payment-details-gcash" class="payment-details-content mt-4 d-none text-center">
+                        <p class="text-body-secondary">You will be redirected to GCash to complete your payment.</p>
+                    </div>
+                    <div id="payment-details-grabpay" class="payment-details-content mt-4 d-none text-center">
+                        <p class="text-body-secondary">You will be redirected to GrabPay to complete your payment.</p>
                     </div>
                 </div>
-                 <div class="d-grid mt-5">
+
+                <div class="d-grid mt-4">
                     <button type="submit" form="checkout-form" class="btn btn-primary btn-lg">Place Order</button>
+                </div>
+
+                <div class="text-center mt-4">
+                    <a href="/cart" class="text-body-secondary small"><i class="bi bi-arrow-left"></i> Return to cart</a>
                 </div>
             </div>
         </div>
 
-        <%# Order Summary Sidebar %>
-        <div class="col-lg-5 checkout-summary">
+        <%# Order Summary Sidebar (Hidden on Mobile) %>
+        <div class="col-lg-5 checkout-summary d-none d-lg-block">
             <div class="summary-card">
-                 <h4 class="d-flex justify-content-between align-items-center mb-3">
-                    <span>Order Summary</span>
-                    <span class="badge bg-dark rounded-pill"><%= cart.totalQty %></span>
-                </h4>
-                <ul class="list-group list-group-flush mb-3">
-                    <% cart.items.forEach(item => { %>
-                        <li class="list-group-item d-flex align-items-center px-0">
-                            <img src="<%= item.thumbnailUrl %>" alt="<%= item.name %>" class="rounded me-3" style="width: 64px; height: 64px; object-fit: contain; background-color: var(--bg-color);">
-                            <div class="flex-grow-1">
-                                <h6 class="my-0 small"><%= item.name %></h6>
-                                <small class="text-body-secondary">Size: <%= item.size %>, Qty: <%= item.qty %></small>
-                            </div>
-                            <span class="text-body-secondary small"><%= locationData.symbol %><%= item.convertedPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></span>
-                        </li>
-                    <% }) %>
+                 <%# --- Start Inlined Order Summary --- %>
+                 <h4 class="mb-3">Order Summary</h4>
+                 <ul class="list-group list-group-flush mb-3">
                     <li class="list-group-item d-flex justify-content-between px-0">
-                        <span>Subtotal</span>
+                        <span>Subtotal <i class="bi bi-question-circle-fill"></i></span>
                         <strong><%= locationData.symbol %><%= cart.convertedTotalPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></strong>
                     </li>
-                     <li class="list-group-item d-flex justify-content-between px-0">
-                        <span>Shipping</span>
-                        <strong>Free</strong>
+                    <li class="list-group-item d-flex justify-content-between px-0">
+                        <span>Delivery/Shipping</span>
+                        <strong><%= shipping.cost > 0 ? locationData.symbol + shipping.cost.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : 'Free' %></strong>
                     </li>
-                    <li class="list-group-item d-flex justify-content-between px-0 fs-5">
-                        <span class="fw-bold">Total</span>
-                        <strong class="fw-bold"><%= locationData.symbol %><%= cart.convertedTotalPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></strong>
+
+                    <% if (shipping.amountNeeded > 0) { %>
+                     <li class="list-group-item px-0">
+                         <div class="free-shipping-progress">
+                             <p class="small text-body-secondary mb-1">Add <strong><%= locationData.symbol %><%= shipping.amountNeeded.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></strong> more to earn Free Shipping!</p>
+                             <div class="progress" style="height: 6px;">
+                                 <div class="progress-bar" role="progressbar" style="width: <%= shipping.progress %>%;" aria-valuenow="<%= shipping.progress %>" aria-valuemin="0" aria-valuemax="100"></div>
+                             </div>
+                             <div class="d-flex justify-content-between small text-body-secondary mt-1">
+                                <span><%= locationData.symbol %>0</span>
+                                <span><%= locationData.symbol %><%= shipping.threshold.toLocaleString(undefined, { minimumFractionDigits: 0 }) %></span>
+                            </div>
+                         </div>
+                     </li>
+                    <% } %>
+
+                    <li class="list-group-item d-flex justify-content-between px-0 fs-5 border-top pt-3">
+                        <strong class="fw-bolder">Total</strong>
+                        <strong class="fw-bolder"><%= locationData.symbol %><%= totalWithShipping.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></strong>
                     </li>
                 </ul>
+                <div class="summary-arrival-date border-top pt-3">
+                    <p class="fw-bold mb-1">Arrives Fri, Sep 26 - Tue, Sep 30</p>
+                </div>
+                <% cart.items.forEach(item => { %>
+                    <div class="summary-product-item">
+                        <img src="<%= item.thumbnailUrl %>" alt="<%= item.name %>">
+                        <div class="summary-product-details">
+                            <p class="summary-product-title"><%= item.name %></p>
+                            <p class="summary-product-meta">Qty: <%= item.qty %></p>
+                            <p class="summary-product-meta">Size: <%= item.size %></p>
+                        </div>
+                        <p class="summary-product-price"><%= locationData.symbol %><%= item.convertedPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></p>
+                    </div>
+                <% }) %>
+               <%# --- End Inlined Order Summary --- %>
             </div>
         </div>
     </div>
