@@ -8,9 +8,14 @@ const { convertCurrency } = require('./currency');
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-// Define shipping constants
-const SHIPPING_COST = 250; // Example cost in PHP
-const FREE_SHIPPING_THRESHOLD = 7500; // Threshold for free shipping in PHP
+// Define shipping constants (using USD as the base currency)
+const SHIPPING_COST_BASE = 5; // e.g., $5 shipping
+const FREE_SHIPPING_THRESHOLD_BASE = 150; // e.g., free shipping on orders over $150
+
+// Helper function for date formatting
+const formatDate = (date) => {
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+};
 
 // GET /checkout - Display the main checkout page
 router.get('/', async (req, res) => {
@@ -21,17 +26,19 @@ router.get('/', async (req, res) => {
     const currency = res.locals.locationData.currency;
     const cart = req.session.cart;
 
-    // --- New Shipping Logic ---
-    let shippingCost = SHIPPING_COST;
-    let amountNeededForFreeShipping = FREE_SHIPPING_THRESHOLD - cart.totalPrice;
-    
-    if (cart.totalPrice >= FREE_SHIPPING_THRESHOLD) {
-        shippingCost = 0;
-        amountNeededForFreeShipping = 0;
-    }
-    
+    // --- Shipping & Total Logic ---
+    let shippingCost = (cart.totalPrice >= FREE_SHIPPING_THRESHOLD_BASE) ? 0 : SHIPPING_COST_BASE;
     const totalWithShipping = cart.totalPrice + shippingCost;
-    const freeShippingProgress = (cart.totalPrice / FREE_SHIPPING_THRESHOLD) * 100;
+    const amountNeededForFreeShipping = FREE_SHIPPING_THRESHOLD_BASE - cart.totalPrice;
+    const freeShippingProgress = (cart.totalPrice / FREE_SHIPPING_THRESHOLD_BASE) * 100;
+
+    // --- Arrival Date Logic ---
+    const today = new Date();
+    const arrivalStart = new Date(today);
+    arrivalStart.setDate(today.getDate() + 5);
+    const arrivalEnd = new Date(today);
+    arrivalEnd.setDate(today.getDate() + 7);
+    const arrivalDate = `Arrives ${arrivalStart.toLocaleDateString('en-US', { weekday: 'short' })}, ${formatDate(arrivalStart)} - ${arrivalEnd.toLocaleDateString('en-US', { weekday: 'short' })}, ${formatDate(arrivalEnd)}`;
 
     // Perform currency conversion for all cart and summary items
     if (cart.items.length > 0) {
@@ -40,20 +47,21 @@ router.get('/', async (req, res) => {
             return item;
         }));
         cart.convertedTotalPrice = await convertCurrency(cart.totalPrice, currency);
-        shippingCost = await convertCurrency(shippingCost, currency);
-        amountNeededForFreeShipping = await convertCurrency(amountNeededForFreeShipping, currency);
     }
+    
+    const convertedShipping = {
+        cost: await convertCurrency(shippingCost, currency),
+        threshold: await convertCurrency(FREE_SHIPPING_THRESHOLD_BASE, currency),
+        amountNeeded: await convertCurrency(amountNeededForFreeShipping, currency),
+        progress: freeShippingProgress > 100 ? 100 : freeShippingProgress
+    };
 
     res.render('checkout', {
         title: "Checkout",
         cart: cart,
-        shipping: {
-            cost: shippingCost,
-            threshold: await convertCurrency(FREE_SHIPPING_THRESHOLD, currency),
-            amountNeeded: amountNeededForFreeShipping,
-            progress: freeShippingProgress
-        },
-        totalWithShipping: await convertCurrency(totalWithShipping, currency)
+        shipping: convertedShipping,
+        totalWithShipping: await convertCurrency(totalWithShipping, currency),
+        arrivalDate: arrivalDate
     });
 });
 
@@ -72,7 +80,7 @@ router.post('/place-order', async (req, res) => {
         const currency = res.locals.locationData.currency;
 
         // Recalculate shipping on the backend to ensure accuracy
-        let finalShippingCost = (cart.totalPrice >= FREE_SHIPPING_THRESHOLD) ? 0 : SHIPPING_COST;
+        const finalShippingCost = (cart.totalPrice >= FREE_SHIPPING_THRESHOLD_BASE) ? 0 : SHIPPING_COST_BASE;
         const finalTotal = cart.totalPrice + finalShippingCost;
 
         // Create the order object
@@ -89,7 +97,7 @@ router.post('/place-order', async (req, res) => {
                 zip: req.body.zip
             },
             items: cart.items,
-            subtotal: cart.totalPrice, // Store subtotal in base currency (USD)
+            subtotal: cart.totalPrice, // Store subtotal in base currency
             shippingCost: finalShippingCost, // Store shipping cost in base currency
             total: finalTotal, // Store final total in base currency
             currency: currency, // Store the currency of the transaction

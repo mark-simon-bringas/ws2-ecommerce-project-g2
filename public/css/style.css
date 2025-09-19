@@ -38,6 +38,7 @@ body {
   color: var(--text-color);
   -webkit-font-smoothing: antialiased;
   line-height: 1.5;
+  overflow-x: hidden; /* Global overflow fix */
 }
 a {
   text-decoration: none;
@@ -692,6 +693,47 @@ li {
     color: var(--text-color);
 }
 
+/* --- Checkout Page Styles --- */
+.checkout-container.container-fluid {
+    max-width: 1280px;
+}
+.checkout-main {
+    border-right: 1px solid var(--border-color);
+}
+.checkout-summary {
+    background-color: var(--bg-color);
+}
+.checkout-form-container {
+    max-width: 550px;
+    margin: 0 auto;
+    padding: 3rem 0;
+}
+.checkout-radio-group {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+.checkout-radio-group label {
+    padding: 1rem;
+    border-radius: 12px;
+    font-weight: 600;
+    text-align: center;
+    border-width: 2px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+.checkout-radio-group .btn-check:checked+.btn {
+    border-color: var(--nike-black);
+    background-color: var(--card-bg-color);
+    color: var(--nike-black);
+    box-shadow: 0 0 0 1px var(--nike-black);
+}
+.payment-methods {
+    grid-template-columns: 1fr;
+}
+
 
 /* --- 7. Dashboard Layout & Components --- */
 .dashboard-layout { display: flex; flex-direction: column; }
@@ -1279,16 +1321,21 @@ li {
 }
 
 /* --- Checkout Page Styles --- */
-.checkout-container {
-    padding: 0;
-    background-color: #fff;
+@media (min-width: 992px) {
+    .checkout-container.container-fluid {
+        max-width: 1140px;
+        margin: 0 auto;
+        padding: 0;
+    }
 }
 .checkout-main {
     padding: 1.5rem;
+    border-right: none;
 }
 .checkout-summary {
-    background-color: #fff; /* Updated from var(--bg-color) */
-    padding: 2.5rem 3.5rem; /* Increased horizontal padding */
+    background-color: #fff;
+    padding: 2.5rem;
+    position: relative; 
 }
 .checkout-form-container {
     max-width: 550px;
@@ -1319,7 +1366,7 @@ li {
     box-shadow: 0 0 0 1px var(--nike-black);
 }
 .payment-methods {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr 1fr;
 }
 .checkout-main .form-label {
     font-size: 0.8rem;
@@ -1358,7 +1405,7 @@ li {
 /* Desktop Summary Card */
 .summary-card {
     position: sticky;
-    top: 44px; /* Height of the desktop navbar */
+    top: 68px; /* Adjusted for navbar height + extra space */
 }
 .summary-card .badge.translate-middle {
     top: 10px;
@@ -1409,7 +1456,7 @@ li {
 .summary-card .list-group-item.fs-5, .accordion-body .list-group-item.fs-5 {
     padding-top: 1rem;
     margin-top: 0.5rem;
-    border-top: 1px solid var(--border-color);
+    border-top: none; /* Removed border */
 }
 .summary-card .list-group-item.fs-5 strong, .accordion-body .list-group-item.fs-5 strong {
     font-weight: 700 !important;
@@ -1426,6 +1473,15 @@ li {
     margin-top: 1.5rem;
     padding-top: 1.5rem;
     border-top: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--text-color-secondary);
+}
+.summary-arrival-date i {
+    font-size: 1.2rem;
 }
 .summary-product-item {
     display: grid;
@@ -1435,8 +1491,8 @@ li {
     margin-top: 1.5rem;
 }
 .summary-product-item img {
-    width: 80px; /* Increased size */
-    height: 80px; /* Increased size */
+    width: 140px; /* Increased size */
+    height: 140px; /* Increased size */
     object-fit: cover;
     border-radius: 8px;
     background-color: #fff;
@@ -1457,4 +1513,12 @@ li {
     font-size: 0.9rem;
     font-weight: 500;
     color: var(--text-color-secondary);
+}
+
+/* --- Mobile Overflow Fix --- */
+@media (max-width: 991.98px) {
+    .checkout-main {
+      flex: 0 0 100%;
+      max-width: 100%;
+    }
 }
