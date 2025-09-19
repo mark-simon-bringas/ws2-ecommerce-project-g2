@@ -406,10 +406,15 @@ router.get('/admin/users', isAdmin, async (req, res) => {
 });
 
 // GET /account/settings - Show account settings page
-router.get('/settings', (req, res) => {
+router.get('/settings', async (req, res) => {
+    const db = req.app.locals.client.db(req.app.locals.dbName);
+    const user = await db.collection('users').findOne({ userId: req.session.user.userId });
+
     res.render('account/settings', {
         title: "Account Settings",
         view: 'settings',
+        // Pass the full user object to the template
+        user: user,
         message: req.query.message,
         error: req.query.error
     });
@@ -436,11 +441,11 @@ router.post('/settings/update-profile', async (req, res) => {
         req.session.user.firstName = firstName;
         req.session.user.lastName = lastName;
 
-        res.redirect('/account/settings?message=' + encodeURIComponent('Profile updated successfully!'));
+        res.redirect('/account/settings?tab=profile&message=' + encodeURIComponent('Profile updated successfully!'));
 
     } catch (err) {
         console.error("Error updating profile:", err);
-        res.redirect('/account/settings?error=' + encodeURIComponent('An error occurred while updating your profile.'));
+        res.redirect('/account/settings?tab=profile&error=' + encodeURIComponent('An error occurred while updating your profile.'));
     }
 });
 
@@ -451,17 +456,18 @@ router.post('/settings/update-password', async (req, res) => {
         const userId = req.session.user.userId;
 
         if (newPassword !== confirmPassword) {
-            return res.redirect('/account/settings?error=' + encodeURIComponent('New passwords do not match.'));
+            return res.redirect('/account/settings?tab=security&error=' + encodeURIComponent('New passwords do not match.'));
         }
 
         const pwdStrengthErrors = [];
         if (newPassword.length < 8) { pwdStrengthErrors.push("Password must be at least 8 characters long.") }
         if (!/[A-Z]/.test(newPassword)) { pwdStrengthErrors.push("Password must contain at least one uppercase letter."); }
         if (!/[a-z]/.test(newPassword)) { pwdStrengthErrors.push("Password must contain at least one lowercase letter."); }
-        if (!/[0-9]/.test(newPassword)) { pwdStrengthErrors.push("Password must contain a special character."); }
+        if (!/[0-9]/.test(newPassword)) { pwdStrengthErrors.push("Password must contain a number."); }
+        if (!/[!@#$%^&*()_\+\-=\[\]{};':"\\|,.<>\/?`~]/.test(newPassword)) { pwdStrengthErrors.push("Password must contain a special character."); }
         
         if (pwdStrengthErrors.length > 0) {
-            return res.redirect('/account/settings?error=' + encodeURIComponent(pwdStrengthErrors.join(' ')));
+            return res.redirect('/account/settings?tab=security&error=' + encodeURIComponent(pwdStrengthErrors.join(' ')));
         }
 
         const db = req.app.locals.client.db(req.app.locals.dbName);
@@ -470,7 +476,7 @@ router.post('/settings/update-password', async (req, res) => {
 
         const isPasswordValid = await bcrypt.compare(currentPassword, user.passwordHash);
         if (!isPasswordValid) {
-            return res.redirect('/account/settings?error=' + encodeURIComponent('Incorrect current password.'));
+            return res.redirect('/account/settings?tab=security&error=' + encodeURIComponent('Incorrect current password.'));
         }
 
         const hashedPassword = await bcrypt.hash(newPassword, saltRounds);
@@ -479,12 +485,120 @@ router.post('/settings/update-password', async (req, res) => {
             { $set: { passwordHash: hashedPassword, updatedAt: new Date() } }
         );
 
-        res.redirect('/account/settings?message=' + encodeURIComponent('Password updated successfully!'));
+        res.redirect('/account/settings?tab=security&message=' + encodeURIComponent('Password updated successfully!'));
 
     } catch (err) {
         console.error("Error updating password:", err);
-        res.redirect('/account/settings?error=' + encodeURIComponent('An error occurred while updating your password.'));
+        res.redirect('/account/settings?tab=security&error=' + encodeURIComponent('An error occurred while updating your password.'));
     }
 });
+
+
+// --- ADDRESS MANAGEMENT ROUTES ---
+
+// POST /account/settings/add-address
+router.post('/settings/add-address', async (req, res) => {
+    try {
+        const { v4: uuidv4 } = await import('uuid');
+        const db = req.app.locals.client.db(req.app.locals.dbName);
+        const usersCollection = db.collection('users');
+        const userId = req.session.user.userId;
+
+        const newAddress = {
+            addressId: uuidv4(),
+            firstName: req.body.firstName,
+            lastName: req.body.lastName,
+            address: req.body.address,
+            country: req.body.country,
+            state: req.body.state,
+            zip: req.body.zip,
+            phone: req.body.phone,
+            isDefault: req.body.isDefault === 'on'
+        };
+
+        // If this new address is the default, first ensure no other address is default
+        if (newAddress.isDefault) {
+            await usersCollection.updateOne(
+                { userId: userId },
+                { $set: { "addresses.$[].isDefault": false } }
+            );
+        }
+
+        await usersCollection.updateOne(
+            { userId: userId },
+            { $push: { addresses: newAddress } }
+        );
+
+        res.redirect('/account/settings?tab=addresses&message=' + encodeURIComponent('Address added successfully!'));
+    } catch (err) {
+        console.error("Error adding address:", err);
+        res.redirect('/account/settings?tab=addresses&error=' + encodeURIComponent('Could not add address.'));
+    }
+});
+
+
+// POST /account/settings/edit-address/:addressId
+router.post('/settings/edit-address/:addressId', async (req, res) => {
+    try {
+        const db = req.app.locals.client.db(req.app.locals.dbName);
+        const usersCollection = db.collection('users');
+        const userId = req.session.user.userId;
+        const { addressId } = req.params;
+
+        const updatedAddress = {
+            addressId: addressId,
+            firstName: req.body.firstName,
+            lastName: req.body.lastName,
+            address: req.body.address,
+            country: req.body.country,
+            state: req.body.state,
+            zip: req.body.zip,
+            phone: req.body.phone,
+            isDefault: req.body.isDefault === 'on'
+        };
+
+        // If this address is now the default, unset default on all others first
+        if (updatedAddress.isDefault) {
+            await usersCollection.updateOne(
+                { userId: userId },
+                { $set: { "addresses.$[].isDefault": false } }
+            );
+        }
+
+        // Now, update the specific address
+        await usersCollection.updateOne(
+            { userId: userId, "addresses.addressId": addressId },
+            { $set: { "addresses.$": updatedAddress } }
+        );
+        
+        res.redirect('/account/settings?tab=addresses&message=' + encodeURIComponent('Address updated successfully!'));
+
+    } catch (err) {
+        console.error("Error updating address:", err);
+        res.redirect('/account/settings?tab=addresses&error=' + encodeURIComponent('Could not update address.'));
+    }
+});
+
+// POST /account/settings/delete-address/:addressId
+router.post('/settings/delete-address/:addressId', async (req, res) => {
+    try {
+        const db = req.app.locals.client.db(req.app.locals.dbName);
+        const usersCollection = db.collection('users');
+        const userId = req.session.user.userId;
+        const { addressId } = req.params;
+        
+        await usersCollection.updateOne(
+            { userId: userId },
+            { $pull: { addresses: { addressId: addressId } } }
+        );
+
+        res.redirect('/account/settings?tab=addresses&message=' + encodeURIComponent('Address removed successfully!'));
+
+    } catch (err) {
+        console.error("Error deleting address:", err);
+        res.redirect('/account/settings?tab=addresses&error=' + encodeURIComponent('Could not remove address.'));
+    }
+});
+
 
 module.exports = router;

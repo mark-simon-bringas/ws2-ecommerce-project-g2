@@ -115,50 +115,77 @@
                             <input type="hidden" name="email" value="<%= currentUser.email %>">
                         <% } %>
 
-                        <h4 class="mt-4 mb-3 h6 fw-semibold">Shipping Address</h4>
-                        <div class="row g-3">
-                            <div class="col-sm-6">
-                                <label for="firstName" class="form-label">First name</label>
-                                <input type="text" class="form-control" name="firstName" id="firstName" value="<%= currentUser ? currentUser.firstName : '' %>" required>
+                        <% if (currentUser && addresses && addresses.length > 0) { %>
+                            <div class="mb-4">
+                                <h4 class="mb-3 h6 fw-semibold">Select a Shipping Address</h4>
+                                <div class="list-group">
+                                    <% addresses.forEach((addr, index) => { %>
+                                        <label class="list-group-item list-group-item-action">
+                                            <input class="form-check-input me-2" type="radio" name="selectedAddressId" value="<%= addr.addressId %>" <%= (addr.isDefault || (!addresses.some(a => a.isDefault) && index === 0)) ? 'checked' : '' %>>
+                                            <strong><%= addr.firstName %> <%= addr.lastName %></strong>, <%= addr.address %>, <%= addr.state %>, <%= addr.zip %>
+                                        </label>
+                                    <% }) %>
+                                    <label class="list-group-item list-group-item-action">
+                                        <input class="form-check-input me-2" type="radio" name="selectedAddressId" value="new">
+                                        Use a new address
+                                    </label>
+                                </div>
                             </div>
-                            <div class="col-sm-6">
-                                <label for="lastName" class="form-label">Last name</label>
-                                <input type="text" class="form-control" name="lastName" id="lastName" value="<%= currentUser ? currentUser.lastName : '' %>" required>
+                        <% } %>
+
+                        <fieldset id="shipping-address-fieldset">
+                            <h4 class="mt-4 mb-3 h6 fw-semibold">Shipping Address</h4>
+                            <div class="row g-3">
+                                <div class="col-sm-6">
+                                    <label for="firstName" class="form-label">First name</label>
+                                    <input type="text" class="form-control" name="firstName" id="firstName" value="<%= currentUser ? currentUser.firstName : '' %>" required>
+                                </div>
+                                <div class="col-sm-6">
+                                    <label for="lastName" class="form-label">Last name</label>
+                                    <input type="text" class="form-control" name="lastName" id="lastName" value="<%= currentUser ? currentUser.lastName : '' %>" required>
+                                </div>
+                                <div class="col-12">
+                                    <label for="address" class="form-label">Address</label>
+                                    <input type="text" class="form-control" name="address" id="address" placeholder="1234 Main St" required>
+                                </div>
+                                <div class="col-md-5">
+                                    <label for="country" class="form-label">Country</label>
+                                    <select class="form-select" id="country" name="country" required>
+                                        <option>Philippines</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="state" class="form-label">State/Region</label>
+                                    <input type="text" class="form-control" name="state" id="state" placeholder="e.g. CAR" required>
+                                </div>
+                                <div class="col-md-3">
+                                    <label for="zip" class="form-label">Zip</label>
+                                    <input type="text" class="form-control" name="zip" id="zip" required>
+                                </div>
+                                <div class="col-12">
+                                    <label for="phone" class="form-label">Phone Number</label>
+                                    <input type="tel" class="form-control" name="phone" id="phone" required>
+                                    <small class="form-text text-body-secondary">A carrier might contact you to confirm delivery.</small>
+                                </div>
                             </div>
-                            <div class="col-12">
-                                <label for="address" class="form-label">Address</label>
-                                <input type="text" class="form-control" name="address" id="address" placeholder="1234 Main St" required>
+                        </fieldset>
+                        
+                        <% if (currentUser) { %>
+                            <div class="form-check mt-3" id="save-address-container">
+                                <input class="form-check-input" type="checkbox" id="saveAddress" name="saveAddress">
+                                <label class="form-check-label" for="saveAddress">
+                                    Save this address for future purchases
+                                </label>
                             </div>
-                            <div class="col-md-5">
-                                <label for="country" class="form-label">Country</label>
-                                <select class="form-select" id="country" name="country" required>
-                                    <option>Philippines</option>
-                                </select>
-                            </div>
-                            <div class="col-md-4">
-                                <label for="state" class="form-label">State/Region</label>
-                                <input type="text" class="form-control" name="state" id="state" placeholder="e.g. CAR" required>
-                            </div>
-                            <div class="col-md-3">
-                                <label for="zip" class="form-label">Zip</label>
-                                <input type="text" class="form-control" name="zip" id="zip" required>
-                            </div>
-                            <div class="col-12">
-                                <label for="phone" class="form-label">Phone Number</label>
-                                <input type="tel" class="form-control" name="phone" id="phone" required>
-                                <small class="form-text text-body-secondary">A carrier might contact you to confirm delivery.</small>
-                            </div>
-                        </div>
+                        <% } %>
 
                         <hr class="my-4">
-
                         <div class="form-check">
                             <input class="form-check-input" type="checkbox" id="sameAsShipping" checked>
                             <label class="form-check-label" for="sameAsShipping">
                                 Billing address is the same as my shipping address
                             </label>
                         </div>
-
                         <div id="billing-address-form" class="d-none mt-4">
                             <h4 class="mb-3 h6 fw-semibold">Billing Address</h4>
                             <div class="row g-3">
@@ -320,3 +347,74 @@
         </div>
     </div>
 </div>
+
+<% if (currentUser) { %>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // This script now handles both cases: with and without saved addresses.
+        const addresses = <%- JSON.stringify(addresses || []) %>;
+        const addressRadios = document.querySelectorAll('input[name="selectedAddressId"]');
+        const fieldset = document.getElementById('shipping-address-fieldset');
+        const saveAddressContainer = document.getElementById('save-address-container');
+
+        const formFields = {
+            firstName: document.getElementById('firstName'),
+            lastName: document.getElementById('lastName'),
+            address: document.getElementById('address'),
+            country: document.getElementById('country'),
+            state: document.getElementById('state'),
+            zip: document.getElementById('zip'),
+            phone: document.getElementById('phone')
+        };
+
+        function populateForm(address) {
+            for (const key in formFields) {
+                if (formFields.hasOwnProperty(key) && address.hasOwnProperty(key)) {
+                    formFields[key].value = address[key];
+                }
+            }
+        }
+
+        function toggleForm(state) {
+            if (state === 'disabled') {
+                fieldset.disabled = true;
+                if(saveAddressContainer) saveAddressContainer.style.display = 'none';
+            } else {
+                fieldset.disabled = false;
+                // We don't clear the form, to preserve the pre-filled first/last name
+                if(saveAddressContainer) saveAddressContainer.style.display = 'block';
+            }
+        }
+
+        if (addressRadios.length > 0) {
+            addressRadios.forEach(radio => {
+                radio.addEventListener('change', function() {
+                    if (this.value === 'new') {
+                        // When switching to 'new', re-enable but don't clear
+                        toggleForm('enabled');
+                    } else {
+                        const selectedAddress = addresses.find(addr => addr.addressId === this.value);
+                        if (selectedAddress) {
+                            populateForm(selectedAddress);
+                            toggleForm('disabled');
+                        }
+                    }
+                });
+            });
+
+            // Initial state check on page load
+            const checkedRadio = document.querySelector('input[name="selectedAddressId"]:checked');
+            if (checkedRadio && checkedRadio.value !== 'new') {
+                const initialAddress = addresses.find(addr => addr.addressId === checkedRadio.value);
+                if (initialAddress) {
+                    populateForm(initialAddress);
+                    toggleForm('disabled');
+                }
+            } else {
+                // This covers both the "new" radio being checked, or no radios existing at all
+                toggleForm('enabled');
+            }
+        }
+    });
+</script>
+<% } %>

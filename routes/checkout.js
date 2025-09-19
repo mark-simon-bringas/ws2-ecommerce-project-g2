@@ -25,6 +25,16 @@ router.get('/', async (req, res) => {
 
     const currency = res.locals.locationData.currency;
     const cart = req.session.cart;
+    let userAddresses = [];
+
+    // Fetch user's saved addresses if they are logged in
+    if (req.session.user) {
+        const db = req.app.locals.client.db(req.app.locals.dbName);
+        const user = await db.collection('users').findOne({ userId: req.session.user.userId });
+        if (user && user.addresses) {
+            userAddresses = user.addresses;
+        }
+    }
 
     // --- Shipping & Total Logic ---
     let shippingCost = (cart.totalPrice >= FREE_SHIPPING_THRESHOLD_BASE) ? 0 : SHIPPING_COST_BASE;
@@ -61,7 +71,8 @@ router.get('/', async (req, res) => {
         cart: cart,
         shipping: convertedShipping,
         totalWithShipping: await convertCurrency(totalWithShipping, currency),
-        arrivalDate: arrivalDate
+        arrivalDate: arrivalDate,
+        addresses: userAddresses // Pass addresses to the view
     });
 });
 
@@ -73,11 +84,48 @@ router.post('/place-order', async (req, res) => {
     }
 
     try {
+        const { v4: uuidv4 } = await import('uuid');
         const db = req.app.locals.client.db(req.app.locals.dbName);
         const ordersCollection = db.collection('orders');
         const productsCollection = db.collection('products');
+        const usersCollection = db.collection('users');
         const cart = req.session.cart;
         const currency = res.locals.locationData.currency;
+
+        let shippingAddress;
+        const { selectedAddressId, saveAddress } = req.body;
+
+        // Determine the shipping address
+        if (req.session.user && selectedAddressId) {
+            // Scenario 1: User is logged in and selected a saved address
+            const user = await usersCollection.findOne({ userId: req.session.user.userId });
+            const savedAddress = user.addresses.find(addr => addr.addressId === selectedAddressId);
+            if (savedAddress) {
+                shippingAddress = savedAddress;
+            }
+        }
+        
+        if (!shippingAddress) {
+            // Scenario 2: User entered a new address (guest or logged-in)
+            shippingAddress = {
+                firstName: req.body.firstName,
+                lastName: req.body.lastName,
+                address: req.body.address,
+                country: req.body.country,
+                state: req.body.state,
+                zip: req.body.zip,
+                phone: req.body.phone
+            };
+            
+            // Scenario 3: Logged-in user entered a new address and wants to save it
+            if (req.session.user && saveAddress === 'on') {
+                const newAddressForProfile = { ...shippingAddress, addressId: uuidv4(), isDefault: false };
+                await usersCollection.updateOne(
+                    { userId: req.session.user.userId },
+                    { $push: { addresses: newAddressForProfile } }
+                );
+            }
+        }
 
         // Recalculate shipping on the backend to ensure accuracy
         const finalShippingCost = (cart.totalPrice >= FREE_SHIPPING_THRESHOLD_BASE) ? 0 : SHIPPING_COST_BASE;
@@ -86,15 +134,15 @@ router.post('/place-order', async (req, res) => {
         // Create the order object
         const order = {
             customer: {
-                firstName: req.body.firstName,
-                lastName: req.body.lastName,
+                firstName: shippingAddress.firstName,
+                lastName: shippingAddress.lastName,
                 email: req.body.email,
             },
             shippingAddress: {
-                address: req.body.address,
-                country: req.body.country,
-                state: req.body.state,
-                zip: req.body.zip
+                address: shippingAddress.address,
+                country: shippingAddress.country,
+                state: shippingAddress.state,
+                zip: shippingAddress.zip
             },
             items: cart.items,
             subtotal: cart.totalPrice, // Store subtotal in base currency
