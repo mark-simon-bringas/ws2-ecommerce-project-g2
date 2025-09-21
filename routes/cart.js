@@ -30,7 +30,6 @@ router.get('/', async (req, res) => {
             }
         }
 
-        // Perform currency conversions before rendering
         if (cart.items.length > 0) {
             cart.items = await Promise.all(cart.items.map(async (item) => {
                 item.convertedPrice = await convertCurrency(item.price, currency);
@@ -38,7 +37,7 @@ router.get('/', async (req, res) => {
             }));
             cart.convertedTotalPrice = await convertCurrency(cart.totalPrice, currency);
         } else {
-            cart.convertedTotalPrice = 0; // Explicitly set to 0 if cart is empty
+            cart.convertedTotalPrice = 0;
         }
 
         if (wishlistProducts.length > 0) {
@@ -52,7 +51,8 @@ router.get('/', async (req, res) => {
             title: "Your Cart",
             cart: cart,
             wishlistProducts: wishlistProducts,
-            wishlist: userWishlist
+            wishlist: userWishlist,
+            message: req.query.message // To display success message
         });
 
     } catch (err) {
@@ -61,7 +61,7 @@ router.get('/', async (req, res) => {
     }
 });
 
-// UPDATED: POST /cart/add - Now returns JSON instead of redirecting
+// POST /cart/add - Now returns JSON instead of redirecting
 router.post('/add', async (req, res) => {
     try {
         const { productId, sku, size } = req.body;
@@ -143,19 +143,18 @@ router.post('/remove', (req, res) => {
     res.redirect('/cart');
 });
 
-// ADDED: POST /cart/update-quantity - Increment or decrement an item's quantity
+// POST /cart/update-quantity - Increment or decrement an item's quantity
 router.post('/update-quantity', (req, res) => {
-    const { itemId, change } = req.body; // change will be '1' or '-1'
-    const cart = req.session.cart;
+    const { itemId, change } = req.body;
     const changeAmount = parseInt(change, 10);
 
-    if (cart && cart.items && !isNaN(changeAmount)) {
+    if (req.session.cart && req.session.cart.items && !isNaN(changeAmount)) {
+        const cart = req.session.cart;
         const itemIndex = cart.items.findIndex(item => item.itemId === itemId);
         if (itemIndex > -1) {
             const item = cart.items[itemIndex];
             item.qty += changeAmount;
 
-            // Remove item if quantity drops to 0 or less
             if (item.qty <= 0) {
                 cart.items.splice(itemIndex, 1);
             } else {
@@ -170,36 +169,49 @@ router.post('/update-quantity', (req, res) => {
     res.redirect('/cart');
 });
 
-// ADDED: POST /cart/move-to-wishlist - Move an item from cart to wishlist
-router.post('/move-to-wishlist', async (req, res) => {
+// POST /cart/add-to-wishlist-from-cart
+router.post('/add-to-wishlist-from-cart', async (req, res) => {
     if (!req.session.user) {
-        return res.redirect('/users/login');
+        return res.status(401).send('Unauthorized');
     }
     try {
-        const { itemId, productId } = req.body;
+        const { productId } = req.body;
         const userId = req.session.user.userId;
         const productObjectId = new ObjectId(productId);
-        const cart = req.session.cart;
 
-        // Add to wishlist
         const db = req.app.locals.client.db(req.app.locals.dbName);
         await db.collection('users').updateOne(
             { userId: userId },
-            { $addToSet: { wishlist: productObjectId } } // Use $addToSet to avoid duplicates
+            { $addToSet: { wishlist: productObjectId } }
         );
 
-        // Remove from cart
-        if (cart && cart.items) {
-            cart.items = cart.items.filter(item => item.itemId !== itemId);
-            cart.totalQty = cart.items.reduce((total, item) => total + item.qty, 0);
-            cart.totalPrice = cart.items.reduce((total, item) => total + item.price, 0);
-        }
-        
-        res.redirect('/cart');
-
+        res.redirect('/cart'); // Corrected: Only redirect
     } catch (err) {
-        console.error("Error moving item to wishlist:", err);
-        res.status(500).send("An error occurred.");
+        console.error("Error adding item to wishlist:", err);
+        res.status(500).send('An error occurred.'); // Or redirect with an error message
+    }
+});
+
+// POST /cart/remove-from-wishlist
+router.post('/remove-from-wishlist', async (req, res) => {
+    if (!req.session.user) {
+        return res.status(401).send('Unauthorized');
+    }
+    try {
+        const { productId } = req.body;
+        const userId = req.session.user.userId;
+        const productObjectId = new ObjectId(productId);
+
+        const db = req.app.locals.client.db(req.app.locals.dbName);
+        await db.collection('users').updateOne(
+            { userId: userId },
+            { $pull: { wishlist: productObjectId } }
+        );
+
+        res.redirect('/cart'); // Corrected: Only redirect
+    } catch (err) {
+        console.error("Error removing item from wishlist:", err);
+        res.status(500).send('An error occurred.'); // Or redirect with an error message
     }
 });
 
