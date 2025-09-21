@@ -33,9 +33,7 @@ router.get('/', async (req, res) => {
         let userWishlist = [];
         if (req.session.user) {
             const user = await usersCollection.findOne({ userId: req.session.user.userId });
-            if (user && user.wishlist) {
-                userWishlist = user.wishlist;
-            }
+            userWishlist = user?.wishlist || []; // Use optional chaining for safety
         }
 
         let query = {};
@@ -89,9 +87,7 @@ router.get('/search', async (req, res) => {
         let userWishlist = [];
         if (req.session.user) {
             const user = await usersCollection.findOne({ userId: req.session.user.userId });
-            if (user && user.wishlist) {
-                userWishlist = user.wishlist;
-            }
+            userWishlist = user?.wishlist || []; // Use optional chaining for safety
         }
 
         const query = {
@@ -605,8 +601,8 @@ router.get('/:sku', async (req, res) => {
             }).limit(8).toArray()
         ]);
 
-        const isWishlisted = user && user.wishlist && user.wishlist.some(id => id.equals(product._id));
-        const userWishlist = user ? user.wishlist : [];
+        const userWishlist = user?.wishlist || []; // Use optional chaining for safety
+        const isWishlisted = userWishlist.some(id => id.equals(product._id));
 
         // Convert all prices before rendering
         product.convertedPrice = await convertCurrency(product.retailPrice, currency);

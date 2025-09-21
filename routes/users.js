@@ -71,6 +71,7 @@ router.post('/register', async (req, res) => {
             isEmailVerified: false,
             verificationToken: token,
             tokenExpiry: new Date(Date.now() + 3600000),
+            wishlist: [],
             createdAt: currentDate,
             updatedAt: currentDate
         };

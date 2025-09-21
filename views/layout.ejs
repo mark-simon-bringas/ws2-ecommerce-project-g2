@@ -18,6 +18,10 @@
         <link rel="stylesheet" href="/css/auth.css">
     <% } %>
 
+    <% if (typeof title !== 'undefined' && (title === 'Success!' || title === 'Email Verified!' || title === 'Check Your Email' || title === 'Password Reset')) { %>
+        <link rel="stylesheet" href="/css/success-page.css">
+    <% } %>
+
     <% if (typeof title !== 'undefined' && title === 'Order Confirmation') { %>
         <link rel="stylesheet" href="/css/order-success.css">
     <% } %>
