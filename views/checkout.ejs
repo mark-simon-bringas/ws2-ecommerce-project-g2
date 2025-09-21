@@ -120,10 +120,8 @@
                                 <div class="list-group address-selector-group">
                                     <% addresses.forEach((addr, index) => { %>
                                         <label class="list-group-item list-group-item-action">
-                                            <input type="radio" name="selectedAddressId" value="<%= addr.addressId %>" 
-                                                <%= (addr.isDefault || (!addresses.some(a => a.isDefault) && index === 0)) ? 'checked' : '' %>>
-                                            <strong><%= addr.firstName %> <%= addr.lastName %></strong>, 
-                                            <%= addr.address %>, <%= addr.state %>, <%= addr.zip %>
+                                            <input type="radio" name="selectedAddressId" value="<%= addr.addressId %>" <%= (addr.isDefault || (!addresses.some(a => a.isDefault) && index === 0)) ? 'checked' : '' %>>
+                                            <strong><%= addr.firstName %> <%= addr.lastName %></strong>, <%= addr.address %>, <%= addr.state %>, <%= addr.zip %>
                                         </label>
                                     <% }) %>
                                     <label class="list-group-item list-group-item-action">
@@ -210,6 +208,67 @@
                                 </div>
                             </div>
                         </div>
+                        
+                        <hr class="my-4">
+                        
+                        <div id="payment-section">
+                            <h4 class="mb-3 h6 fw-semibold">How would you like to pay?</h4>
+                            <div class="checkout-radio-group payment-methods">
+                                <input type="radio" class="btn-check" name="payment-method" id="payment-cc" value="cc" checked autocomplete="off">
+                                <label class="btn btn-outline-secondary" for="payment-cc">Credit or Debit Card</label>
+                                
+                                <input type="radio" class="btn-check" name="payment-method" id="payment-paypal" value="paypal" autocomplete="off">
+                                <label class="btn btn-outline-secondary" for="payment-paypal">PayPal</label>
+                                
+                                <input type="radio" class="btn-check" name="payment-method" id="payment-gpay" value="gpay" autocomplete="off">
+                                <label class="btn btn-outline-secondary" for="payment-gpay">G Pay</label>
+                                
+                                <input type="radio" class="btn-check" name="payment-method" id="payment-gcash" value="gcash" autocomplete="off">
+                                <label class="btn btn-outline-secondary" for="payment-gcash">GCash</label>
+                                
+                                <input type="radio" class="btn-check" name="payment-method" id="payment-grabpay" value="grabpay" autocomplete="off">
+                                <label class="btn btn-outline-secondary" for="payment-grabpay">GrabPay</label>
+
+                                <input type="radio" class="btn-check" name="payment-method" id="payment-cod" value="cod" autocomplete="off">
+                                <label class="btn btn-outline-secondary" for="payment-cod">Cash on Delivery</label>
+                            </div>
+
+                            <div id="payment-details-cc" class="payment-details-content mt-4">
+                                <div class="row g-3">
+                                    <div class="col-12">
+                                        <label for="cc-name" class="form-label">Name on card</label>
+                                        <input type="text" class="form-control" id="cc-name" name="cc-name" required>
+                                    </div>
+                                    <div class="col-12">
+                                        <label for="cc-number" class="form-label">Card number</label>
+                                        <input type="text" class="form-control" id="cc-number" name="cc-number" required>
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <label for="cc-expiration" class="form-label">Expiration</label>
+                                        <input type="text" class="form-control" id="cc-expiration" name="cc-expiration" placeholder="MM/YY" required>
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <label for="cc-cvv" class="form-label">CVV</label>
+                                        <input type="text" class="form-control" id="cc-cvv" name="cc-cvv" placeholder="123" required>
+                                    </div>
+                                </div>
+                            </div>
+                            <div id="payment-details-paypal" class="payment-details-content mt-4 d-none text-center">
+                                <p class="text-body-secondary">You will be redirected to PayPal to complete your payment.</p>
+                            </div>
+                            <div id="payment-details-gpay" class="payment-details-content mt-4 d-none text-center">
+                                <p class="text-body-secondary">You will be redirected to Google Pay to complete your payment.</p>
+                            </div>
+                            <div id="payment-details-gcash" class="payment-details-content mt-4 d-none text-center">
+                                <p class="text-body-secondary">You will be redirected to GCash to complete your payment.</p>
+                            </div>
+                            <div id="payment-details-grabpay" class="payment-details-content mt-4 d-none text-center">
+                                <p class="text-body-secondary">You will be redirected to GrabPay to complete your payment.</p>
+                            </div>
+                            <div id="payment-details-cod" class="payment-details-content mt-4 d-none text-center">
+                                <p class="text-body-secondary">You will pay the courier upon receiving your order.</p>
+                            </div>
+                        </div>
                     </form>
                 </div>
 
@@ -218,68 +277,6 @@
                     <p class="text-body-secondary">Pickup locations are currently unavailable. Please select "Deliver It" to proceed.</p>
                 </div>
                 
-                <hr class="my-4">
-
-                <div id="payment-section">
-                    <h4 class="mb-3 h6 fw-semibold">How would you like to pay?</h4>
-                    <div class="checkout-radio-group payment-methods">
-                        <input type="radio" class="btn-check" name="payment-method" id="payment-cc" value="cc" checked autocomplete="off">
-                        <label class="btn btn-outline-secondary" for="payment-cc">Credit or Debit Card</label>
-                        
-                        <input type="radio" class="btn-check" name="payment-method" id="payment-paypal" value="paypal" autocomplete="off">
-                        <label class="btn btn-outline-secondary" for="payment-paypal">PayPal</label>
-                        
-                        <input type="radio" class="btn-check" name="payment-method" id="payment-gpay" value="gpay" autocomplete="off">
-                        <label class="btn btn-outline-secondary" for="payment-gpay">G Pay</label>
-                        
-                        <input type="radio" class="btn-check" name="payment-method" id="payment-gcash" value="gcash" autocomplete="off">
-                        <label class="btn btn-outline-secondary" for="payment-gcash">GCash</label>
-                        
-                        <input type="radio" class="btn-check" name="payment-method" id="payment-grabpay" value="grabpay" autocomplete="off">
-                        <label class="btn btn-outline-secondary" for="payment-grabpay">GrabPay</label>
-
-                        <input type="radio" class="btn-check" name="payment-method" id="payment-cod" value="cod" autocomplete="off">
-                        <label class="btn btn-outline-secondary" for="payment-cod">Cash on Delivery</label>
-                    </div>
-
-                    <div id="payment-details-cc" class="payment-details-content mt-4">
-                        <div class="row g-3">
-                            <div class="col-12">
-                                <label for="cc-name" class="form-label">Name on card</label>
-                                <input type="text" class="form-control" id="cc-name" name="cc-name" form="checkout-form" required>
-                            </div>
-                            <div class="col-12">
-                                <label for="cc-number" class="form-label">Card number</label>
-                                <input type="text" class="form-control" id="cc-number" name="cc-number" form="checkout-form" required>
-                            </div>
-                            <div class="col-sm-6">
-                                <label for="cc-expiration" class="form-label">Expiration</label>
-                                <input type="text" class="form-control" id="cc-expiration" name="cc-expiration" placeholder="MM/YY" form="checkout-form" required>
-                            </div>
-                            <div class="col-sm-6">
-                                <label for="cc-cvv" class="form-label">CVV</label>
-                                <input type="text" class="form-control" id="cc-cvv" name="cc-cvv" placeholder="123" form="checkout-form" required>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div id="payment-details-paypal" class="payment-details-content mt-4 d-none text-center">
-                        <p class="text-body-secondary">You will be redirected to PayPal to complete your payment.</p>
-                    </div>
-                    <div id="payment-details-gpay" class="payment-details-content mt-4 d-none text-center">
-                        <p class="text-body-secondary">You will be redirected to Google Pay to complete your payment.</p>
-                    </div>
-                    <div id="payment-details-gcash" class="payment-details-content mt-4 d-none text-center">
-                        <p class="text-body-secondary">You will be redirected to GCash to complete your payment.</p>
-                    </div>
-                    <div id="payment-details-grabpay" class="payment-details-content mt-4 d-none text-center">
-                        <p class="text-body-secondary">You will be redirected to GrabPay to complete your payment.</p>
-                    </div>
-                    <div id="payment-details-cod" class="payment-details-content mt-4 d-none text-center">
-                        <p class="text-body-secondary">You will pay the courier upon receiving your order.</p>
-                    </div>
-                </div>
-
                 <div class="d-grid mt-4">
                     <button type="submit" form="checkout-form" class="btn btn-primary btn-lg">Place Order</button>
                 </div>
@@ -293,8 +290,7 @@
         <%# Order Summary Sidebar (Hidden on Mobile) %>
         <div class="col-lg-4 checkout-summary d-none d-lg-block">
             <div class="summary-card">
-                <%# --- Start Inlined Order Summary --- %>
-                <h4 class="mb-3">Order Summary</h4>
+                 <h4 class="mb-3">Order Summary</h4>
                 <ul class="list-group list-group-flush mb-3">
                    <li class="list-group-item d-flex justify-content-between px-0">
                        <span>Subtotal <i class="bi bi-question-circle-fill"></i></span>
@@ -343,7 +339,6 @@
                        <p class="summary-product-price"><%= locationData.symbol %><%= item.convertedPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></p>
                    </div>
                <% }) %>
-              <%# --- End Inlined Order Summary --- %>
             </div>
         </div>
     </div>

@@ -1,3 +1,5 @@
+// routes/account.js
+
 const express = require('express');
 const router = express.Router();
 const { ObjectId } = require('mongodb');
@@ -8,38 +10,74 @@ const saltRounds = 12;
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 // Helper function to create a consistent, beautiful email template for status updates
-const createStatusEmailHtml = (title, message, order) => {
+const createStatusEmailHtml = (order) => {
+    const itemsHtml = order.items.map(item => `
+        <tr>
+            <td style="padding: 15px; vertical-align: top; background-color: #f5f5f7; border-radius: 8px 0 0 8px;">
+                <img src="${item.thumbnailUrl}" alt="${item.name}" width="60" style="border-radius: 8px;">
+            </td>
+            <td style="padding: 15px; vertical-align: top;">
+                <p style="margin: 0; font-weight: 600; max-width: 300px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${item.name}</p>
+                <p style="margin: 0; font-size: 0.9em; color: #6e6e73;">Size: ${item.size}</p>
+            </td>
+            <td style="padding: 15px; vertical-align: top; text-align: center;">${item.qty}</td>
+            <td style="padding: 15px; vertical-align: top; text-align: right; font-weight: 600;">${order.total.toLocaleString(undefined, { style: 'currency', currency: 'USD' })}</td>
+        </tr>
+    `).join('');
+
+    let headerMessage = 'Your order has been updated.';
+    let subMessage = `Order #${order._id.toString().slice(-7).toUpperCase()}`;
+
+    if (order.status === 'Processing') {
+        headerMessage = 'Thank you for your order.';
+        subMessage = `Your order #${order._id.toString().slice(-7).toUpperCase()} is confirmed and will be shipping soon.`;
+    } else if (order.status === 'Shipped') {
+        headerMessage = 'Good news! Your order has shipped.';
+    } else if (order.status === 'Delivered') {
+        headerMessage = 'Your order has been delivered.';
+    } else if (order.status === 'Cancelled') {
+        headerMessage = 'Your order has been cancelled.';
+        subMessage = `Your order #${order._id.toString().slice(-7).toUpperCase()} has been successfully cancelled. You have not been charged.`;
+    }
+
     return `
         <!DOCTYPE html>
         <html>
         <head>
             <style>
-                body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 0; background-color: #f5f5f7; }
-                .container { max-width: 600px; margin: 20px auto; background-color: #ffffff; border-radius: 12px; padding: 40px; }
-                .header { text-align: center; margin-bottom: 30px; }
-                .header h1 { color: #1d1d1f; margin: 0; }
-                .message-body { font-size: 1.1em; color: #1d1d1f; line-height: 1.5; text-align: center; }
-                .details { margin-top: 30px; padding-top: 20px; border-top: 1px solid #eaeaea; }
-                .details p { margin: 5px 0; color: #6e6e73; }
-                .details strong { color: #1d1d1f; }
-                .footer { text-align: center; margin-top: 30px; color: #86868b; font-size: 0.8em; }
+                body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 20px; background-color: #f5f5f7; color: #1d1d1f; }
+                .container { max-width: 680px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; padding: 40px; }
+                .header { text-align: center; border-bottom: 1px solid #d2d2d7; padding-bottom: 20px; margin-bottom: 20px;}
+                .header h1 { font-size: 24px; }
+                .items-table { width: 100%; border-collapse: separate; border-spacing: 0 10px; margin-top: 20px; }
+                .info-grid { display: table; width: 100%; margin-top: 30px; border-collapse: separate; border-spacing: 20px 0;}
+                .info-column { display: table-cell; width: 50%; vertical-align: top; }
+                .info-column h3 { font-size: 1em; margin-bottom: 10px;}
+                .footer { text-align: center; margin-top: 30px; font-size: 0.8em; color: #86868b; }
             </style>
         </head>
         <body>
             <div class="container">
                 <div class="header">
-                    <h1>sneakslab</h1>
+                    <h1>${headerMessage}</h1>
+                    <p>${subMessage}</p>
                 </div>
-                <h2 style="text-align: center; color: #1d1d1f;">${title}</h2>
-                <div class="message-body">
-                    ${message}
-                </div>
-                <div class="details">
-                    <p><strong>Order ID:</strong> ${order._id}</p>
-                    <p><strong>Order Date:</strong> ${new Date(order.orderDate).toLocaleDateString()}</p>
+                <table class="items-table">
+                    ${itemsHtml}
+                </table>
+                <div class="info-grid">
+                    <div class="info-column">
+                        <h3>Shipping to</h3>
+                        <p style="color: #6e6e73; margin:0;">${order.customer.firstName} ${order.customer.lastName}<br>${order.shippingAddress.address}<br>${order.shippingAddress.state}, ${order.shippingAddress.zip}</p>
+                    </div>
+                    <div class="info-column">
+                        <h3>Payment</h3>
+                        <p style="color: #6e6e73; margin:0;">${order.paymentDetails.method} ${order.paymentDetails.last4 ? `ending in ${order.paymentDetails.last4}` : ''}</p>
+                    </div>
                 </div>
                 <div class="footer">
-                    <p>&copy; ${new Date().getFullYear()} sneakslab. All rights reserved.</p>
+                    <p>Need help? <a href="#">Contact our support team.</a></p>
+                    <p>&copy; ${new Date().getFullYear()} Sneakslab. All rights reserved.</p>
                 </div>
             </div>
         </body>
@@ -47,7 +85,6 @@ const createStatusEmailHtml = (title, message, order) => {
     `;
 };
 
-// Middleware to check if the user is logged in
 const isLoggedIn = (req, res, next) => {
     if (!req.session.user) {
         return res.redirect('/users/login');
@@ -57,7 +94,6 @@ const isLoggedIn = (req, res, next) => {
     next();
 };
 
-// Middleware to check if the user is an admin
 const isAdmin = (req, res, next) => {
     if (req.session.user && req.session.user.role === 'admin') {
         return next();
@@ -65,10 +101,8 @@ const isAdmin = (req, res, next) => {
     res.status(403).send("Access Denied: You do not have permission to view this page.");
 };
 
-// Use isLoggedIn middleware for all /account routes
 router.use(isLoggedIn);
 
-// GET /account -> Redirect to the default dashboard view
 router.get('/', (req, res) => {
     if (req.session.user.role === 'admin') {
         res.redirect('/account/admin/dashboard');
@@ -77,8 +111,6 @@ router.get('/', (req, res) => {
     }
 });
 
-
-// POST /account/wishlist/toggle
 router.post('/wishlist/toggle', async (req, res) => {
     try {
         const { productId } = req.body;
@@ -116,8 +148,6 @@ router.post('/wishlist/toggle', async (req, res) => {
     }
 });
 
-
-// GET /account/wishlist - Display the user's wishlist page
 router.get('/wishlist', async (req, res) => {
     try {
         const db = req.app.locals.client.db(req.app.locals.dbName);
@@ -148,8 +178,6 @@ router.get('/wishlist', async (req, res) => {
     }
 });
 
-
-// /account/admin/dashboard to correctly fetch all recent activity
 router.get('/admin/dashboard', isAdmin, async (req, res) => {
     try {
         const db = req.app.locals.client.db(req.app.locals.dbName);
@@ -209,7 +237,6 @@ router.get('/admin/dashboard', isAdmin, async (req, res) => {
     }
 });
 
-// GET /account/admin/orders - Now marks orders as "read"
 router.get('/admin/orders', isAdmin, async (req, res) => {
     try {
         const db = req.app.locals.client.db(req.app.locals.dbName);
@@ -217,7 +244,7 @@ router.get('/admin/orders', isAdmin, async (req, res) => {
         
         const allOrders = await ordersCollection.find().sort({ orderDate: -1 }).toArray();
 
-        ordersCollection.updateMany({ isNew: true }, { $set: { isNew: false } });
+        await ordersCollection.updateMany({ isNew: true }, { $set: { isNew: false } });
 
         res.render('account/admin-orders', {
             title: "Order Management",
@@ -231,7 +258,6 @@ router.get('/admin/orders', isAdmin, async (req, res) => {
     }
 });
 
-// GET /account/admin/orders/:id - View a single order's details
 router.get('/admin/orders/:id', isAdmin, async (req, res) => {
     try {
         const db = req.app.locals.client.db(req.app.locals.dbName);
@@ -254,7 +280,6 @@ router.get('/admin/orders/:id', isAdmin, async (req, res) => {
     }
 });
 
-// POST /account/admin/orders/update-status/:id - Update an order's status
 router.post('/admin/orders/update-status/:id', isAdmin, async (req, res) => {
     try {
         const db = req.app.locals.client.db(req.app.locals.dbName);
@@ -272,34 +297,27 @@ router.post('/admin/orders/update-status/:id', isAdmin, async (req, res) => {
 
         if (updatedOrder) {
             let emailTitle = '';
-            let emailMessage = '';
 
             switch(newStatus) {
                 case 'Processing':
                     emailTitle = 'Your Order is Being Processed';
-                    emailMessage = `Hi ${updatedOrder.customer.firstName}, we're getting your order ready. We'll notify you again once it has shipped.`;
                     break;
                 case 'Shipped':
                     emailTitle = 'Your Order Has Shipped!';
-                    emailMessage = `Good news, ${updatedOrder.customer.firstName}! Your order is on its way.`;
                     break;
                 case 'Delivered':
                     emailTitle = 'Your Order Has Been Delivered';
-                    emailMessage = `Hi ${updatedOrder.customer.firstName}, your order has been delivered. We hope you enjoy it!`;
                     break;
             }
 
             if (emailTitle) {
-                const emailHtml = createStatusEmailHtml(emailTitle, emailMessage, updatedOrder);
-                const { data, error } = await resend.emails.send({
+                const emailHtml = createStatusEmailHtml(updatedOrder);
+                await resend.emails.send({
                     from: process.env.RESEND_FROM_EMAIL,
                     to: updatedOrder.customer.email,
                     subject: emailTitle,
                     html: emailHtml,
                 });
-                if (error) {
-                    console.error(`Resend API Error for order ${orderId}:`, error);
-                }
             }
         }
 
@@ -310,53 +328,42 @@ router.post('/admin/orders/update-status/:id', isAdmin, async (req, res) => {
     }
 });
 
-// FIXED: /account/admin/orders/cancel/:id - Now correctly updates status and logs activity
 router.post('/admin/orders/cancel/:id', isAdmin, async (req, res) => {
     try {
         const db = req.app.locals.client.db(req.app.locals.dbName);
         const ordersCollection = db.collection('orders');
         const activityLogCollection = db.collection('activity_log');
         const orderId = req.params.id;
-
-        const orderToCancel = await ordersCollection.findOne({ _id: new ObjectId(orderId) });
-
-        if (!orderToCancel) {
-            return res.status(404).send("Order not found.");
-        }
-
+        
         await ordersCollection.updateOne(
             { _id: new ObjectId(orderId) },
             { $set: { status: 'Cancelled' } }
         );
+        
+        const updatedOrderForEmail = await ordersCollection.findOne({ _id: new ObjectId(orderId) });
 
-        // Create log entry
-        const logEntry = {
-            userId: req.session.user.userId,
-            userFirstName: req.session.user.firstName,
-            userRole: req.session.user.role,
-            actionType: 'ORDER_CANCEL',
-            details: {
-                orderId: orderToCancel._id,
-                customerName: `${orderToCancel.customer.firstName} ${orderToCancel.customer.lastName}`
-            },
-            timestamp: new Date()
-        };
-        await activityLogCollection.insertOne(logEntry);
+        if (updatedOrderForEmail) {
+            const logEntry = {
+                userId: req.session.user.userId,
+                userFirstName: req.session.user.firstName,
+                userRole: req.session.user.role,
+                actionType: 'ORDER_CANCEL',
+                details: {
+                    orderId: updatedOrderForEmail._id,
+                    customerName: `${updatedOrderForEmail.customer.firstName} ${updatedOrderForEmail.customer.lastName}`
+                },
+                timestamp: new Date()
+            };
+            await activityLogCollection.insertOne(logEntry);
+            
+            const emailHtml = createStatusEmailHtml(updatedOrderForEmail);
 
-        // Send email
-        const emailTitle = 'Your Order Has Been Cancelled';
-        const emailMessage = `Hi ${orderToCancel.customer.firstName}, your order has been successfully cancelled as requested. If you have any questions, please contact our support team.`;
-        const emailHtml = createStatusEmailHtml(emailTitle, emailMessage, orderToCancel);
-
-        const { data, error } = await resend.emails.send({
-            from: process.env.RESEND_FROM_EMAIL,
-            to: orderToCancel.customer.email,
-            subject: emailTitle,
-            html: emailHtml,
-        });
-
-        if (error) {
-            console.error(`Resend API Error for order ${orderId}:`, error);
+            await resend.emails.send({
+                from: process.env.RESEND_FROM_EMAIL,
+                to: updatedOrderForEmail.customer.email,
+                subject: 'Your Order Has Been Cancelled',
+                html: emailHtml,
+            });
         }
 
         res.redirect(`/account/admin/orders?message=${encodeURIComponent('Order has been cancelled.')}`);
@@ -366,8 +373,6 @@ router.post('/admin/orders/cancel/:id', isAdmin, async (req, res) => {
     }
 });
 
-
-// GET /account/orders - Show the user's order history
 router.get('/orders', async (req, res) => {
     try {
         const db = req.app.locals.client.db(req.app.locals.dbName);
@@ -386,7 +391,6 @@ router.get('/orders', async (req, res) => {
     }
 });
 
-// GET /account/admin/users - Show the user management page for admins
 router.get('/admin/users', isAdmin, async (req, res) => {
     try {
         const db = req.app.locals.client.db(req.app.locals.dbName);
@@ -405,7 +409,6 @@ router.get('/admin/users', isAdmin, async (req, res) => {
     }
 });
 
-// GET /account/settings - Show account settings page
 router.get('/settings', async (req, res) => {
     const db = req.app.locals.client.db(req.app.locals.dbName);
     const user = await db.collection('users').findOne({ userId: req.session.user.userId });
@@ -413,14 +416,12 @@ router.get('/settings', async (req, res) => {
     res.render('account/settings', {
         title: "Account Settings",
         view: 'settings',
-        // Pass the full user object to the template
         user: user,
         message: req.query.message,
         error: req.query.error
     });
 });
 
-// POST /account/settings/update-profile - Handle profile information update
 router.post('/settings/update-profile', async (req, res) => {
     try {
         const { firstName, lastName } = req.body;
@@ -449,7 +450,6 @@ router.post('/settings/update-profile', async (req, res) => {
     }
 });
 
-// POST /account/settings/update-password - Handle password change
 router.post('/settings/update-password', async (req, res) => {
     try {
         const { currentPassword, newPassword, confirmPassword } = req.body;
@@ -464,7 +464,7 @@ router.post('/settings/update-password', async (req, res) => {
         if (!/[A-Z]/.test(newPassword)) { pwdStrengthErrors.push("Password must contain at least one uppercase letter."); }
         if (!/[a-z]/.test(newPassword)) { pwdStrengthErrors.push("Password must contain at least one lowercase letter."); }
         if (!/[0-9]/.test(newPassword)) { pwdStrengthErrors.push("Password must contain a number."); }
-        if (!/[!@#$%^&*()_\+\-=\[\]{};':"\\|,.<>\/?`~]/.test(newPassword)) { pwdStrengthErrors.push("Password must contain a special character."); }
+        if (!/[!@#$%^&*()_\+\-=\[\]{};':\"\\|,.<>\/?`~]/.test(newPassword)) { pwdStrengthErrors.push("Password must contain a special character."); }
         
         if (pwdStrengthErrors.length > 0) {
             return res.redirect('/account/settings?tab=security&error=' + encodeURIComponent(pwdStrengthErrors.join(' ')));
@@ -493,10 +493,6 @@ router.post('/settings/update-password', async (req, res) => {
     }
 });
 
-
-// --- ADDRESS MANAGEMENT ROUTES ---
-
-// POST /account/settings/add-address
 router.post('/settings/add-address', async (req, res) => {
     try {
         const { v4: uuidv4 } = await import('uuid');
@@ -516,7 +512,6 @@ router.post('/settings/add-address', async (req, res) => {
             isDefault: req.body.isDefault === 'on'
         };
 
-        // If this new address is the default, first ensure no other address is default
         if (newAddress.isDefault) {
             await usersCollection.updateOne(
                 { userId: userId },
@@ -536,8 +531,6 @@ router.post('/settings/add-address', async (req, res) => {
     }
 });
 
-
-// POST /account/settings/edit-address/:addressId
 router.post('/settings/edit-address/:addressId', async (req, res) => {
     try {
         const db = req.app.locals.client.db(req.app.locals.dbName);
@@ -557,7 +550,6 @@ router.post('/settings/edit-address/:addressId', async (req, res) => {
             isDefault: req.body.isDefault === 'on'
         };
 
-        // If this address is now the default, unset default on all others first
         if (updatedAddress.isDefault) {
             await usersCollection.updateOne(
                 { userId: userId },
@@ -565,7 +557,6 @@ router.post('/settings/edit-address/:addressId', async (req, res) => {
             );
         }
 
-        // Now, update the specific address
         await usersCollection.updateOne(
             { userId: userId, "addresses.addressId": addressId },
             { $set: { "addresses.$": updatedAddress } }
@@ -579,7 +570,6 @@ router.post('/settings/edit-address/:addressId', async (req, res) => {
     }
 });
 
-// POST /account/settings/delete-address/:addressId
 router.post('/settings/delete-address/:addressId', async (req, res) => {
     try {
         const db = req.app.locals.client.db(req.app.locals.dbName);
@@ -599,6 +589,5 @@ router.post('/settings/delete-address/:addressId', async (req, res) => {
         res.redirect('/account/settings?tab=addresses&error=' + encodeURIComponent('Could not remove address.'));
     }
 });
-
 
 module.exports = router;
