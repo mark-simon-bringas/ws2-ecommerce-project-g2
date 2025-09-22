@@ -1,0 +1,165 @@
+/* public/css/modal.css */
+
+/* --- Quick Add Modal Styles --- */
+.quick-add-modal .modal-dialog {
+    max-width: 380px;
+    margin: 1.75rem auto;
+    transition: max-width 0.3s ease;
+}
+
+.quick-add-modal .modal-content {
+    background-color: #ffffff;
+    border-radius: 24px;
+    border: none;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    padding: 1rem;
+}
+
+.quick-add-modal .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: none;
+    padding: 0.5rem 1rem;
+}
+
+.quick-add-modal .brand-logo {
+    height: 24px;
+    object-fit: contain;
+}
+
+.quick-add-modal .action-icon {
+    font-size: 1.5rem;
+    color: var(--text-color-secondary);
+}
+
+.quick-add-modal .modal-body {
+    padding: 0 1rem;
+    text-align: left;
+}
+
+.quick-add-modal .product-image-wrapper {
+    background: radial-gradient(circle, #e8e8e9, #f5f5f7);
+    border-radius: 16px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+.quick-add-modal .product-image-wrapper img {
+    width: 100%;
+    max-height: 180px; /* Control max image size */
+    object-fit: contain;
+    transform: rotate(-8deg) scale(1.1);
+    filter: drop-shadow(0 15px 10px rgba(0,0,0,0.15));
+}
+
+.quick-add-modal .product-info h2 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+    line-height: 1.2;
+}
+
+.quick-add-modal .product-info .sku {
+    font-size: 0.8rem;
+    color: var(--text-color-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.quick-add-modal .price-and-rating {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 1rem 0;
+}
+
+.quick-add-modal .price {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--text-color);
+}
+
+.quick-add-modal .rating {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    color: var(--nike-black);
+}
+
+.quick-add-modal .size-selection-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+}
+
+.quick-add-modal .size-selection-header .bi {
+    font-size: 1.2rem;
+}
+
+.quick-add-modal .size-selector {
+    grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+    gap: 0.5rem;
+}
+.quick-add-modal .size-selector .btn {
+    font-size: 0.9rem;
+    padding: 0.6rem 0;
+}
+
+.quick-add-modal .modal-footer {
+    border-top: none;
+    padding: 1rem 1rem 1rem;
+}
+
+.quick-add-modal .add-to-cart-btn {
+    font-size: 1.1rem;
+    font-weight: 600;
+    background-color: var(--nike-black); /* Updated to #111111 */
+    border: none;
+    color: #fff;
+    transition: background-color 0.2s ease;
+}
+
+.quick-add-modal .add-to-cart-btn:hover {
+    background-color: #333; /* Dark gray hover state */
+}
+
+/* --- Desktop Landscape Layout for Modal --- */
+@media (min-width: 768px) {
+    .quick-add-modal .modal-dialog {
+        max-width: 680px; /* Wider modal for landscape layout */
+    }
+
+    .quick-add-modal .modal-body {
+        display: grid;
+        grid-template-columns: 2fr 3fr; /* Image column is smaller than info column */
+        align-items: center;
+        gap: 2rem;
+        padding: 1rem 0;
+    }
+
+    .quick-add-modal .product-image-wrapper {
+        margin-bottom: 0;
+        align-self: stretch;
+        display: flex;
+        align-items: center;
+    }
+    
+    .quick-add-modal .product-image-wrapper img {
+        max-height: 220px;
+    }
+    
+    .quick-add-modal .product-details-wrapper {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        height: 100%;
+    }
+
+    .quick-add-modal .modal-footer {
+        padding-top: 0;
+    }
+}
+

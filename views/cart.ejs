@@ -74,14 +74,16 @@
                     <span>Subtotal</span>
                     <span><%= locationData.symbol %><%= (cart.convertedTotalPrice || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></span>
                 </div>
-                <div class="summary-item">
-                    <span>Estimated Delivery & Handling</span>
-                    <span>Free</span>
-                </div>
+                <% if (cart && cart.items.length > 0) { %>
+                    <div class="summary-item">
+                        <span>Estimated Delivery & Handling</span>
+                        <span><%= shippingCost > 0 ? locationData.symbol + shippingCost.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : 'Free' %></span>
+                    </div>
+                <% } %>
                 <hr>
                 <div class="summary-total">
                     <span>Total</span>
-                    <span><%= locationData.symbol %><%= (cart.convertedTotalPrice || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></span>
+                    <span><%= locationData.symbol %><%= (cart && cart.items.length > 0 ? totalWithShipping : 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></span>
                 </div>
                 <hr>
                 <div class="d-none d-lg-grid gap-3" id="desktop-checkout-buttons">
@@ -125,6 +127,8 @@
                     </div>
                 <% }) %>
             </div>
+        <% } else if (currentUser) { %>
+            <p class="text-body-secondary">Your favorite items will appear here. <a href="/products" class="text-dark fw-semibold">Start exploring!</a></p>
         <% } else { %>
             <p class="text-body-secondary">Want to view your favourites? <a href="/users/login" class="text-dark fw-semibold">Sign in</a> or <a href="/users/register" class="text-dark fw-semibold">Join us</a>.</p>
         <% } %>
@@ -145,7 +149,7 @@
                  <a href="/users/login" class="btn btn-outline-secondary btn-lg <%= (cart && cart.items.length > 0) ? '' : 'disabled' %>">
                      Member Login
                  </a>
-             <% } %>
+            <% } %>
         </div>
     </div>
     <button id="mobile-checkout-btn" class="btn btn-dark btn-lg w-100 <%= (cart && cart.items.length > 0) ? '' : 'disabled' %>">
@@ -164,10 +168,8 @@
                 const button = this.querySelector('button');
                 const icon = button.querySelector('i');
                 
-                // Temporarily disable the button to prevent multiple clicks
                 button.disabled = true;
 
-                // Determine if we're adding or removing based on the current icon class
                 const isCurrentlyWishlisted = icon.classList.contains('bi-heart-fill');
                 const actionUrl = isCurrentlyWishlisted ? '/cart/remove-from-wishlist' : '/cart/add-to-wishlist-from-cart';
                 
@@ -182,7 +184,6 @@
                         return;
                     }
                     if (response.ok) {
-                        // Toggle the icon class on success
                         if (isCurrentlyWishlisted) {
                             icon.classList.remove('bi-heart-fill');
                             icon.classList.add('bi-heart');
@@ -193,16 +194,13 @@
                             button.title = 'Remove from Wishlist';
                         }
                     } else {
-                        // Handle server errors
                         console.error('Server error:', response.status);
-                        // Re-enable the button on failure
                         button.disabled = false;
                     }
-                    return response.text();
+                    return response.text(); 
                 })
                 .catch(error => {
                     console.error('Error handling wishlist action:', error);
-                    // Re-enable the button on network error
                     button.disabled = false;
                 });
             });

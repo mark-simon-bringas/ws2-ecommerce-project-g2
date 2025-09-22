@@ -5,6 +5,10 @@ const router = express.Router();
 const { ObjectId } = require('mongodb');
 const { convertCurrency } = require('./currency');
 
+// Define shipping constants (using USD as the base currency)
+const SHIPPING_COST_BASE = 5; // e.g., $5 shipping
+const FREE_SHIPPING_THRESHOLD_BASE = 150; // e.g., free shipping on orders over $150
+
 // GET /cart - Display the shopping cart page
 router.get('/', async (req, res) => {
     try {
@@ -47,12 +51,22 @@ router.get('/', async (req, res) => {
             }));
         }
 
+        // Calculate shipping cost and total with shipping
+        const shippingCost = (cart.totalPrice >= FREE_SHIPPING_THRESHOLD_BASE) ? 0 : SHIPPING_COST_BASE;
+        const totalWithShipping = cart.totalPrice + shippingCost;
+        
+        // Convert prices for display
+        const convertedShippingCost = await convertCurrency(shippingCost, currency);
+        const convertedTotalWithShipping = await convertCurrency(totalWithShipping, currency);
+
         res.render('cart', {
             title: "Your Cart",
             cart: cart,
             wishlistProducts: wishlistProducts,
             wishlist: userWishlist,
-            message: req.query.message // To display success message
+            message: req.query.message,
+            shippingCost: convertedShippingCost,
+            totalWithShipping: convertedTotalWithShipping
         });
 
     } catch (err) {

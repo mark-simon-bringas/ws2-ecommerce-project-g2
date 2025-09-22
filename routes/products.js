@@ -33,11 +33,11 @@ router.get('/', async (req, res) => {
         let userWishlist = [];
         if (req.session.user) {
             const user = await usersCollection.findOne({ userId: req.session.user.userId });
-            userWishlist = user?.wishlist || []; // Use optional chaining for safety
+            userWishlist = user?.wishlist || [];
         }
 
         let query = {};
-        let sort = {};
+        let sort = { importedAt: -1 }; // Default sort order
         let pageTitle = "Shop All";
 
         if (req.query.category) {
@@ -55,7 +55,23 @@ router.get('/', async (req, res) => {
             pageTitle = "New Arrivals";
         }
 
-        const products = await productsCollection.find(query).sort(sort).toArray();
+        const products = await productsCollection.aggregate([
+            { $match: query },
+            { $sort: sort },
+            {
+                $lookup: {
+                    from: 'reviews',
+                    localField: '_id',
+                    foreignField: 'productId',
+                    as: 'reviews'
+                }
+            },
+            {
+                $addFields: {
+                    averageRating: { $avg: '$reviews.rating' }
+                }
+            }
+        ]).toArray();
         
         const productsWithConvertedPrices = await Promise.all(products.map(async (product) => {
             product.convertedPrice = await convertCurrency(product.retailPrice, currency);
@@ -87,7 +103,7 @@ router.get('/search', async (req, res) => {
         let userWishlist = [];
         if (req.session.user) {
             const user = await usersCollection.findOne({ userId: req.session.user.userId });
-            userWishlist = user?.wishlist || []; // Use optional chaining for safety
+            userWishlist = user?.wishlist || [];
         }
 
         const query = {
@@ -97,7 +113,23 @@ router.get('/search', async (req, res) => {
             ]
         };
 
-        const products = await productsCollection.find(query).toArray();
+        const products = await productsCollection.aggregate([
+            { $match: query },
+            {
+                $lookup: {
+                    from: 'reviews',
+                    localField: '_id',
+                    foreignField: 'productId',
+                    as: 'reviews'
+                }
+            },
+            {
+                $addFields: {
+                    averageRating: { $avg: '$reviews.rating' }
+                }
+            }
+        ]).toArray();
+
         const pageTitle = `Search results for "${searchQuery}"`;
 
         const productsWithConvertedPrices = await Promise.all(products.map(async (product) => {
@@ -189,7 +221,6 @@ router.get('/manage', isAdmin, async (req, res) => {
     }
 });
 
-// UPDATED: Route now handles the hasDescription filter
 router.post('/search', isAdmin, async (req, res) => {
     const { query, brand, gender, hasDescription } = req.body;
 
@@ -218,7 +249,6 @@ router.post('/search', isAdmin, async (req, res) => {
         const response = await axios.request(options);
         let apiProducts = response.data.results;
 
-        // Filter results if the checkbox was checked
         if (hasDescription === 'true') {
             apiProducts = apiProducts.filter(product => product.story && product.story.trim() !== '');
         }
@@ -256,13 +286,12 @@ router.post('/search', isAdmin, async (req, res) => {
     }
 });
 
-// Route now receives 'id's and fetches details with the correct endpoint
 router.post('/import-multiple', isAdmin, async (req, res) => {
     try {
         const db = req.app.locals.client.db(req.app.locals.dbName);
         const productsCollection = db.collection('products');
         const activityLogCollection = db.collection('activity_log');
-        let { selectedProducts: selectedIds } = req.body; // Renamed for clarity
+        let { selectedProducts: selectedIds } = req.body;
         if (!selectedIds) { return res.redirect('/products/manage'); }
         if (!Array.isArray(selectedIds)) { selectedIds = [selectedIds]; }
 
@@ -271,7 +300,6 @@ router.post('/import-multiple', isAdmin, async (req, res) => {
 
         for (const id of selectedIds) {
             try {
-                // Fetch full product details using the correct 'id'
                 const options = {
                     method: 'GET',
                     url: `https://the-sneaker-database.p.rapidapi.com/sneakers/${id}`,
@@ -333,8 +361,6 @@ router.post('/import-multiple', isAdmin, async (req, res) => {
     }
 });
 
-
-// Route to delete a single product and log the action
 router.post('/delete', isAdmin, async (req, res) => {
     try {
         const db = req.app.locals.client.db(req.app.locals.dbName);
@@ -368,7 +394,6 @@ router.post('/delete', isAdmin, async (req, res) => {
     }
 });
 
-// Route to handle bulk deletion and log the action
 router.post('/delete-multiple', isAdmin, async (req, res) => {
     try {
         const db = req.app.locals.client.db(req.app.locals.dbName);
@@ -412,7 +437,6 @@ router.post('/delete-multiple', isAdmin, async (req, res) => {
     }
 });
 
-// Route to show the edit stock and price page
 router.get('/stock/:id', isAdmin, async (req, res) => {
     try {
         const db = req.app.locals.client.db(req.app.locals.dbName);
@@ -435,7 +459,6 @@ router.get('/stock/:id', isAdmin, async (req, res) => {
     }
 });
 
-// Route to handle the stock and price update
 router.post('/stock/:id', isAdmin, async (req, res) => {
     const productId = req.params.id;
     const { retailPrice, stock: newStockLevels } = req.body;
@@ -497,7 +520,6 @@ router.post('/stock/:id', isAdmin, async (req, res) => {
     }
 });
 
-// Route to show the "Add a Review" form
 router.get('/:sku/review', isLoggedIn, async (req, res) => {
     try {
         const db = req.app.locals.client.db(req.app.locals.dbName);
@@ -538,7 +560,6 @@ router.get('/:sku/review', isLoggedIn, async (req, res) => {
     }
 });
 
-// Route to handle the "Add a Review" form submission
 router.post('/:sku/review', isLoggedIn, async (req, res) => {
     try {
         const db = req.app.locals.client.db(req.app.locals.dbName);
@@ -551,7 +572,10 @@ router.post('/:sku/review', isLoggedIn, async (req, res) => {
             userId: req.session.user.userId,
             rating: parseInt(rating),
             comment: comment,
-            createdAt: new Date()
+            createdAt: new Date(),
+            author: {
+                firstName: req.session.user.firstName,
+            }
         };
 
         await reviewsCollection.insertOne(newReview);
@@ -564,8 +588,6 @@ router.post('/:sku/review', isLoggedIn, async (req, res) => {
     }
 });
 
-
-// Route for a single Product Detail Page (PDP)
 router.get('/:sku', async (req, res) => {
     try {
         const db = req.app.locals.client.db(req.app.locals.dbName);
@@ -601,10 +623,9 @@ router.get('/:sku', async (req, res) => {
             }).limit(8).toArray()
         ]);
 
-        const userWishlist = user?.wishlist || []; // Use optional chaining for safety
+        const userWishlist = user?.wishlist || [];
         const isWishlisted = userWishlist.some(id => id.equals(product._id));
 
-        // Convert all prices before rendering
         product.convertedPrice = await convertCurrency(product.retailPrice, currency);
         const relatedProductsWithConvertedPrices = await Promise.all(relatedProducts.map(async (p) => {
             p.convertedPrice = await convertCurrency(p.retailPrice, currency);
@@ -625,6 +646,5 @@ router.get('/:sku', async (req, res) => {
         res.status(500).send("Error loading product page.");
     }
 });
-
 
 module.exports = router;
