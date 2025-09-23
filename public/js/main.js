@@ -1,6 +1,23 @@
 // public/js/main.js
 
 document.addEventListener('DOMContentLoaded', function() {
+    // --- Skeleton Preloader Logic ---
+    const contentWrapper = document.querySelector('.content-wrapper');
+    const skeletonLoader = document.querySelector('.skeleton-loader');
+    
+    // Only apply loading logic if a skeleton loader is present on the page
+    if (contentWrapper && skeletonLoader) {
+        contentWrapper.classList.add('is-loading');
+        console.log('Skeleton loader activated as DOM content loaded.');
+
+        window.addEventListener('load', function() {
+            // This runs only after ALL content (images, etc.) has finished loading.
+            console.log('Page content fully loaded. Revealing content.');
+            contentWrapper.classList.remove('is-loading');
+        });
+    }
+
+    // --- Location Data for Mini-Cart ---
     const locationData = JSON.parse(document.body.dataset.location || '{}');
 
     // --- Desktop Navbar Dropdown Logic ---
@@ -320,7 +337,6 @@ document.addEventListener('DOMContentLoaded', function() {
             checkoutOptions.classList.add('is-active');
         });
 
-        // Close the options if the user clicks outside of them
         document.addEventListener('click', function(event) {
             if (!mobileCheckoutBtn.contains(event.target) && !checkoutOptions.contains(event.target)) {
                 mobileCheckoutBtn.style.display = 'block'; // Show the main button again

@@ -1,45 +1,62 @@
-<div class="container my-5 py-5">
+<div class="container my-5 py-5 is-loading">
     <h1 class="display-4 fw-bold text-center mb-5"><%= pageTitle %></h1>
-    <% if (products && products.length > 0) { %>
-        <div class="row row-cols-1 row-cols-sm-2 row-cols-lg-4 g-4">
-            <% products.forEach(product => { %>
-                <div class="col">
-                    <div class="product-card" data-sku="<%= product.sku %>">
-                        <div class="product-card-img-container">
-                            <a href="/products/<%= product.sku %>" class="product-card-img-link"></a>
-                            <img src="<%= product.thumbnailUrl %>" class="product-card-img" alt="<%= product.name %>">
-                            <div class="product-card-actions">
-                                <% if (currentUser) { %>
-                                    <button type="button" class="btn-action wishlist-toggle-btn" title="Toggle Wishlist" data-product-id="<%= product._id %>">
-                                        <% const isWishlisted = wishlist.some(id => id.equals(product._id)); %>
-                                        <i class="bi <%= isWishlisted ? 'bi-heart-fill' : 'bi-heart' %>"></i>
-                                    </button>
-                                <% } else { %>
-                                    <a href="/users/login?redirect=<%= path %>" class="btn-action" title="Login to Add to Wishlist">
-                                        <i class="bi bi-heart"></i>
-                                    </a>
-                                <% } %>
-                                <button type="button" class="btn-action" title="Add to Cart" data-bs-toggle="modal" data-bs-target="#productModal-<%= product.sku %>">
-                                    <i class="bi bi-bag-plus"></i>
-                                </button>
-                            </div>
-                        </div>
-                        <div class="product-card-body">
-                            <a href="/products/<%= product.sku %>" class="text-decoration-none">
-                                <div class="product-title"><%= product.name %></div>
-                                <div class="product-price"><%= locationData.symbol %><%= product.convertedPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></div>
-                            </a>
-                        </div>
+
+    <div class="skeleton-loader">
+        <div class="skeleton-grid">
+            <% for(let i = 0; i < 8; i++) { %>
+                <div class="skeleton-card">
+                    <div class="skeleton skeleton-image"></div>
+                    <div class="skeleton-body">
+                        <div class="skeleton skeleton-line"></div>
+                        <div class="skeleton skeleton-line short"></div>
                     </div>
                 </div>
-            <% }) %>
+            <% } %>
         </div>
-    <% } else { %>
-        <div class="text-center p-5 bg-light rounded-4">
-            <h3 class="text-body-secondary">No products found.</h3>
-            <p class="lead text-body-secondary">Try adjusting your search or filter to find what you're looking for.</p>
-        </div>
-    <% } %>
+    </div>
+    
+    <div class="content-to-load">
+        <% if (products && products.length > 0) { %>
+            <div class="row row-cols-1 row-cols-sm-2 row-cols-lg-4 g-4">
+                <% products.forEach(product => { %>
+                    <div class="col">
+                        <div class="product-card" data-sku="<%= product.sku %>">
+                            <div class="product-card-img-container">
+                                <a href="/products/<%= product.sku %>" class="product-card-img-link"></a>
+                                <img src="<%= product.thumbnailUrl %>" class="product-card-img" alt="<%= product.name %>">
+                                <div class="product-card-actions">
+                                    <% if (currentUser) { %>
+                                        <button type="button" class="btn-action wishlist-toggle-btn" title="Toggle Wishlist" data-product-id="<%= product._id %>">
+                                            <% const isWishlisted = wishlist.some(id => id.equals(product._id)); %>
+                                            <i class="bi <%= isWishlisted ? 'bi-heart-fill' : 'bi-heart' %>"></i>
+                                        </button>
+                                    <% } else { %>
+                                        <a href="/users/login?redirect=<%= path %>" class="btn-action" title="Login to Add to Wishlist">
+                                            <i class="bi bi-heart"></i>
+                                        </a>
+                                    <% } %>
+                                    <button type="button" class="btn-action" title="Add to Cart" data-bs-toggle="modal" data-bs-target="#productModal-<%= product.sku %>">
+                                        <i class="bi bi-bag-plus"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="product-card-body">
+                                <a href="/products/<%= product.sku %>" class="text-decoration-none">
+                                    <div class="product-title"><%= product.name %></div>
+                                    <div class="product-price"><%= locationData.symbol %><%= product.convertedPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></div>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                <% }) %>
+            </div>
+        <% } else { %>
+            <div class="text-center p-5 bg-light rounded-4">
+                <h3 class="text-body-secondary">No products found.</h3>
+                <p class="lead text-body-secondary">Try adjusting your search or filter to find what you're looking for.</p>
+            </div>
+        <% } %>
+    </div>
 </div>
 
 
