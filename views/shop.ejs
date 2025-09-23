@@ -23,7 +23,7 @@
                         <div class="product-card" data-sku="<%= product.sku %>">
                             <div class="product-card-img-container">
                                 <a href="/products/<%= product.sku %>" class="product-card-img-link"></a>
-                                <img src="<%= product.thumbnailUrl %>" class="product-card-img" alt="<%= product.name %>">
+                                <img src="<%= product.thumbnailUrl %>" class="product-card-img" alt="<%= product.name %>" loading="lazy" width="300" height="300">
                                 <div class="product-card-actions">
                                     <% if (currentUser) { %>
                                         <button type="button" class="btn-action wishlist-toggle-btn" title="Toggle Wishlist" data-product-id="<%= product._id %>">
@@ -80,7 +80,7 @@
                     </div>
                     <div class="modal-body">
                         <div class="product-image-wrapper">
-                            <img src="<%= product.thumbnailUrl %>" alt="<%= product.name %>" class="product-image">
+                            <img src="<%= product.thumbnailUrl %>" alt="<%= product.name %>" class="product-image" loading="lazy" width="300" height="300">
                         </div>
                         <div class="product-details-wrapper">
                             <div class="product-info">

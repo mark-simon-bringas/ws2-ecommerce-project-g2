@@ -1,21 +1,27 @@
-// public/js/main.js
-
 document.addEventListener('DOMContentLoaded', function() {
-    // --- Skeleton Preloader Logic ---
-    const contentWrapper = document.querySelector('.content-wrapper');
-    const skeletonLoader = document.querySelector('.skeleton-loader');
-    
-    // Only apply loading logic if a skeleton loader is present on the page
-    if (contentWrapper && skeletonLoader) {
-        contentWrapper.classList.add('is-loading');
-        console.log('Skeleton loader activated as DOM content loaded.');
+    // --- Skeleton Preloader Logic (FIXED) ---
+    // Find all parent containers that have a skeleton loader inside them.
+    const containersWithLoaders = document.querySelectorAll('.content-wrapper, .container, .my-5');
 
-        window.addEventListener('load', function() {
-            // This runs only after ALL content (images, etc.) has finished loading.
-            console.log('Page content fully loaded. Revealing content.');
-            contentWrapper.classList.remove('is-loading');
-        });
-    }
+    containersWithLoaders.forEach(container => {
+        const skeletonLoader = container.querySelector(':scope > .skeleton-loader');
+        const contentToLoad = container.querySelector(':scope > .content-to-load');
+        
+        if (skeletonLoader && contentToLoad) {
+            // This now correctly hides the content and shows the skeleton
+            // as soon as the HTML document is parsed.
+            container.classList.add('is-loading');
+            console.log('Skeleton loader activated for a container.');
+
+            // Use a minimal timeout to ensure the browser has a moment to render the skeleton
+            // before we reveal the content. This prevents a "flash" of unstyled content.
+            setTimeout(() => {
+                container.classList.remove('is-loading');
+                console.log('Content revealed for a container.');
+            }, 100); // A small delay is often enough
+        }
+    });
+
 
     // --- Location Data for Mini-Cart ---
     const locationData = JSON.parse(document.body.dataset.location || '{}');

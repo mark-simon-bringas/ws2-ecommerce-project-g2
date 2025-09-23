@@ -34,15 +34,31 @@ router.get('/', async (req, res) => {
             }
         }
 
+        const aggregationPipeline = [
+            {
+                $lookup: {
+                    from: 'reviews',
+                    localField: '_id',
+                    foreignField: 'productId',
+                    as: 'reviews'
+                }
+            },
+            {
+                $addFields: {
+                    averageRating: { $avg: '$reviews.rating' }
+                }
+            }
+        ];
+
         const [allProducts, jordanProducts] = await Promise.all([
-            productsCollection.find().sort({ importedAt: -1 }).toArray(),
-            productsCollection.find({ brand: 'Jordan' }).toArray()
+            productsCollection.aggregate(aggregationPipeline).sort({ importedAt: -1 }).toArray(),
+            productsCollection.aggregate([ { $match: { brand: 'Jordan' } }, ...aggregationPipeline ]).toArray()
         ]);
         
         // Shuffle and slice the arrays to get random assortments
-        const newArrivals = shuffleArray([...allProducts]).slice(0, 8);
-        const topKicks = shuffleArray([...allProducts]).slice(0, 8);
-        const jordanCollection = shuffleArray([...jordanProducts]).slice(0, 8);
+        const newArrivals = shuffleArray([...allProducts]).slice(0, 20);
+        const topKicks = shuffleArray([...allProducts]).slice(0, 20);
+        const jordanCollection = shuffleArray([...jordanProducts]).slice(0, 20);
 
         // Helper function to convert prices for an array of products
         const convertPrices = (products) => {
@@ -98,3 +114,4 @@ router.get('/legal', (req, res) => {
 });
 
 module.exports = router;
+

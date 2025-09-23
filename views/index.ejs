@@ -1,331 +1,287 @@
 <% const isHomepage = true; %>
 
-<div id="heroCarousel" class="carousel slide hero-carousel" data-bs-ride="carousel">
-    <div class="carousel-indicators">
-        <button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="0" class="active" aria-current="true" aria-label="Slide 1"></button>
-        <button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="1" aria-label="Slide 2"></button>
-        <button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="2" aria-label="Slide 3"></button>
-    </div>
-    <div class="carousel-inner">
-        <div class="carousel-item active" style="background-image: url('https://images.unsplash.com/photo-1542291026-7eec264c27ff?q=80&w=2070&auto=format&fit=crop')">
-            <div class="carousel-caption text-center pb-5">
-                <h1 class="display-3 fw-bold">Fresh Off The Line</h1>
-                <p class="lead my-3">Discover the latest drops and must-have releases from the world's top brands.</p>
-                <a href="/products?new=true" class="btn btn-light btn-lg">Explore New Arrivals</a>
-            </div>
-        </div>
-        <div class="carousel-item" style="background-image: url('https://images.unsplash.com/photo-1552346154-21d32810aba3?q=80&w=2070&auto=format&fit=crop')">
-            <div class="carousel-caption text-center pb-5">
-                <h1 class="display-3 fw-bold">The Classics, Reimagined</h1>
-                <p class="lead my-3">Iconic silhouettes that defined a generation, now back in stock.</p>
-                <a href="/products" class="btn btn-light btn-lg">Shop the Collection</a>
-            </div>
-        </div>
-        <div class="carousel-item" style="background-image: url('https://images.unsplash.com/photo-1543508282-6319a3e2621f?q=80&w=2030&auto=format&fit=crop')">
-            <div class="carousel-caption text-center pb-5">
-                <h1 class="display-3 fw-bold">Up to 40% Off</h1>
-                <p class="lead my-3">Limited time only.</p>
-                <a href="/products?sale=true" class="btn btn-light btn-lg">Shop Clearance</a>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="container my-5 py-5">
-    <div class="category-showcase-grid">
-        <a href="/products?category=men" class="category-showcase-item">
-            <img src="https://images.unsplash.com/photo-1560769629-975ec94e6a86?q=80&w=1964&auto=format&fit=crop" alt="Men's Collection" class="category-showcase-item-bg">
-            <div class="btn btn-light btn-lg">Shop Men's</div>
-        </a>
-        <a href="/products?category=women" class="category-showcase-item">
-            <img src="https://images.unsplash.com/photo-1595341888016-a392ef81b7de?q=80&w=2079&auto=format&fit=crop" alt="Women's Collection" class="category-showcase-item-bg">
-            <div class="btn btn-light btn-lg">Shop Women's</div>
-        </a>
-        <a href="/products?category=kids" class="category-showcase-item">
-            <img src="https://images.unsplash.com/photo-1511556532299-8f662fc26c06?q=80&w=2070&auto=format&fit=crop" alt="Kids' Collection" class="category-showcase-item-bg">
-            <div class="btn btn-light btn-lg">Shop Kids'</div>
-        </a>
-        <a href="/products?sale=true" class="category-showcase-item">
-            <img src="https://images.unsplash.com/photo-1562183241-b937e95585b6?q=80&w=1964&auto=format&fit=crop" alt="Sale" class="category-showcase-item-bg">
-            <div class="btn btn-light btn-lg">Shop Sale</div>
-        </a>
-    </div>
-</div>
-
-<div class="skeleton-loader">
-    <section class="product-carousel-section container-fluid mb-5">
-        <div class="container">
-            <div class="section-header">
-                <div class="skeleton skeleton-line" style="height: 2.5rem; width: 300px;"></div>
-            </div>
-        </div>
-        <div class="product-carousel-wrapper">
-            <div class="product-carousel">
-                <% for (let i = 0; i < 4; i++) { %>
-                <div class="skeleton-card" style="flex: 0 0 calc(33.333% - 1rem);">
-                    <div class="skeleton skeleton-image"></div>
-                    <div class="skeleton-body">
-                        <div class="skeleton skeleton-line"></div>
-                        <div class="skeleton skeleton-line short"></div>
-                    </div>
+<div class="content-wrapper is-loading">
+    <div class="skeleton-loader">
+        <div class="skeleton skeleton-hero"></div>
+        <div class="container my-5 py-5">
+            <section class="product-carousel-section">
+                <div class="section-header">
+                    <div class="skeleton skeleton-line" style="height: 2.5rem; width: 300px;"></div>
                 </div>
-                <% } %>
-            </div>
-        </div>
-    </section>
-</div>
-<div class="content-to-load">
-    <% if (newArrivals && newArrivals.length > 0) { %>
-    <section class="product-carousel-section container-fluid mb-5">
-        <div class="container">
-            <div class="section-header">
-                <h2 class="display-5 fw-bold mb-0">New Arrivals</h2>
-                <div class="section-header-actions">
-                    <a href="/products?new=true" class="btn btn-outline-dark d-none d-lg-inline-block">View All</a>
-                    <div class="carousel-nav-buttons">
-                        <button class="carousel-nav-btn prev" aria-label="Previous slide"><i class="bi bi-chevron-left"></i></button>
-                        <button class="carousel-nav-btn next" aria-label="Next slide"><i class="bi bi-chevron-right"></i></button>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="product-carousel-wrapper">
-            <div class="product-carousel">
-                <% newArrivals.forEach(product => { %>
-                    <div class="product-card" data-sku="<%= product.sku %>">
-                        <div class="product-card-img-container">
-                            <a href="/products/<%= product.sku %>" class="product-card-img-link"></a>
-                            <img src="<%= product.thumbnailUrl %>" class="product-card-img" alt="<%= product.name %>">
-                            <div class="product-card-actions">
-                                <% if (currentUser) { %>
-                                    <button type="button" class="btn-action wishlist-toggle-btn" title="Toggle Wishlist" data-product-id="<%= product._id %>">
-                                        <% const isWishlisted = wishlist.some(id => id.equals(product._id)); %>
-                                        <i class="bi <%= isWishlisted ? 'bi-heart-fill' : 'bi-heart' %>"></i>
-                                    </button>
-                                <% } else { %>
-                                    <a href="/users/login?redirect=<%= path %>" class="btn-action" title="Login to Add to Wishlist">
-                                        <i class="bi bi-heart"></i>
-                                    </a>
-                                <% } %>
-                                <button type="button" class="btn-action" title="Add to Cart" data-bs-toggle="modal" data-bs-target="#productModal-<%= product.sku %>"><i class="bi bi-bag-plus"></i></button>
+                <div class="product-carousel-wrapper">
+                    <div class="product-carousel">
+                        <% for (let i = 0; i < 4; i++) { %>
+                        <div class="skeleton-card" style="flex: 0 0 calc(33.333% - 1rem);">
+                            <div class="skeleton skeleton-image"></div>
+                            <div class="skeleton-body">
+                                <div class="skeleton skeleton-line"></div>
+                                <div class="skeleton skeleton-line short"></div>
                             </div>
                         </div>
-                        <div class="product-card-body">
-                            <a href="/products/<%= product.sku %>" class="text-decoration-none">
-                                <div class="product-title"><%= product.name %></div>
-                                <div class="product-price"><%= locationData.symbol %><%= product.convertedPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></div>
-                            </a>
+                        <% } %>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <main class="content-to-load">
+        <div id="heroCarousel" class="carousel slide hero-carousel" data-bs-ride="carousel">
+            <div class="carousel-indicators">
+                <button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="0" class="active" aria-current="true" aria-label="Slide 1"></button>
+                <button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="1" aria-label="Slide 2"></button>
+                <button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="2" aria-label="Slide 3"></button>
+            </div>
+            <div class="carousel-inner">
+                <div class="carousel-item active" style="background-image: url('https://images.unsplash.com/photo-1542291026-7eec264c27ff?q=80&w=2070&auto=format&fit=crop')">
+                    <div class="carousel-caption text-center pb-5">
+                        <h1 class="display-3 fw-bold">Fresh Off The Line</h1>
+                        <p class="lead my-3">Discover the latest drops and must-have releases from the world's top brands.</p>
+                        <a href="/products?new=true" class="btn btn-light btn-lg">Explore New Arrivals</a>
+                    </div>
+                </div>
+                <div class="carousel-item" style="background-image: url('https://images.unsplash.com/photo-1552346154-21d32810aba3?q=80&w=2070&auto=format&fit=crop')">
+                    <div class="carousel-caption text-center pb-5">
+                        <h1 class="display-3 fw-bold">The Classics, Reimagined</h1>
+                        <p class="lead my-3">Iconic silhouettes that defined a generation, now back in stock.</p>
+                        <a href="/products" class="btn btn-light btn-lg">Shop the Collection</a>
+                    </div>
+                </div>
+                <div class="carousel-item" style="background-image: url('https://images.unsplash.com/photo-1543508282-6319a3e2621f?q=80&w=2030&auto=format&fit=crop')">
+                    <div class="carousel-caption text-center pb-5">
+                        <h1 class="display-3 fw-bold">Up to 40% Off</h1>
+                        <p class="lead my-3">Limited time only.</p>
+                        <a href="/products?sale=true" class="btn btn-light btn-lg">Shop Clearance</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="container my-5 py-5">
+            <div class="category-showcase-grid">
+                <a href="/products?category=men" class="category-showcase-item">
+                    <img src="https://images.unsplash.com/photo-1560769629-975ec94e6a86?q=80&w=1964&auto=format&fit=crop" alt="Men's Collection" class="category-showcase-item-bg">
+                    <div class="btn btn-light btn-lg">Shop Men's</div>
+                </a>
+                <a href="/products?category=women" class="category-showcase-item">
+                    <img src="https://images.unsplash.com/photo-1595341888016-a392ef81b7de?q=80&w=2079&auto=format&fit=crop" alt="Women's Collection" class="category-showcase-item-bg">
+                    <div class="btn btn-light btn-lg">Shop Women's</div>
+                </a>
+                <a href="/products?category=kids" class="category-showcase-item">
+                    <img src="https://images.unsplash.com/photo-1511556532299-8f662fc26c06?q=80&w=2070&auto=format&fit=crop" alt="Kids' Collection" class="category-showcase-item-bg">
+                    <div class="btn btn-light btn-lg">Shop Kids'</div>
+                </a>
+                <a href="/products?sale=true" class="category-showcase-item">
+                    <img src="https://images.unsplash.com/photo-1562183241-b937e95585b6?q=80&w=1964&auto=format&fit=crop" alt="Sale" class="category-showcase-item-bg">
+                    <div class="btn btn-light btn-lg">Shop Sale</div>
+                </a>
+            </div>
+        </div>
+
+        <% if (newArrivals && newArrivals.length > 0) { %>
+        <section class="product-carousel-section container-fluid mb-5">
+            <div class="container">
+                <div class="section-header">
+                    <h2 class="display-5 fw-bold mb-0">New Arrivals</h2>
+                    <div class="section-header-actions">
+                        <a href="/products?new=true" class="btn btn-outline-dark d-none d-lg-inline-block">View All</a>
+                        <div class="carousel-nav-buttons">
+                            <button class="carousel-nav-btn prev" aria-label="Previous slide"><i class="bi bi-chevron-left"></i></button>
+                            <button class="carousel-nav-btn next" aria-label="Next slide"><i class="bi bi-chevron-right"></i></button>
                         </div>
                     </div>
-                <% }) %>
-            </div>
-        </div>
-    </section>
-    <% } %>
-</div>
-
-<div class="skeleton-loader">
-    <section class="product-carousel-section container-fluid mb-5 py-5 bg-light">
-        <div class="container">
-            <div class="section-header">
-                <div class="skeleton skeleton-line" style="height: 2.5rem; width: 250px;"></div>
-            </div>
-        </div>
-        <div class="product-carousel-wrapper">
-            <div class="product-carousel">
-                <% for (let i = 0; i < 4; i++) { %>
-                <div class="skeleton-card" style="flex: 0 0 calc(33.333% - 1rem);">
-                    <div class="skeleton skeleton-image"></div>
-                    <div class="skeleton-body">
-                        <div class="skeleton skeleton-line"></div>
-                        <div class="skeleton skeleton-line short"></div>
-                    </div>
-                </div>
-                <% } %>
-            </div>
-        </div>
-    </section>
-</div>
-<div class="content-to-load">
-    <% if (topKicks && topKicks.length > 0) { %>
-    <section class="product-carousel-section container-fluid mb-5 py-5 bg-light">
-        <div class="container">
-            <div class="section-header">
-                <h2 class="display-5 fw-bold mb-0">Top Kicks</h2>
-                <div class="section-header-actions">
-                    <a href="/products" class="btn btn-outline-dark d-none d-lg-inline-block">View All</a>
-                    <div class="carousel-nav-buttons">
-                        <button class="carousel-nav-btn prev" aria-label="Previous slide"><i class="bi bi-chevron-left"></i></button>
-                        <button class="carousel-nav-btn next" aria-label="Next slide"><i class="bi bi-chevron-right"></i></button>
-                    </div>
                 </div>
             </div>
-        </div>
-        <div class="product-carousel-wrapper">
-            <div class="product-carousel">
-                <% topKicks.forEach(product => { %>
-                    <div class="product-card" data-sku="<%= product.sku %>">
-                        <div class="product-card-img-container">
-                            <a href="/products/<%= product.sku %>" class="product-card-img-link"></a>
-                            <img src="<%= product.thumbnailUrl %>" class="product-card-img" alt="<%= product.name %>">
-                            <div class="product-card-actions">
-                                <% if (currentUser) { %>
-                                    <button type="button" class="btn-action wishlist-toggle-btn" title="Toggle Wishlist" data-product-id="<%= product._id %>">
-                                        <% const isWishlisted = wishlist.some(id => id.equals(product._id)); %>
-                                        <i class="bi <%= isWishlisted ? 'bi-heart-fill' : 'bi-heart' %>"></i>
-                                    </button>
-                                <% } else { %>
-                                    <a href="/users/login?redirect=<%= path %>" class="btn-action" title="Login to Add to Wishlist">
-                                        <i class="bi bi-heart"></i>
-                                    </a>
-                                <% } %>
-                                <button type="button" class="btn-action" title="Add to Cart" data-bs-toggle="modal" data-bs-target="#productModal-<%= product.sku %>"><i class="bi bi-bag-plus"></i></button>
+            <div class="product-carousel-wrapper">
+                <div class="product-carousel">
+                    <% newArrivals.forEach(product => { %>
+                        <div class="product-card" data-sku="<%= product.sku %>">
+                            <div class="product-card-img-container">
+                                <a href="/products/<%= product.sku %>" class="product-card-img-link"></a>
+                                <img src="<%= product.thumbnailUrl %>" class="product-card-img" alt="<%= product.name %>" loading="lazy" width="300" height="300">
+                                <div class="product-card-actions">
+                                    <% if (currentUser) { %>
+                                        <button type="button" class="btn-action wishlist-toggle-btn" title="Toggle Wishlist" data-product-id="<%= product._id %>">
+                                            <% const isWishlisted = wishlist.some(id => id.equals(product._id)); %>
+                                            <i class="bi <%= isWishlisted ? 'bi-heart-fill' : 'bi-heart' %>"></i>
+                                        </button>
+                                    <% } else { %>
+                                        <a href="/users/login?redirect=<%= path %>" class="btn-action" title="Login to Add to Wishlist">
+                                            <i class="bi bi-heart"></i>
+                                        </a>
+                                    <% } %>
+                                    <button type="button" class="btn-action" title="Add to Cart" data-bs-toggle="modal" data-bs-target="#productModal-<%= product.sku %>"><i class="bi bi-bag-plus"></i></button>
+                                </div>
+                            </div>
+                            <div class="product-card-body">
+                                <a href="/products/<%= product.sku %>" class="text-decoration-none">
+                                    <div class="product-title"><%= product.name %></div>
+                                    <div class="product-price"><%= locationData.symbol %><%= product.convertedPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></div>
+                                </a>
                             </div>
                         </div>
-                        <div class="product-card-body">
-                            <a href="/products/<%= product.sku %>" class="text-decoration-none">
-                                <div class="product-title"><%= product.name %></div>
-                                <div class="product-price"><%= locationData.symbol %><%= product.convertedPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></div>
-                            </a>
+                    <% }) %>
+                </div>
+            </div>
+        </section>
+        <% } %>
+
+        <% if (topKicks && topKicks.length > 0) { %>
+        <section class="product-carousel-section container-fluid mb-5 py-5 bg-light">
+            <div class="container">
+                <div class="section-header">
+                    <h2 class="display-5 fw-bold mb-0">Top Kicks</h2>
+                    <div class="section-header-actions">
+                        <a href="/products" class="btn btn-outline-dark d-none d-lg-inline-block">View All</a>
+                        <div class="carousel-nav-buttons">
+                            <button class="carousel-nav-btn prev" aria-label="Previous slide"><i class="bi bi-chevron-left"></i></button>
+                            <button class="carousel-nav-btn next" aria-label="Next slide"><i class="bi bi-chevron-right"></i></button>
                         </div>
                     </div>
-                <% }) %>
-            </div>
-        </div>
-    </section>
-    <% } %>
-</div>
-
-<div class="container my-5">
-    <div class="promo-banner-grid">
-        <a href="/products?category=men" class="promo-banner-item" style="background-image: linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), url('https://images.unsplash.com/photo-1600185365926-3a2ce3cdb9eb?q=80&w=2000&auto=format&fit=crop');">
-            <div>
-                <h3 class="display-5">For Him</h3>
-                <p class="lead">Performance gear and lifestyle staples.</p>
-            </div>
-        </a>
-        <a href="/products?category=women" class="promo-banner-item" style="background-image: linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), url('https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?q=80&w=2000&auto=format&fit=crop');">
-            <div>
-                <h3 class="display-5">For Her</h3>
-                <p class="lead">The best in comfort, style, and design.</p>
-            </div>
-        </a>
-    </div>
-</div>
-
-<div class="skeleton-loader">
-    <section class="product-carousel-section container-fluid mb-5 py-5">
-        <div class="container">
-            <div class="section-header">
-                <div class="skeleton skeleton-line" style="height: 2.5rem; width: 320px;"></div>
-            </div>
-        </div>
-        <div class="product-carousel-wrapper">
-            <div class="product-carousel">
-                <% for (let i = 0; i < 4; i++) { %>
-                <div class="skeleton-card" style="flex: 0 0 calc(33.333% - 1rem);">
-                    <div class="skeleton skeleton-image"></div>
-                    <div class="skeleton-body">
-                        <div class="skeleton skeleton-line"></div>
-                        <div class="skeleton skeleton-line short"></div>
-                    </div>
-                </div>
-                <% } %>
-            </div>
-        </div>
-    </section>
-</div>
-<div class="content-to-load">
-    <% if (jordanCollection && jordanCollection.length > 0) { %>
-    <section class="product-carousel-section container-fluid mb-5 py-5">
-        <div class="container">
-            <div class="section-header">
-                <h2 class="display-5 fw-bold mb-0">Jordan Collection</h2>
-                <div class="section-header-actions">
-                    <a href="/products?brand=Jordan" class="btn btn-outline-dark d-none d-lg-inline-block">View All</a>
-                    <div class="carousel-nav-buttons">
-                        <button class="carousel-nav-btn prev" aria-label="Previous slide"><i class="bi bi-chevron-left"></i></button>
-                        <button class="carousel-nav-btn next" aria-label="Next slide"><i class="bi bi-chevron-right"></i></button>
-                    </div>
                 </div>
             </div>
-        </div>
-        <div class="product-carousel-wrapper">
-            <div class="product-carousel">
-                <% jordanCollection.forEach(product => { %>
-                    <div class="product-card" data-sku="<%= product.sku %>">
-                        <div class="product-card-img-container">
-                            <a href="/products/<%= product.sku %>" class="product-card-img-link"></a>
-                            <img src="<%= product.thumbnailUrl %>" class="product-card-img" alt="<%= product.name %>">
-                            <div class="product-card-actions">
-                                <% if (currentUser) { %>
-                                    <button type="button" class="btn-action wishlist-toggle-btn" title="Toggle Wishlist" data-product-id="<%= product._id %>">
-                                        <% const isWishlisted = wishlist.some(id => id.equals(product._id)); %>
-                                        <i class="bi <%= isWishlisted ? 'bi-heart-fill' : 'bi-heart' %>"></i>
-                                    </button>
-                                <% } else { %>
-                                    <a href="/users/login?redirect=<%= path %>" class="btn-action" title="Login to Add to Wishlist">
-                                        <i class="bi bi-heart"></i>
-                                    </a>
-                                <% } %>
-                                <button type="button" class="btn-action" title="Add to Cart" data-bs-toggle="modal" data-bs-target="#productModal-<%= product.sku %>"><i class="bi bi-bag-plus"></i></button>
+            <div class="product-carousel-wrapper">
+                <div class="product-carousel">
+                    <% topKicks.forEach(product => { %>
+                        <div class="product-card" data-sku="<%= product.sku %>">
+                            <div class="product-card-img-container">
+                                <a href="/products/<%= product.sku %>" class="product-card-img-link"></a>
+                                <img src="<%= product.thumbnailUrl %>" class="product-card-img" alt="<%= product.name %>" loading="lazy" width="300" height="300">
+                                <div class="product-card-actions">
+                                    <% if (currentUser) { %>
+                                        <button type="button" class="btn-action wishlist-toggle-btn" title="Toggle Wishlist" data-product-id="<%= product._id %>">
+                                            <% const isWishlisted = wishlist.some(id => id.equals(product._id)); %>
+                                            <i class="bi <%= isWishlisted ? 'bi-heart-fill' : 'bi-heart' %>"></i>
+                                        </button>
+                                    <% } else { %>
+                                        <a href="/users/login?redirect=<%= path %>" class="btn-action" title="Login to Add to Wishlist">
+                                            <i class="bi bi-heart"></i>
+                                        </a>
+                                    <% } %>
+                                    <button type="button" class="btn-action" title="Add to Cart" data-bs-toggle="modal" data-bs-target="#productModal-<%= product.sku %>"><i class="bi bi-bag-plus"></i></button>
+                                </div>
+                            </div>
+                            <div class="product-card-body">
+                                <a href="/products/<%= product.sku %>" class="text-decoration-none">
+                                    <div class="product-title"><%= product.name %></div>
+                                    <div class="product-price"><%= locationData.symbol %><%= product.convertedPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></div>
+                                </a>
                             </div>
                         </div>
-                        <div class="product-card-body">
-                            <a href="/products/<%= product.sku %>" class="text-decoration-none">
-                                <div class="product-title"><%= product.name %></div>
-                                <div class="product-price"><%= locationData.symbol %><%= product.convertedPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></div>
-                            </a>
+                    <% }) %>
+                </div>
+            </div>
+        </section>
+        <% } %>
+
+        <div class="container my-5">
+            <div class="promo-banner-grid">
+                <a href="/products?category=men" class="promo-banner-item" style="background-image: linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), url('https://images.unsplash.com/photo-1600185365926-3a2ce3cdb9eb?q=80&w=2000&auto=format&fit=crop');">
+                    <div>
+                        <h3 class="display-5">For Him</h3>
+                        <p class="lead">Performance gear and lifestyle staples.</p>
+                    </div>
+                </a>
+                <a href="/products?category=women" class="promo-banner-item" style="background-image: linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), url('https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?q=80&w=2000&auto=format&fit=crop');">
+                    <div>
+                        <h3 class="display-5">For Her</h3>
+                        <p class="lead">The best in comfort, style, and design.</p>
+                    </div>
+                </a>
+            </div>
+        </div>
+
+        <% if (jordanCollection && jordanCollection.length > 0) { %>
+        <section class="product-carousel-section container-fluid mb-5 py-5">
+            <div class="container">
+                <div class="section-header">
+                    <h2 class="display-5 fw-bold mb-0">Jordan Collection</h2>
+                    <div class="section-header-actions">
+                        <a href="/products?brand=Jordan" class="btn btn-outline-dark d-none d-lg-inline-block">View All</a>
+                        <div class="carousel-nav-buttons">
+                            <button class="carousel-nav-btn prev" aria-label="Previous slide"><i class="bi bi-chevron-left"></i></button>
+                            <button class="carousel-nav-btn next" aria-label="Next slide"><i class="bi bi-chevron-right"></i></button>
                         </div>
                     </div>
-                <% }) %>
+                </div>
             </div>
-        </div>
-    </section>
-    <% } %>
-</div>
+            <div class="product-carousel-wrapper">
+                <div class="product-carousel">
+                    <% jordanCollection.forEach(product => { %>
+                        <div class="product-card" data-sku="<%= product.sku %>">
+                            <div class="product-card-img-container">
+                                <a href="/products/<%= product.sku %>" class="product-card-img-link"></a>
+                                <img src="<%= product.thumbnailUrl %>" class="product-card-img" alt="<%= product.name %>" loading="lazy" width="300" height="300">
+                                <div class="product-card-actions">
+                                    <% if (currentUser) { %>
+                                        <button type="button" class="btn-action wishlist-toggle-btn" title="Toggle Wishlist" data-product-id="<%= product._id %>">
+                                            <% const isWishlisted = wishlist.some(id => id.equals(product._id)); %>
+                                            <i class="bi <%= isWishlisted ? 'bi-heart-fill' : 'bi-heart' %>"></i>
+                                        </button>
+                                    <% } else { %>
+                                        <a href="/users/login?redirect=<%= path %>" class="btn-action" title="Login to Add to Wishlist">
+                                            <i class="bi bi-heart"></i>
+                                        </a>
+                                    <% } %>
+                                    <button type="button" class="btn-action" title="Add to Cart" data-bs-toggle="modal" data-bs-target="#productModal-<%= product.sku %>"><i class="bi bi-bag-plus"></i></button>
+                                </div>
+                            </div>
+                            <div class="product-card-body">
+                                <a href="/products/<%= product.sku %>" class="text-decoration-none">
+                                    <div class="product-title"><%= product.name %></div>
+                                    <div class="product-price"><%= locationData.symbol %><%= product.convertedPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></div>
+                                </a>
+                            </div>
+                        </div>
+                    <% }) %>
+                </div>
+            </div>
+        </section>
+        <% } %>
 
-<div class="container my-5 py-5">
-    <div class="section-header text-center">
-        <h2 class="display-5 fw-bold">Shop by Brand</h2>
-    </div>
-    <div class="brand-logo-grid">
-        <a href="/products?brand=Nike" class="brand-logo-item"><img src="https://upload.wikimedia.org/wikipedia/commons/a/a6/Logo_NIKE.svg" alt="Nike"></a>
-        <a href="/products?brand=Jordan" class="brand-logo-item"><img src="https://upload.wikimedia.org/wikipedia/en/thumb/3/37/Jumpman_logo.svg/1200px-Jumpman_logo.svg.png" alt="Jordan"></a>
-        <a href="/products?brand=adidas" class="brand-logo-item"><img src="https://upload.wikimedia.org/wikipedia/commons/2/20/Adidas_Logo.svg" alt="Adidas"></a>
-        <a href="/products?brand=New+Balance" class="brand-logo-item"><img src="https://logos-world.net/wp-content/uploads/2020/09/New-Balance-Emblem-700x394.png" alt="New Balance"></a>
-    </div>
-</div>
+        <div class="container my-5 py-5">
+            <div class="section-header text-center">
+                <h2 class="display-5 fw-bold">Shop by Brand</h2>
+            </div>
+            <div class="brand-logo-grid">
+                <a href="/products?brand=Nike" class="brand-logo-item"><img src="https://upload.wikimedia.org/wikipedia/commons/a/a6/Logo_NIKE.svg" alt="Nike"></a>
+                <a href="/products?brand=Jordan" class="brand-logo-item"><img src="https://upload.wikimedia.org/wikipedia/en/thumb/3/37/Jumpman_logo.svg/1200px-Jumpman_logo.svg.png" alt="Jordan"></a>
+                <a href="/products?brand=adidas" class="brand-logo-item"><img src="https://upload.wikimedia.org/wikipedia/commons/2/20/Adidas_Logo.svg" alt="Adidas"></a>
+                <a href="/products?brand=New+Balance" class="brand-logo-item"><img src="https://logos-world.net/wp-content/uploads/2020/09/New-Balance-Emblem-700x394.png" alt="New Balance"></a>
+            </div>
+        </div>
 
-<div class="bg-light my-5 py-5">
-    <div class="container">
-        <div class="section-header text-center">
-            <h2 class="display-5 fw-bold">The Sneakslab Difference</h2>
+        <div class="bg-light my-5 py-5">
+            <div class="container">
+                <div class="section-header text-center">
+                    <h2 class="display-5 fw-bold">The Sneakslab Difference</h2>
+                </div>
+                <div class="row text-center g-4 mt-4">
+                    <div class="col-md-4">
+                        <div class="feature-icon-container mb-3">
+                            <i class="bi bi-patch-check-fill"></i>
+                        </div>
+                        <h4>Authenticity Guaranteed</h4>
+                        <p class="text-body-secondary">Every pair is 100% authentic, sourced from trusted partners and verified by our experts.</p>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="feature-icon-container mb-3">
+                            <i class="bi bi-airplane-fill"></i>
+                        </div>
+                        <h4>Fast, Free Shipping</h4>
+                        <p class="text-body-secondary">Get your grails delivered to your door quickly and securely, with free shipping on all orders.</p>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="feature-icon-container mb-3">
+                            <i class="bi bi-arrow-counterclockwise"></i>
+                        </div>
+                        <h4>Easy Returns</h4>
+                        <p class="text-body-secondary">Not the perfect fit? Our hassle-free return policy has you covered.</p>
+                    </div>
+                </div>
+            </div>
         </div>
-        <div class="row text-center g-4 mt-4">
-            <div class="col-md-4">
-                <div class="feature-icon-container mb-3">
-                    <i class="bi bi-patch-check-fill"></i>
-                </div>
-                <h4>Authenticity Guaranteed</h4>
-                <p class="text-body-secondary">Every pair is 100% authentic, sourced from trusted partners and verified by our experts.</p>
-            </div>
-            <div class="col-md-4">
-                <div class="feature-icon-container mb-3">
-                    <i class="bi bi-airplane-fill"></i>
-                </div>
-                <h4>Fast, Free Shipping</h4>
-                <p class="text-body-secondary">Get your grails delivered to your door quickly and securely, with free shipping on all orders.</p>
-            </div>
-            <div class="col-md-4">
-                <div class="feature-icon-container mb-3">
-                    <i class="bi bi-arrow-counterclockwise"></i>
-                </div>
-                <h4>Easy Returns</h4>
-                <p class="text-body-secondary">Not the perfect fit? Our hassle-free return policy has you covered.</p>
-            </div>
-        </div>
-    </div>
+    </main>
 </div>
 
 <% if (allProducts && allProducts.length > 0) { %>
@@ -348,7 +304,7 @@
                     </div>
                     <div class="modal-body">
                         <div class="product-image-wrapper">
-                            <img src="<%= product.thumbnailUrl %>" alt="<%= product.name %>" class="product-image">
+                            <img src="<%= product.thumbnailUrl %>" alt="<%= product.name %>" class="product-image" loading="lazy" width="300" height="300">
                         </div>
                         <div class="product-details-wrapper">
                             <div class="product-info">
