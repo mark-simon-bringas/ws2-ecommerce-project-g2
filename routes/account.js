@@ -395,7 +395,6 @@ router.get('/admin/tickets/:ticketId', isAdmin, async (req, res) => {
     }
 });
 
-// ADDED: New route to handle status updates from the form
 router.post('/admin/tickets/:ticketId/update-status', isAdmin, async (req, res) => {
     const { ticketId } = req.params;
     const { status } = req.body;
@@ -427,6 +426,58 @@ router.post('/admin/tickets/:ticketId/update-status', isAdmin, async (req, res) 
         res.redirect(`/account/admin/tickets/${ticketId}?error=` + encodeURIComponent('Failed to update status.'));
     }
 });
+
+// --- ADMIN SALES ROUTES ---
+router.get('/admin/sales', isAdmin, async (req, res) => {
+    try {
+        const db = req.app.locals.client.db(req.app.locals.dbName);
+        const products = await db.collection('products').find().sort({ name: 1 }).toArray();
+        const sales = await db.collection('sales').find().sort({ startDate: -1 }).toArray();
+
+        res.render('account/admin-sales', {
+            title: "Sales Management",
+            view: 'admin-sales',
+            products: products,
+            sales: sales,
+            message: req.query.message,
+            error: req.query.error
+        });
+    } catch (err) {
+        console.error("Error fetching sales data:", err);
+        res.status(500).send("Could not load sales management page.");
+    }
+});
+
+router.post('/admin/sales/create', isAdmin, async (req, res) => {
+    try {
+        const db = req.app.locals.client.db(req.app.locals.dbName);
+        const { saleName, discountPercentage, startDate, endDate, productIds } = req.body;
+
+        if (!saleName || !discountPercentage || !startDate || !endDate || !productIds) {
+            return res.redirect('/account/admin/sales?error=' + encodeURIComponent('All fields are required.'));
+        }
+
+        // Ensure productIds is an array
+        const productObjectIds = Array.isArray(productIds) ? productIds.map(id => new ObjectId(id)) : [new ObjectId(productIds)];
+
+        const newSale = {
+            name: saleName,
+            discountPercentage: parseInt(discountPercentage, 10),
+            startDate: new Date(startDate),
+            endDate: new Date(new Date(endDate).setHours(23, 59, 59, 999)), // End of the selected day
+            productIds: productObjectIds,
+            createdAt: new Date()
+        };
+
+        await db.collection('sales').insertOne(newSale);
+        res.redirect('/account/admin/sales?message=' + encodeURIComponent('Sale created successfully!'));
+
+    } catch (err) {
+        console.error("Error creating sale:", err);
+        res.redirect('/account/admin/sales?error=' + encodeURIComponent('An error occurred.'));
+    }
+});
+
 
 // --- CUSTOMER ACCOUNT ROUTES ---
 router.get('/orders', async (req, res) => {

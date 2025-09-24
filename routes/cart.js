@@ -9,16 +9,53 @@ const { convertCurrency } = require('./currency');
 const SHIPPING_COST_BASE = 5; // e.g., $5 shipping
 const FREE_SHIPPING_THRESHOLD_BASE = 150; // e.g., free shipping on orders over $150
 
+// ADDED: Re-usable sales logic function
+async function applySalesToProducts(products, db) {
+    if (!products || products.length === 0) {
+        return [];
+    }
+    const now = new Date();
+    const activeSales = await db.collection('sales').find({
+        startDate: { $lte: now },
+        endDate: { $gte: now }
+    }).toArray();
+    if (activeSales.length === 0) {
+        return products.map(p => ({ ...p, onSale: false }));
+    }
+    const saleMap = new Map();
+    activeSales.forEach(sale => {
+        sale.productIds.forEach(productId => {
+            saleMap.set(productId.toString(), {
+                discountPercentage: sale.discountPercentage
+            });
+        });
+    });
+    return products.map(product => {
+        const saleInfo = saleMap.get(product._id.toString());
+        if (saleInfo) {
+            const salePrice = product.retailPrice * (1 - saleInfo.discountPercentage / 100);
+            return {
+                ...product,
+                onSale: true,
+                salePrice: parseFloat(salePrice.toFixed(2)),
+                discountPercentage: saleInfo.discountPercentage
+            };
+        }
+        return { ...product, onSale: false };
+    });
+}
+
+
 // GET /cart - Display the shopping cart page
 router.get('/', async (req, res) => {
     try {
+        const db = req.app.locals.client.db(req.app.locals.dbName);
         const currency = res.locals.locationData.currency;
         let wishlistProducts = [];
         let userWishlist = [];
         let cart = req.session.cart || { items: [], totalQty: 0, totalPrice: 0 };
 
         if (req.session.user) {
-            const db = req.app.locals.client.db(req.app.locals.dbName);
             const usersCollection = db.collection('users');
             const productsCollection = db.collection('products');
             
@@ -29,7 +66,7 @@ router.get('/', async (req, res) => {
                 if (user.wishlist.length > 0) {
                     wishlistProducts = await productsCollection.find({
                         _id: { $in: user.wishlist }
-                    }).limit(4).toArray();
+                    }).toArray();
                 }
             }
         }
@@ -51,11 +88,16 @@ router.get('/', async (req, res) => {
             }));
         }
 
-        // Calculate shipping cost and total with shipping
-        const shippingCost = (cart.totalPrice >= FREE_SHIPPING_THRESHOLD_BASE) ? 0 : SHIPPING_COST_BASE;
+        // UPDATED: Shipping cost calculation
+        const now = new Date();
+        const activeSale = await db.collection('sales').findOne({
+            startDate: { $lte: now },
+            endDate: { $gte: now }
+        });
+
+        const shippingCost = (activeSale || cart.totalPrice >= FREE_SHIPPING_THRESHOLD_BASE) ? 0 : SHIPPING_COST_BASE;
         const totalWithShipping = cart.totalPrice + shippingCost;
         
-        // Convert prices for display
         const convertedShippingCost = await convertCurrency(shippingCost, currency);
         const convertedTotalWithShipping = await convertCurrency(totalWithShipping, currency);
 
@@ -75,28 +117,28 @@ router.get('/', async (req, res) => {
     }
 });
 
-// POST /cart/add - Now returns JSON instead of redirecting
+// POST /cart/add - Now uses sale price in calculations
 router.post('/add', async (req, res) => {
     try {
         const { productId, sku, size } = req.body;
         const currency = res.locals.locationData.currency;
+        const db = req.app.locals.client.db(req.app.locals.dbName);
 
         if (!req.session.cart) {
-            req.session.cart = {
-                items: [],
-                totalQty: 0,
-                totalPrice: 0
-            };
+            req.session.cart = { items: [], totalQty: 0, totalPrice: 0 };
         }
         const cart = req.session.cart;
 
-        const db = req.app.locals.client.db(req.app.locals.dbName);
         const productsCollection = db.collection('products');
-        const product = await productsCollection.findOne({ _id: new ObjectId(productId) });
+        let product = await productsCollection.findOne({ _id: new ObjectId(productId) });
 
         if (!product) {
             return res.status(404).json({ success: false, message: 'Product not found' });
         }
+        
+        [product] = await applySalesToProducts([product], db);
+        
+        const pricePerUnit = product.onSale ? product.salePrice : product.retailPrice;
 
         const itemId = `${sku}_${size}`;
         const existingItemIndex = cart.items.findIndex(item => item.itemId === itemId);
@@ -104,7 +146,7 @@ router.post('/add', async (req, res) => {
 
         if (existingItemIndex > -1) {
             cart.items[existingItemIndex].qty++;
-            cart.items[existingItemIndex].price = cart.items[existingItemIndex].qty * product.retailPrice;
+            cart.items[existingItemIndex].price = cart.items[existingItemIndex].qty * pricePerUnit;
             addedItem = cart.items[existingItemIndex];
         } else {
             addedItem = {
@@ -115,9 +157,9 @@ router.post('/add', async (req, res) => {
                 brand: product.brand,
                 thumbnailUrl: product.thumbnailUrl,
                 size: size,
-                unitPrice: product.retailPrice,
+                unitPrice: pricePerUnit,
                 qty: 1,
-                price: product.retailPrice
+                price: pricePerUnit
             };
             cart.items.push(addedItem);
         }
@@ -199,10 +241,10 @@ router.post('/add-to-wishlist-from-cart', async (req, res) => {
             { $addToSet: { wishlist: productObjectId } }
         );
 
-        res.redirect('/cart'); // Corrected: Only redirect
+        res.redirect('/cart');
     } catch (err) {
         console.error("Error adding item to wishlist:", err);
-        res.status(500).send('An error occurred.'); // Or redirect with an error message
+        res.status(500).send('An error occurred.');
     }
 });
 
@@ -222,10 +264,10 @@ router.post('/remove-from-wishlist', async (req, res) => {
             { $pull: { wishlist: productObjectId } }
         );
 
-        res.redirect('/cart'); // Corrected: Only redirect
+        res.redirect('/cart');
     } catch (err) {
         console.error("Error removing item from wishlist:", err);
-        res.status(500).send('An error occurred.'); // Or redirect with an error message
+        res.status(500).send('An error occurred.');
     }
 });
 

@@ -23,21 +23,26 @@ router.get('/', async (req, res) => {
         return res.redirect('/cart');
     }
 
+    const db = req.app.locals.client.db(req.app.locals.dbName);
     const currency = res.locals.locationData.currency;
     const cart = req.session.cart;
     let userAddresses = [];
 
-    // Fetch user's saved addresses if they are logged in
     if (req.session.user) {
-        const db = req.app.locals.client.db(req.app.locals.dbName);
         const user = await db.collection('users').findOne({ userId: req.session.user.userId });
         if (user && user.addresses) {
             userAddresses = user.addresses;
         }
     }
 
-    // --- Shipping & Total Logic ---
-    let shippingCost = (cart.totalPrice >= FREE_SHIPPING_THRESHOLD_BASE) ? 0 : SHIPPING_COST_BASE;
+    // UPDATED: Shipping & Total Logic
+    const now = new Date();
+    const activeSale = await db.collection('sales').findOne({
+        startDate: { $lte: now },
+        endDate: { $gte: now }
+    });
+    
+    let shippingCost = (activeSale || cart.totalPrice >= FREE_SHIPPING_THRESHOLD_BASE) ? 0 : SHIPPING_COST_BASE;
     const totalWithShipping = cart.totalPrice + shippingCost;
     const amountNeededForFreeShipping = FREE_SHIPPING_THRESHOLD_BASE - cart.totalPrice;
     const freeShippingProgress = (cart.totalPrice / FREE_SHIPPING_THRESHOLD_BASE) * 100;
@@ -50,7 +55,6 @@ router.get('/', async (req, res) => {
     arrivalEnd.setDate(today.getDate() + 7);
     const arrivalDate = `Arrives ${arrivalStart.toLocaleDateString('en-US', { weekday: 'short' })}, ${formatDate(arrivalStart)} - ${arrivalEnd.toLocaleDateString('en-US', { weekday: 'short' })}, ${formatDate(arrivalEnd)}`;
 
-    // Perform currency conversion for all cart and summary items
     if (cart.items.length > 0) {
         cart.items = await Promise.all(cart.items.map(async (item) => {
             item.convertedPrice = await convertCurrency(item.price, currency);
@@ -97,7 +101,6 @@ router.post('/place-order', async (req, res) => {
         const { selectedAddressId, saveAddress, sameAsShipping } = req.body;
         const paymentMethod = req.body['payment-method'];
 
-        // Determine the shipping address
         if (req.session.user && selectedAddressId && selectedAddressId !== 'new') {
             const user = await usersCollection.findOne({ userId: req.session.user.userId });
             const savedAddress = user.addresses.find(addr => addr.addressId === selectedAddressId);
@@ -123,7 +126,6 @@ router.post('/place-order', async (req, res) => {
             }
         }
 
-        // Determine billing address
         if (sameAsShipping === 'on') {
             billingAddress = { ...shippingAddress };
         } else {
@@ -135,7 +137,6 @@ router.post('/place-order', async (req, res) => {
             };
         }
 
-        // Determine payment details
         let paymentDetails = { method: 'Unknown' };
         if (paymentMethod === 'cc') {
             const ccNumber = req.body['cc-number'] || '';
@@ -146,8 +147,15 @@ router.post('/place-order', async (req, res) => {
         } else if (paymentMethod) {
             paymentDetails.method = paymentMethod.charAt(0).toUpperCase() + paymentMethod.slice(1);
         }
+        
+        // UPDATED: Final shipping cost check
+        const now = new Date();
+        const activeSale = await db.collection('sales').findOne({
+            startDate: { $lte: now },
+            endDate: { $gte: now }
+        });
 
-        const finalShippingCost = (cart.totalPrice >= FREE_SHIPPING_THRESHOLD_BASE) ? 0 : SHIPPING_COST_BASE;
+        const finalShippingCost = (activeSale || cart.totalPrice >= FREE_SHIPPING_THRESHOLD_BASE) ? 0 : SHIPPING_COST_BASE;
         const finalTotal = cart.totalPrice + finalShippingCost;
 
         const order = {
@@ -311,7 +319,7 @@ router.get('/success/:orderId', async (req, res) => {
         res.render('order-success', {
             title: "Order Confirmation",
             order: order,
-            pageStyle: 'order-success' // ADDED: Specific flag for styling
+            pageStyle: 'order-success'
         });
 
     } catch (err) {

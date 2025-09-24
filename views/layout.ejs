@@ -196,6 +196,10 @@
                                         <i class="bi bi-box-seam-fill"></i>
                                         <span>Products</span>
                                     </a>
+                                    <a class="nav-link <%= (view === 'admin-sales') ? 'active' : '' %>" href="/account/admin/sales">
+                                        <i class="bi bi-tag-fill"></i>
+                                        <span>Sales</span>
+                                    </a>
                                 <% } %>
                                 <h6 class="nav-heading mt-4">My Account</h6>
                                 <a class="nav-link <%= (view === 'orders') ? 'active' : '' %>" href="/account/orders">
@@ -323,6 +327,10 @@
             <a href="/products/manage" class="bottom-navbar-link <%= (view === 'admin-products') ? 'active' : '' %>">
                 <i class="bi bi-box-seam-fill"></i>
                 <span>Products</span>
+            </a>
+             <a class="bottom-navbar-link <%= (view === 'admin-sales') ? 'active' : '' %>" href="/account/admin/sales">
+                <i class="bi bi-tag-fill"></i>
+                <span>Sales</span>
             </a>
         <% } else { %>
             <a href="/account/orders" class="bottom-navbar-link <%= (view === 'orders') ? 'active' : '' %>">

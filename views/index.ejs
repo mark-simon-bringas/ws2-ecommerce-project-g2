@@ -78,6 +78,58 @@
             </div>
         </div>
 
+        <% if (activeSale && saleProducts && saleProducts.length > 0) { %>
+        <section class="product-carousel-section container-fluid mb-5 py-5 bg-light">
+            <div class="container">
+                <div class="section-header">
+                    <h2 class="display-5 fw-bold mb-0"><%= activeSale.name %></h2>
+                    <div class="section-header-actions">
+                        <a href="/products/sale/<%= activeSale._id %>" class="btn btn-outline-dark d-none d-lg-inline-block">View All</a>
+                        <div class="carousel-nav-buttons">
+                            <button class="carousel-nav-btn prev" aria-label="Previous slide"><i class="bi bi-chevron-left"></i></button>
+                            <button class="carousel-nav-btn next" aria-label="Next slide"><i class="bi bi-chevron-right"></i></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="product-carousel-wrapper">
+                <div class="product-carousel">
+                    <% saleProducts.forEach(product => { %>
+                        <div class="product-card" data-sku="<%= product.sku %>">
+                            <div class="product-card-img-container">
+                                <a href="/products/<%= product.sku %>" class="product-card-img-link"></a>
+                                <img src="<%= product.thumbnailUrl %>" class="product-card-img" alt="<%= product.name %>" loading="lazy" width="300" height="300">
+                                <div class="product-card-actions">
+                                    <% if (currentUser) { %>
+                                        <button type="button" class="btn-action wishlist-toggle-btn" title="Toggle Wishlist" data-product-id="<%= product._id %>">
+                                            <% const isWishlisted = wishlist.some(id => id.equals(product._id)); %>
+                                            <i class="bi <%= isWishlisted ? 'bi-heart-fill' : 'bi-heart' %>"></i>
+                                        </button>
+                                    <% } else { %>
+                                        <a href="/users/login?redirect=<%= path %>" class="btn-action" title="Login to Add to Wishlist">
+                                            <i class="bi bi-heart"></i>
+                                        </a>
+                                    <% } %>
+                                    <button type="button" class="btn-action" title="Add to Cart" data-bs-toggle="modal" data-bs-target="#productModal-<%= product.sku %>"><i class="bi bi-bag-plus"></i></button>
+                                </div>
+                            </div>
+                            <div class="product-card-body">
+                                <a href="/products/<%= product.sku %>" class="text-decoration-none">
+                                    <div class="product-title"><%= product.name %></div>
+                                    <div class="product-price">
+                                        <span class="fw-bold text-dark"><%= locationData.symbol %><%= product.convertedSalePrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></span>
+                                        <del class="text-body-secondary ms-2"><%= locationData.symbol %><%= product.convertedPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></del>
+                                        <span class="text-success fw-bold ms-2"><%= product.discountPercentage %>% OFF</span>
+                                    </div>
+                                </a>
+                            </div>
+                        </div>
+                    <% }) %>
+                </div>
+            </div>
+        </section>
+        <% } %>
+
         <% if (newArrivals && newArrivals.length > 0) { %>
         <section class="product-carousel-section container-fluid mb-5">
             <div class="container">
@@ -116,7 +168,15 @@
                             <div class="product-card-body">
                                 <a href="/products/<%= product.sku %>" class="text-decoration-none">
                                     <div class="product-title"><%= product.name %></div>
-                                    <div class="product-price"><%= locationData.symbol %><%= product.convertedPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></div>
+                                    <div class="product-price">
+                                        <% if (product.onSale) { %>
+                                            <span class="fw-bold text-dark"><%= locationData.symbol %><%= product.convertedSalePrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></span>
+                                            <del class="text-body-secondary ms-2"><%= locationData.symbol %><%= product.convertedPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></del>
+                                            <span class="text-success fw-bold ms-2"><%= product.discountPercentage %>% OFF</span>
+                                        <% } else { %>
+                                            <span><%= locationData.symbol %><%= product.convertedPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></span>
+                                        <% } %>
+                                    </div>
                                 </a>
                             </div>
                         </div>
@@ -164,7 +224,15 @@
                             <div class="product-card-body">
                                 <a href="/products/<%= product.sku %>" class="text-decoration-none">
                                     <div class="product-title"><%= product.name %></div>
-                                    <div class="product-price"><%= locationData.symbol %><%= product.convertedPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></div>
+                                    <div class="product-price">
+                                        <% if (product.onSale) { %>
+                                            <span class="fw-bold text-dark"><%= locationData.symbol %><%= product.convertedSalePrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></span>
+                                            <del class="text-body-secondary ms-2"><%= locationData.symbol %><%= product.convertedPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></del>
+                                            <span class="text-success fw-bold ms-2"><%= product.discountPercentage %>% OFF</span>
+                                        <% } else { %>
+                                            <span><%= locationData.symbol %><%= product.convertedPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></span>
+                                        <% } %>
+                                    </div>
                                 </a>
                             </div>
                         </div>
@@ -229,7 +297,15 @@
                             <div class="product-card-body">
                                 <a href="/products/<%= product.sku %>" class="text-decoration-none">
                                     <div class="product-title"><%= product.name %></div>
-                                    <div class="product-price"><%= locationData.symbol %><%= product.convertedPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></div>
+                                    <div class="product-price">
+                                         <% if (product.onSale) { %>
+                                            <span class="fw-bold text-dark"><%= locationData.symbol %><%= product.convertedSalePrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></span>
+                                            <del class="text-body-secondary ms-2"><%= locationData.symbol %><%= product.convertedPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></del>
+                                            <span class="text-success fw-bold ms-2"><%= product.discountPercentage %>% OFF</span>
+                                        <% } else { %>
+                                            <span><%= locationData.symbol %><%= product.convertedPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></span>
+                                        <% } %>
+                                    </div>
                                 </a>
                             </div>
                         </div>
@@ -311,25 +387,25 @@
                                 <h2><%= product.name %></h2>
                                 <p class="sku">SKU: <%= product.sku %></p>
                                 <div class="price-and-rating">
-                                    <p class="price mb-0"><%= locationData.symbol %><%= product.convertedPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></p>
+                                    <div class="price mb-0 d-flex flex-wrap align-items-center">
+                                         <% if (product.onSale) { %>
+                                            <span class="fw-bold text-dark me-2"><%= locationData.symbol %><%= product.convertedSalePrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></span>
+                                            <del class="text-body-secondary me-2"><%= locationData.symbol %><%= product.convertedPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></del>
+                                            <span class="text-success fw-bold"><%= product.discountPercentage %>% OFF</span>
+                                        <% } else { %>
+                                            <span class="fw-bold text-dark"><%= locationData.symbol %><%= product.convertedPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></span>
+                                        <% } %>
+                                    </div>
                                     <div class="rating">
-                                        <% 
-                                            const averageRating = product.averageRating || 0; 
-                                            const fullStars = Math.floor(averageRating);
-                                            const halfStar = averageRating % 1 >= 0.5 ? 1 : 0;
-                                            const emptyStars = 5 - fullStars - halfStar;
-                                        %>
+                                        <% const averageRating = product.averageRating || 0; %>
                                         <% if (averageRating > 0) { %>
-                                            <% for(let i = 0; i < fullStars; i++) { %><i class="bi bi-star-fill"></i><% } %>
-                                            <% if (halfStar) { %><i class="bi bi-star-half"></i><% } %>
-                                            <% for(let i = 0; i < emptyStars; i++) { %><i class="bi bi-star"></i><% } %>
+                                            <% for(let i = 0; i < Math.floor(averageRating); i++) { %><i class="bi bi-star-fill"></i><% } %>
                                         <% } else { %>
                                             <small class="text-body-secondary">No reviews</small>
                                         <% } %>
                                     </div>
                                 </div>
                             </div>
-
                             <form action="/cart/add" method="POST" id="form-add-<%= product.sku %>" class="mt-3">
                                 <input type="hidden" name="productId" value="<%= product._id %>">
                                 <input type="hidden" name="sku" value="<%= product.sku %>">

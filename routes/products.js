@@ -6,6 +6,47 @@ const axios = require('axios');
 const { ObjectId } = require('mongodb');
 const { convertCurrency } = require('./currency');
 
+// --- Helper function to apply sales to products ---
+async function applySalesToProducts(products, db) {
+    if (!products || products.length === 0) {
+        return [];
+    }
+
+    const now = new Date();
+    const activeSales = await db.collection('sales').find({
+        startDate: { $lte: now },
+        endDate: { $gte: now }
+    }).toArray();
+
+    if (activeSales.length === 0) {
+        return products.map(p => ({ ...p, onSale: false }));
+    }
+
+    const saleMap = new Map();
+    activeSales.forEach(sale => {
+        sale.productIds.forEach(productId => {
+            saleMap.set(productId.toString(), {
+                discountPercentage: sale.discountPercentage
+            });
+        });
+    });
+
+    return products.map(product => {
+        const saleInfo = saleMap.get(product._id.toString());
+        if (saleInfo) {
+            const salePrice = product.retailPrice * (1 - saleInfo.discountPercentage / 100);
+            return {
+                ...product,
+                onSale: true,
+                salePrice: parseFloat(salePrice.toFixed(2)),
+                discountPercentage: saleInfo.discountPercentage
+            };
+        }
+        return { ...product, onSale: false };
+    });
+}
+
+
 // Middleware to check if the user is logged in
 const isLoggedIn = (req, res, next) => {
     if (!req.session.user) {
@@ -37,7 +78,7 @@ router.get('/', async (req, res) => {
         }
 
         let query = {};
-        let sort = { importedAt: -1 }; // Default sort order
+        let sort = { importedAt: -1 }; 
         let pageTitle = "Shop All";
 
         if (req.query.category) {
@@ -55,7 +96,7 @@ router.get('/', async (req, res) => {
             pageTitle = "New Arrivals";
         }
 
-        const products = await productsCollection.aggregate([
+        let products = await productsCollection.aggregate([
             { $match: query },
             { $sort: sort },
             {
@@ -73,8 +114,13 @@ router.get('/', async (req, res) => {
             }
         ]).toArray();
         
+        products = await applySalesToProducts(products, db);
+
         const productsWithConvertedPrices = await Promise.all(products.map(async (product) => {
             product.convertedPrice = await convertCurrency(product.retailPrice, currency);
+            if (product.onSale) {
+                product.convertedSalePrice = await convertCurrency(product.salePrice, currency);
+            }
             return product;
         }));
 
@@ -90,6 +136,54 @@ router.get('/', async (req, res) => {
         res.status(500).send("Error loading the shop page.");
     }
 });
+
+// ADDED: Route for dedicated sale page
+router.get('/sale/:saleId', async (req, res) => {
+    try {
+        const db = req.app.locals.client.db(req.app.locals.dbName);
+        const { saleId } = req.params;
+        const salesCollection = db.collection('sales');
+        const productsCollection = db.collection('products');
+        const usersCollection = db.collection('users');
+        const currency = res.locals.locationData.currency;
+        
+        const sale = await salesCollection.findOne({ _id: new ObjectId(saleId) });
+
+        if (!sale) {
+            return res.status(404).send("Sale not found.");
+        }
+        
+        let userWishlist = [];
+        if (req.session.user) {
+            const user = await usersCollection.findOne({ userId: req.session.user.userId });
+            userWishlist = user?.wishlist || [];
+        }
+
+        let products = await productsCollection.find({ _id: { $in: sale.productIds } }).toArray();
+        products = await applySalesToProducts(products, db);
+        
+        const productsWithConvertedPrices = await Promise.all(products.map(async (product) => {
+            product.convertedPrice = await convertCurrency(product.retailPrice, currency);
+            if (product.onSale) {
+                product.convertedSalePrice = await convertCurrency(product.salePrice, currency);
+            }
+            return product;
+        }));
+        
+        // Use the shop.ejs template to display the sale products
+        res.render('shop', {
+            title: sale.name,
+            pageTitle: sale.name,
+            products: productsWithConvertedPrices,
+            wishlist: userWishlist
+        });
+
+    } catch (err) {
+        console.error("Error fetching sale page:", err);
+        res.status(500).send("Error loading sale page.");
+    }
+});
+
 
 // GET /products/search - Handle search queries
 router.get('/search', async (req, res) => {
@@ -113,7 +207,7 @@ router.get('/search', async (req, res) => {
             ]
         };
 
-        const products = await productsCollection.aggregate([
+        let products = await productsCollection.aggregate([
             { $match: query },
             {
                 $lookup: {
@@ -131,9 +225,14 @@ router.get('/search', async (req, res) => {
         ]).toArray();
 
         const pageTitle = `Search results for "${searchQuery}"`;
+        
+        products = await applySalesToProducts(products, db);
 
         const productsWithConvertedPrices = await Promise.all(products.map(async (product) => {
             product.convertedPrice = await convertCurrency(product.retailPrice, currency);
+            if (product.onSale) {
+                product.convertedSalePrice = await convertCurrency(product.salePrice, currency);
+            }
             return product;
         }));
 
@@ -601,13 +700,14 @@ router.get('/:sku', async (req, res) => {
             return res.status(404).send("Page not found.");
         }
 
-        const product = await productsCollection.findOne({ sku: sku });
+        let product = await productsCollection.findOne({ sku: sku });
 
         if (!product) {
             return res.status(404).send("Product not found");
         }
         
-        const [reviews, user, relatedProducts] = await Promise.all([
+        let relatedProducts = [];
+        const [reviews, user] = await Promise.all([
             reviewsCollection.aggregate([
                 { $match: { productId: product._id } },
                 { $sort: { createdAt: -1 } },
@@ -616,19 +716,32 @@ router.get('/:sku', async (req, res) => {
             ]).toArray(),
             
             req.session.user ? usersCollection.findOne({ userId: req.session.user.userId }) : null,
-
-            productsCollection.find({
-                brand: product.brand,
-                _id: { $ne: product._id }
-            }).limit(8).toArray()
         ]);
+        
+        // Apply sales logic after fetching the main product
+        [product] = await applySalesToProducts([product], db);
+
+        // Fetch related products after we know the brand of the main product
+        relatedProducts = await productsCollection.find({
+            brand: product.brand,
+            _id: { $ne: product._id }
+        }).limit(8).toArray();
+        relatedProducts = await applySalesToProducts(relatedProducts, db);
 
         const userWishlist = user?.wishlist || [];
         const isWishlisted = userWishlist.some(id => id.equals(product._id));
 
+        // Convert currencies for all products
         product.convertedPrice = await convertCurrency(product.retailPrice, currency);
+        if (product.onSale) {
+            product.convertedSalePrice = await convertCurrency(product.salePrice, currency);
+        }
+
         const relatedProductsWithConvertedPrices = await Promise.all(relatedProducts.map(async (p) => {
             p.convertedPrice = await convertCurrency(p.retailPrice, currency);
+            if (p.onSale) {
+                p.convertedSalePrice = await convertCurrency(p.salePrice, currency);
+            }
             return p;
         }));
 

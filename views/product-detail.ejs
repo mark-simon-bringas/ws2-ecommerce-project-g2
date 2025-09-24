@@ -1,4 +1,4 @@
-<div class="my-5 is-loading"> 
+<div class="my-5 is-loading">
     <div class="skeleton-loader">
         <div class="skeleton-pdp-layout">
             <div class="skeleton skeleton-pdp-image"></div>
@@ -66,13 +66,21 @@
                 <div class="product-info-panel">
                     <p class="text-body-secondary mb-2"><%= product.brand %></p>
                     <h1 class="product-title display-5 fw-bold"><%= product.name %></h1>
-                    <p class="product-price h3 my-3"><%= locationData.symbol %><%= product.convertedPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></p>
+                    <div class="product-price h3 my-3 d-flex flex-wrap align-items-baseline">
+                        <% if (product.onSale) { %>
+                            <span class="fw-bold text-dark me-2"><%= locationData.symbol %><%= product.convertedSalePrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></span>
+                            <del class="text-body-secondary me-2"><%= locationData.symbol %><%= product.convertedPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></del>
+                            <span class="text-success fw-bold"><%= product.discountPercentage %>% OFF</span>
+                        <% } else { %>
+                            <span class="fw-bold text-dark"><%= locationData.symbol %><%= product.convertedPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></span>
+                        <% } %>
+                    </div>
                     
                     <% 
                         const standardSizes = ['8', '8.5', '9', '9.5', '10', '10.5', '11', '12'];
                         const isCompletelyOutOfStock = product.stock && standardSizes.every(size => {
                             const safeSizeKey = size.replace('.', '_');
-                            return product.stock[safeSizeKey] <= 0;
+                            return !product.stock[safeSizeKey] || product.stock[safeSizeKey] <= 0;
                         });
                     %>
 
@@ -150,7 +158,7 @@
                                         <li class="mb-2">Standard delivered 5-9 Business Days</li>
                                         <li>Express delivered 2-4 Business Days</li>
                                     </ul>
-                                    <p class="small text-body-secondary mt-3">Orders are processed and delivered Monday-Friday (excluding public holidays).</p>
+                                     <p class="small text-body-secondary mt-3">Orders are processed and delivered Monday-Friday (excluding public holidays).</p>
                                 </div>
                             </div>
                         </div>
@@ -229,7 +237,15 @@
                         <div class="product-card-body">
                             <a href="/products/<%= relatedProduct.sku %>" class="text-decoration-none">
                                 <div class="product-title"><%= relatedProduct.name %></div>
-                                <div class="product-price"><%= locationData.symbol %><%= relatedProduct.convertedPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></div>
+                                <div class="product-price">
+                                     <% if (relatedProduct.onSale) { %>
+                                        <span class="fw-bold text-dark"><%= locationData.symbol %><%= relatedProduct.convertedSalePrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></span>
+                                        <del class="text-body-secondary ms-2"><%= locationData.symbol %><%= relatedProduct.convertedPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></del>
+                                        <span class="text-success fw-bold ms-2"><%= relatedProduct.discountPercentage %>% OFF</span>
+                                    <% } else { %>
+                                        <span><%= locationData.symbol %><%= relatedProduct.convertedPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></span>
+                                    <% } %>
+                                </div>
                             </a>
                         </div>
                     </div>
@@ -248,7 +264,15 @@
             <img src="<%= product.thumbnailUrl %>" alt="<%= product.name %>" class="product-modal-header__image">
             <div class="product-modal-header__info">
                 <h1 class="modal-title fs-5" id="productDetailsModalLabel"><%= product.name %></h1>
-                <p class="product-price mb-0"><%= locationData.symbol %><%= product.convertedPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></p>
+                <div class="product-price mb-0 d-flex flex-wrap align-items-baseline">
+                    <% if (product.onSale) { %>
+                        <span class="fw-bold text-dark me-2"><%= locationData.symbol %><%= product.convertedSalePrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></span>
+                        <del class="text-body-secondary me-2"><%= locationData.symbol %><%= product.convertedPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></del>
+                        <span class="text-success fw-bold"><%= product.discountPercentage %>% OFF</span>
+                    <% } else { %>
+                        <span class="fw-bold text-dark"><%= locationData.symbol %><%= product.convertedPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></span>
+                    <% } %>
+                </div>
             </div>
         </div>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -391,7 +415,15 @@ function initMagnifier(imgId) {
                                 <h2><%= product.name %></h2>
                                 <p class="sku">SKU: <%= product.sku %></p>
                                 <div class="price-and-rating">
-                                    <p class="price mb-0"><%= locationData.symbol %><%= product.convertedPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></p>
+                                    <div class="price mb-0 d-flex flex-wrap align-items-baseline">
+                                        <% if (product.onSale) { %>
+                                            <span class="fw-bold text-dark me-2"><%= locationData.symbol %><%= product.convertedSalePrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></span>
+                                            <del class="text-body-secondary me-2"><%= locationData.symbol %><%= product.convertedPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></del>
+                                            <span class="text-success fw-bold"><%= product.discountPercentage %>% OFF</span>
+                                        <% } else { %>
+                                            <span class="fw-bold text-dark"><%= locationData.symbol %><%= product.convertedPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></span>
+                                        <% } %>
+                                    </div>
                                     <div class="rating">
                                         <% 
                                             const averageRating = product.averageRating || 0; 
