@@ -10,8 +10,16 @@ const geoip = require('geoip-lite');
 const { getCountryData, countryData } = require('./utils/currencyMap');
 require('dotenv').config();
 
+// --- ADDED: HTTP and Socket.IO ---
+const http = require('http');
+const { Server } = require("socket.io");
+
 const app = express();
 const port = process.env.PORT || 5000;
+
+// --- ADDED: Create HTTP server for Socket.IO ---
+const server = http.createServer(app);
+const io = new Server(server);
 
 // Middleware
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -76,6 +84,53 @@ const client = new MongoClient(uri);
 app.locals.client = client;
 app.locals.dbName = process.env.DB_NAME || "ecommerceDB";
 
+// --- ADDED: Socket.IO Connection Logic ---
+io.on('connection', (socket) => {
+    console.log('A user connected to the chat server.');
+
+    // When a client joins a specific ticket room
+    socket.on('joinTicket', (ticketId) => {
+        socket.join(ticketId);
+        console.log(`User joined ticket room: ${ticketId}`);
+    });
+
+    // When a new chat message is received from a client
+    socket.on('chatMessage', async (data) => {
+        try {
+            const db = app.locals.client.db(app.locals.dbName);
+            const ticketsCollection = db.collection('support_tickets');
+            
+            const newMessage = {
+                sender: data.sender,
+                name: data.name,
+                adminName: data.adminName || null,
+                message: data.message,
+                timestamp: new Date()
+            };
+
+            // Save the new message to the database
+            await ticketsCollection.updateOne(
+                { ticketId: data.ticketId },
+                {
+                    $push: { messages: newMessage },
+                    $set: { status: 'Open', updatedAt: new Date() } // Re-open ticket on user reply
+                }
+            );
+
+            // Broadcast the new message to everyone in the ticket room
+            io.to(data.ticketId).emit('newMessage', newMessage);
+
+        } catch (err) {
+            console.error('Error handling chat message:', err);
+        }
+    });
+
+    socket.on('disconnect', () => {
+        console.log('User disconnected from the chat server.');
+    });
+});
+
+
 async function main() {
     try {
         await client.connect();
@@ -107,7 +162,8 @@ async function main() {
         app.use('/account', accountRoute);
         app.use('/support', supportRoute); 
 
-        app.listen(port, () => {
+        //
+        server.listen(port, () => {
             console.log(`Server running on port ${port}`);
         });
     } catch (err) {
