@@ -359,7 +359,7 @@ router.get('/admin/users', isAdmin, async (req, res) => {
     }
 });
 
-// --- NEW ADMIN SUPPORT TICKET ROUTES ---
+// --- ADMIN SUPPORT TICKET ROUTES ---
 router.get('/admin/inbox', isAdmin, async (req, res) => {
     try {
         const db = req.app.locals.client.db(req.app.locals.dbName);
@@ -395,52 +395,36 @@ router.get('/admin/tickets/:ticketId', isAdmin, async (req, res) => {
     }
 });
 
-router.post('/admin/tickets/:ticketId/reply', isAdmin, async (req, res) => {
+// ADDED: New route to handle status updates from the form
+router.post('/admin/tickets/:ticketId/update-status', isAdmin, async (req, res) => {
     const { ticketId } = req.params;
-    const { message, status } = req.body;
+    const { status } = req.body;
     try {
         const db = req.app.locals.client.db(req.app.locals.dbName);
         const ticketsCollection = db.collection('support_tickets');
-        const ticket = await ticketsCollection.findOne({ ticketId: ticketId.toUpperCase() });
-
-        if (!ticket) {
-            return res.status(404).send('Ticket not found.');
-        }
-
-        const newMessage = {
-            sender: 'admin',
-            adminName: req.session.user.firstName,
-            message: message,
-            timestamp: new Date()
-        };
-
-        await ticketsCollection.updateOne(
-            { _id: ticket._id },
-            { 
-                $push: { messages: newMessage },
-                $set: { status: status, updatedAt: new Date() }
-            }
+        
+        const result = await ticketsCollection.findOneAndUpdate(
+            { ticketId: ticketId.toUpperCase() },
+            { $set: { status: status, updatedAt: new Date() } },
+            { returnDocument: 'after' }
         );
+        const ticket = result;
 
-        const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
-        const ticketUrl = `${baseUrl}/support/tickets/${ticket.ticketId}?email=${encodeURIComponent(ticket.userEmail)}`;
-
-        await resend.emails.send({
-            from: process.env.RESEND_FROM_EMAIL,
-            to: ticket.userEmail,
-            subject: `Re: Your Support Ticket [${ticket.ticketId}] has been updated`,
-            html: `
-                <p>A support agent has replied to your ticket. Here is their response:</p>
-                <blockquote style="border-left: 4px solid #ccc; padding-left: 1rem; margin-left: 0;">${message}</blockquote>
-                <p>You can view the full conversation and reply by clicking the link below:</p>
-                <a href="${ticketUrl}">View Your Ticket</a>
-            `
-        });
-
+        if (ticket) {
+             const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
+             const ticketUrl = `${baseUrl}/support/tickets/${ticket.ticketId}?email=${encodeURIComponent(ticket.userEmail)}`;
+            await resend.emails.send({
+                from: process.env.RESEND_FROM_EMAIL,
+                to: ticket.userEmail,
+                subject: `Your Support Ticket [${ticket.ticketId}] has been updated`,
+                html: `<p>An agent has updated the status of your ticket to: <strong>${status}</strong>.</p><p>You can view the full conversation and reply by clicking the link below:</p><a href="${ticketUrl}">View Your Ticket</a>`
+            });
+        }
+        
         res.redirect(`/account/admin/tickets/${ticketId}`);
     } catch (err) {
-        console.error("Error replying to ticket (admin):", err);
-        res.redirect(`/account/admin/tickets/${ticketId}?error=` + encodeURIComponent('Failed to send reply.'));
+        console.error("Error updating ticket status:", err);
+        res.redirect(`/account/admin/tickets/${ticketId}?error=` + encodeURIComponent('Failed to update status.'));
     }
 });
 

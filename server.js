@@ -84,17 +84,15 @@ const client = new MongoClient(uri);
 app.locals.client = client;
 app.locals.dbName = process.env.DB_NAME || "ecommerceDB";
 
-// --- ADDED: Socket.IO Connection Logic ---
+// --- Socket.IO Connection Logic ---
 io.on('connection', (socket) => {
     console.log('A user connected to the chat server.');
 
-    // When a client joins a specific ticket room
     socket.on('joinTicket', (ticketId) => {
         socket.join(ticketId);
         console.log(`User joined ticket room: ${ticketId}`);
     });
 
-    // When a new chat message is received from a client
     socket.on('chatMessage', async (data) => {
         try {
             const db = app.locals.client.db(app.locals.dbName);
@@ -107,13 +105,16 @@ io.on('connection', (socket) => {
                 message: data.message,
                 timestamp: new Date()
             };
+            
+            // Determine the new status based on who sent the message
+            const newStatus = data.sender === 'admin' ? 'Answered' : 'Open';
 
-            // Save the new message to the database
+            // Save the new message and update the status
             await ticketsCollection.updateOne(
                 { ticketId: data.ticketId },
                 {
                     $push: { messages: newMessage },
-                    $set: { status: 'Open', updatedAt: new Date() } // Re-open ticket on user reply
+                    $set: { status: newStatus, updatedAt: new Date() }
                 }
             );
 
@@ -162,7 +163,7 @@ async function main() {
         app.use('/account', accountRoute);
         app.use('/support', supportRoute); 
 
-        //
+    
         server.listen(port, () => {
             console.log(`Server running on port ${port}`);
         });

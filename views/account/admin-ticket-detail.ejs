@@ -72,6 +72,14 @@
     <% } else { %>
          <div class="chat-reply-form text-center">
             <p class="text-body-secondary mb-0">This ticket has been closed. Replying will re-open it.</p>
+             <form id="reply-form">
+                <div class="input-group">
+                    <textarea class="form-control" id="message-input" placeholder="Type your reply to re-open..." rows="1" required></textarea>
+                    <button type="submit" class="btn btn-primary btn-send" aria-label="Send Reply">
+                        <i class="bi bi-send-fill"></i>
+                    </button>
+                </div>
+            </form>
         </div>
     <% } %>
 </div>
