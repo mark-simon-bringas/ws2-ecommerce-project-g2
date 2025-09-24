@@ -1,0 +1,76 @@
+<div class="support-page-container pt-4 pb-4">
+    <div class="chat-container">
+        <div class="chat-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="mb-0">Ticket #<%= ticket.ticketId %></h1>
+                    <p class="text-body-secondary small mb-0">Regarding: <%= ticket.subject %></p>
+                </div>
+                <div>
+                    <% if (ticket.status === 'Open') { %>
+                        <span class="badge bg-primary-subtle text-primary-emphasis rounded-pill"><%= ticket.status %></span>
+                    <% } else if (ticket.status === 'Answered') { %>
+                        <span class="badge bg-success-subtle text-success-emphasis rounded-pill"><%= ticket.status %></span>
+                    <% } else { %>
+                        <span class="badge bg-secondary-subtle text-secondary-emphasis rounded-pill"><%= ticket.status %></span>
+                    <% } %>
+                </div>
+            </div>
+        </div>
+        <div class="chat-messages" id="chat-messages">
+            <% ticket.messages.forEach(message => { %>
+                <% if (message.sender === 'user') { %>
+                    <div class="chat-message user-message">
+                        <div class="message-bubble">
+                            <%- message.message.replace(/\n/g, '<br>') %>
+                        </div>
+                        <div class="message-meta">
+                            <%= message.name %> • <%= new Date(message.timestamp).toLocaleString() %>
+                        </div>
+                    </div>
+                <% } else { %>
+                    <div class="chat-message support-message">
+                        <div class="message-bubble">
+                            <%- message.message.replace(/\n/g, '<br>') %>
+                        </div>
+                        <div class="message-meta">
+                            <%= message.adminName || 'Support Team' %> • <%= new Date(message.timestamp).toLocaleString() %>
+                        </div>
+                    </div>
+                <% } %>
+            <% }) %>
+        </div>
+
+        <% if (ticket.status !== 'Closed') { %>
+            <div class="chat-reply-form">
+                <form action="/support/tickets/<%= ticket.ticketId %>/reply" method="POST">
+                    <input type="hidden" name="userEmail" value="<%= ticket.userEmail %>">
+                    <div class="input-group">
+                        <textarea class="form-control" name="message" placeholder="Type your reply..." rows="1" required></textarea>
+                        <button type="submit" class="btn btn-primary btn-send" aria-label="Send Message">
+                            <i class="bi bi-arrow-up"></i>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        <% } else { %>
+            <div class="chat-reply-form text-center">
+                <p class="text-body-secondary mb-0">This ticket has been closed. To reopen it, please create a new ticket and reference ticket ID #<%= ticket.ticketId %>.</p>
+            </div>
+        <% } %>
+
+    </div>
+</div>
+
+<script>
+    // Auto-scroll to the latest message
+    const chatMessages = document.getElementById('chat-messages');
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+
+    // Auto-expand textarea
+    const textarea = document.querySelector('.chat-reply-form textarea');
+    textarea.addEventListener('input', function () {
+        this.style.height = 'auto';
+        this.style.height = (this.scrollHeight) + 'px';
+    });
+</script>

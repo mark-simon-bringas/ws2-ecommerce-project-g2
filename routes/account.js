@@ -178,6 +178,7 @@ router.get('/wishlist', async (req, res) => {
     }
 });
 
+// --- ADMIN ROUTES ---
 router.get('/admin/dashboard', isAdmin, async (req, res) => {
     try {
         const db = req.app.locals.client.db(req.app.locals.dbName);
@@ -297,18 +298,8 @@ router.post('/admin/orders/update-status/:id', isAdmin, async (req, res) => {
 
         if (updatedOrder) {
             let emailTitle = '';
-
-            switch(newStatus) {
-                case 'Processing':
-                    emailTitle = 'Your Order is Being Processed';
-                    break;
-                case 'Shipped':
-                    emailTitle = 'Your Order Has Shipped!';
-                    break;
-                case 'Delivered':
-                    emailTitle = 'Your Order Has Been Delivered';
-                    break;
-            }
+            if (newStatus === 'Shipped') emailTitle = 'Your Order Has Shipped!';
+            if (newStatus === 'Delivered') emailTitle = 'Your Order Has Been Delivered';
 
             if (emailTitle) {
                 const emailHtml = createStatusEmailHtml(updatedOrder);
@@ -320,7 +311,6 @@ router.post('/admin/orders/update-status/:id', isAdmin, async (req, res) => {
                 });
             }
         }
-
         res.redirect(`/account/admin/orders?message=${encodeURIComponent('Order status updated successfully!')}`);
     } catch (err) {
         console.error("Error updating order status:", err);
@@ -335,37 +325,22 @@ router.post('/admin/orders/cancel/:id', isAdmin, async (req, res) => {
         const activityLogCollection = db.collection('activity_log');
         const orderId = req.params.id;
         
-        await ordersCollection.updateOne(
-            { _id: new ObjectId(orderId) },
-            { $set: { status: 'Cancelled' } }
-        );
-        
+        await ordersCollection.updateOne({ _id: new ObjectId(orderId) }, { $set: { status: 'Cancelled' } });
         const updatedOrderForEmail = await ordersCollection.findOne({ _id: new ObjectId(orderId) });
 
         if (updatedOrderForEmail) {
-            const logEntry = {
-                userId: req.session.user.userId,
-                userFirstName: req.session.user.firstName,
-                userRole: req.session.user.role,
+            await activityLogCollection.insertOne({
+                userId: req.session.user.userId, userFirstName: req.session.user.firstName, userRole: req.session.user.role,
                 actionType: 'ORDER_CANCEL',
-                details: {
-                    orderId: updatedOrderForEmail._id,
-                    customerName: `${updatedOrderForEmail.customer.firstName} ${updatedOrderForEmail.customer.lastName}`
-                },
+                details: { orderId: updatedOrderForEmail._id, customerName: `${updatedOrderForEmail.customer.firstName} ${updatedOrderForEmail.customer.lastName}` },
                 timestamp: new Date()
-            };
-            await activityLogCollection.insertOne(logEntry);
-            
+            });
             const emailHtml = createStatusEmailHtml(updatedOrderForEmail);
-
             await resend.emails.send({
-                from: process.env.RESEND_FROM_EMAIL,
-                to: updatedOrderForEmail.customer.email,
-                subject: 'Your Order Has Been Cancelled',
-                html: emailHtml,
+                from: process.env.RESEND_FROM_EMAIL, to: updatedOrderForEmail.customer.email,
+                subject: 'Your Order Has Been Cancelled', html: emailHtml,
             });
         }
-
         res.redirect(`/account/admin/orders?message=${encodeURIComponent('Order has been cancelled.')}`);
     } catch (err) {
         console.error("Error cancelling order:", err);
@@ -373,52 +348,120 @@ router.post('/admin/orders/cancel/:id', isAdmin, async (req, res) => {
     }
 });
 
-router.get('/orders', async (req, res) => {
-    try {
-        const db = req.app.locals.client.db(req.app.locals.dbName);
-        const ordersCollection = db.collection('orders');
-        const userOrders = await ordersCollection.find({ userId: req.session.user.userId }).sort({ orderDate: -1 }).toArray();
-
-        res.render('account/order-history', {
-            title: "Order History",
-            orders: userOrders, 
-            view: 'orders' 
-        });
-
-    } catch (err) {
-        console.error("Error fetching order history:", err);
-        res.status(500).send("Could not load your order history.");
-    }
-});
-
 router.get('/admin/users', isAdmin, async (req, res) => {
     try {
         const db = req.app.locals.client.db(req.app.locals.dbName);
-        const usersCollection = db.collection('users');
-        const allUsers = await usersCollection.find().toArray();
-
-        res.render('account/user-management', {
-            title: "User Management",
-            users: allUsers, 
-            view: 'admin-users' 
-        });
-
+        const allUsers = await db.collection('users').find().toArray();
+        res.render('account/user-management', { title: "User Management", users: allUsers, view: 'admin-users' });
     } catch (err) {
         console.error("Error fetching users for admin:", err);
         res.status(500).send("Could not load user management.");
     }
 });
 
+// --- NEW ADMIN SUPPORT TICKET ROUTES ---
+router.get('/admin/inbox', isAdmin, async (req, res) => {
+    try {
+        const db = req.app.locals.client.db(req.app.locals.dbName);
+        const tickets = await db.collection('support_tickets').find().sort({ updatedAt: -1 }).toArray();
+        res.render('account/admin-inbox', {
+            title: "Support Inbox",
+            view: 'admin-inbox',
+            tickets: tickets
+        });
+    } catch (err) {
+        console.error("Error fetching support tickets:", err);
+        res.status(500).send("Could not load support inbox.");
+    }
+});
+
+router.get('/admin/tickets/:ticketId', isAdmin, async (req, res) => {
+    try {
+        const { ticketId } = req.params;
+        const db = req.app.locals.client.db(req.app.locals.dbName);
+        const ticket = await db.collection('support_tickets').findOne({ ticketId: ticketId.toUpperCase() });
+
+        if (!ticket) {
+            return res.status(404).send("Ticket not found.");
+        }
+        res.render('account/admin-ticket-detail', {
+            title: `Ticket #${ticket.ticketId}`,
+            view: 'admin-inbox',
+            ticket: ticket
+        });
+    } catch (err) {
+        console.error("Error fetching ticket details:", err);
+        res.status(500).send("Could not load ticket details.");
+    }
+});
+
+router.post('/admin/tickets/:ticketId/reply', isAdmin, async (req, res) => {
+    const { ticketId } = req.params;
+    const { message, status } = req.body;
+    try {
+        const db = req.app.locals.client.db(req.app.locals.dbName);
+        const ticketsCollection = db.collection('support_tickets');
+        const ticket = await ticketsCollection.findOne({ ticketId: ticketId.toUpperCase() });
+
+        if (!ticket) {
+            return res.status(404).send('Ticket not found.');
+        }
+
+        const newMessage = {
+            sender: 'admin',
+            adminName: req.session.user.firstName,
+            message: message,
+            timestamp: new Date()
+        };
+
+        await ticketsCollection.updateOne(
+            { _id: ticket._id },
+            { 
+                $push: { messages: newMessage },
+                $set: { status: status, updatedAt: new Date() }
+            }
+        );
+
+        const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
+        const ticketUrl = `${baseUrl}/support/tickets/${ticket.ticketId}?email=${encodeURIComponent(ticket.userEmail)}`;
+
+        await resend.emails.send({
+            from: process.env.RESEND_FROM_EMAIL,
+            to: ticket.userEmail,
+            subject: `Re: Your Support Ticket [${ticket.ticketId}] has been updated`,
+            html: `
+                <p>A support agent has replied to your ticket. Here is their response:</p>
+                <blockquote style="border-left: 4px solid #ccc; padding-left: 1rem; margin-left: 0;">${message}</blockquote>
+                <p>You can view the full conversation and reply by clicking the link below:</p>
+                <a href="${ticketUrl}">View Your Ticket</a>
+            `
+        });
+
+        res.redirect(`/account/admin/tickets/${ticketId}`);
+    } catch (err) {
+        console.error("Error replying to ticket (admin):", err);
+        res.redirect(`/account/admin/tickets/${ticketId}?error=` + encodeURIComponent('Failed to send reply.'));
+    }
+});
+
+// --- CUSTOMER ACCOUNT ROUTES ---
+router.get('/orders', async (req, res) => {
+    try {
+        const db = req.app.locals.client.db(req.app.locals.dbName);
+        const userOrders = await db.collection('orders').find({ userId: req.session.user.userId }).sort({ orderDate: -1 }).toArray();
+        res.render('account/order-history', { title: "Order History", orders: userOrders, view: 'orders' });
+    } catch (err) {
+        console.error("Error fetching order history:", err);
+        res.status(500).send("Could not load your order history.");
+    }
+});
+
 router.get('/settings', async (req, res) => {
     const db = req.app.locals.client.db(req.app.locals.dbName);
     const user = await db.collection('users').findOne({ userId: req.session.user.userId });
-
     res.render('account/settings', {
-        title: "Account Settings",
-        view: 'settings',
-        user: user,
-        message: req.query.message,
-        error: req.query.error
+        title: "Account Settings", view: 'settings', user: user,
+        message: req.query.message, error: req.query.error
     });
 });
 
@@ -426,24 +469,15 @@ router.post('/settings/update-profile', async (req, res) => {
     try {
         const { firstName, lastName } = req.body;
         const userId = req.session.user.userId;
-
-        if (!firstName || !lastName) {
-            return res.redirect('/account/settings?error=' + encodeURIComponent('First and last name cannot be empty.'));
-        }
-
+        if (!firstName || !lastName) { return res.redirect('/account/settings?error=' + encodeURIComponent('First and last name cannot be empty.')); }
         const db = req.app.locals.client.db(req.app.locals.dbName);
-        const usersCollection = db.collection('users');
-
-        await usersCollection.updateOne(
+        await db.collection('users').updateOne(
             { userId: userId },
             { $set: { firstName: firstName, lastName: lastName, updatedAt: new Date() } }
         );
-
         req.session.user.firstName = firstName;
         req.session.user.lastName = lastName;
-
         res.redirect('/account/settings?tab=profile&message=' + encodeURIComponent('Profile updated successfully!'));
-
     } catch (err) {
         console.error("Error updating profile:", err);
         res.redirect('/account/settings?tab=profile&error=' + encodeURIComponent('An error occurred while updating your profile.'));
@@ -454,39 +488,17 @@ router.post('/settings/update-password', async (req, res) => {
     try {
         const { currentPassword, newPassword, confirmPassword } = req.body;
         const userId = req.session.user.userId;
-
-        if (newPassword !== confirmPassword) {
-            return res.redirect('/account/settings?tab=security&error=' + encodeURIComponent('New passwords do not match.'));
-        }
-
-        const pwdStrengthErrors = [];
-        if (newPassword.length < 8) { pwdStrengthErrors.push("Password must be at least 8 characters long.") }
-        if (!/[A-Z]/.test(newPassword)) { pwdStrengthErrors.push("Password must contain at least one uppercase letter."); }
-        if (!/[a-z]/.test(newPassword)) { pwdStrengthErrors.push("Password must contain at least one lowercase letter."); }
-        if (!/[0-9]/.test(newPassword)) { pwdStrengthErrors.push("Password must contain a number."); }
-        if (!/[!@#$%^&*()_\+\-=\[\]{};':\"\\|,.<>\/?`~]/.test(newPassword)) { pwdStrengthErrors.push("Password must contain a special character."); }
-        
-        if (pwdStrengthErrors.length > 0) {
-            return res.redirect('/account/settings?tab=security&error=' + encodeURIComponent(pwdStrengthErrors.join(' ')));
-        }
-
+        if (newPassword !== confirmPassword) { return res.redirect('/account/settings?tab=security&error=' + encodeURIComponent('New passwords do not match.')); }
         const db = req.app.locals.client.db(req.app.locals.dbName);
-        const usersCollection = db.collection('users');
-        const user = await usersCollection.findOne({ userId: userId });
-
+        const user = await db.collection('users').findOne({ userId: userId });
         const isPasswordValid = await bcrypt.compare(currentPassword, user.passwordHash);
-        if (!isPasswordValid) {
-            return res.redirect('/account/settings?tab=security&error=' + encodeURIComponent('Incorrect current password.'));
-        }
-
+        if (!isPasswordValid) { return res.redirect('/account/settings?tab=security&error=' + encodeURIComponent('Incorrect current password.')); }
         const hashedPassword = await bcrypt.hash(newPassword, saltRounds);
-        await usersCollection.updateOne(
+        await db.collection('users').updateOne(
             { userId: userId },
             { $set: { passwordHash: hashedPassword, updatedAt: new Date() } }
         );
-
         res.redirect('/account/settings?tab=security&message=' + encodeURIComponent('Password updated successfully!'));
-
     } catch (err) {
         console.error("Error updating password:", err);
         res.redirect('/account/settings?tab=security&error=' + encodeURIComponent('An error occurred while updating your password.'));
@@ -497,33 +509,14 @@ router.post('/settings/add-address', async (req, res) => {
     try {
         const { v4: uuidv4 } = await import('uuid');
         const db = req.app.locals.client.db(req.app.locals.dbName);
-        const usersCollection = db.collection('users');
         const userId = req.session.user.userId;
-
         const newAddress = {
-            addressId: uuidv4(),
-            firstName: req.body.firstName,
-            lastName: req.body.lastName,
-            address: req.body.address,
-            country: req.body.country,
-            state: req.body.state,
-            zip: req.body.zip,
-            phone: req.body.phone,
-            isDefault: req.body.isDefault === 'on'
+            addressId: uuidv4(), firstName: req.body.firstName, lastName: req.body.lastName,
+            address: req.body.address, country: req.body.country, state: req.body.state,
+            zip: req.body.zip, phone: req.body.phone, isDefault: req.body.isDefault === 'on'
         };
-
-        if (newAddress.isDefault) {
-            await usersCollection.updateOne(
-                { userId: userId },
-                { $set: { "addresses.$[].isDefault": false } }
-            );
-        }
-
-        await usersCollection.updateOne(
-            { userId: userId },
-            { $push: { addresses: newAddress } }
-        );
-
+        if (newAddress.isDefault) { await db.collection('users').updateOne({ userId: userId }, { $set: { "addresses.$[].isDefault": false } }); }
+        await db.collection('users').updateOne({ userId: userId }, { $push: { addresses: newAddress } });
         res.redirect('/account/settings?tab=addresses&message=' + encodeURIComponent('Address added successfully!'));
     } catch (err) {
         console.error("Error adding address:", err);
@@ -534,36 +527,16 @@ router.post('/settings/add-address', async (req, res) => {
 router.post('/settings/edit-address/:addressId', async (req, res) => {
     try {
         const db = req.app.locals.client.db(req.app.locals.dbName);
-        const usersCollection = db.collection('users');
         const userId = req.session.user.userId;
         const { addressId } = req.params;
-
         const updatedAddress = {
-            addressId: addressId,
-            firstName: req.body.firstName,
-            lastName: req.body.lastName,
-            address: req.body.address,
-            country: req.body.country,
-            state: req.body.state,
-            zip: req.body.zip,
-            phone: req.body.phone,
-            isDefault: req.body.isDefault === 'on'
+            addressId: addressId, firstName: req.body.firstName, lastName: req.body.lastName,
+            address: req.body.address, country: req.body.country, state: req.body.state,
+            zip: req.body.zip, phone: req.body.phone, isDefault: req.body.isDefault === 'on'
         };
-
-        if (updatedAddress.isDefault) {
-            await usersCollection.updateOne(
-                { userId: userId },
-                { $set: { "addresses.$[].isDefault": false } }
-            );
-        }
-
-        await usersCollection.updateOne(
-            { userId: userId, "addresses.addressId": addressId },
-            { $set: { "addresses.$": updatedAddress } }
-        );
-        
+        if (updatedAddress.isDefault) { await db.collection('users').updateOne({ userId: userId }, { $set: { "addresses.$[].isDefault": false } }); }
+        await db.collection('users').updateOne({ userId: userId, "addresses.addressId": addressId }, { $set: { "addresses.$": updatedAddress } });
         res.redirect('/account/settings?tab=addresses&message=' + encodeURIComponent('Address updated successfully!'));
-
     } catch (err) {
         console.error("Error updating address:", err);
         res.redirect('/account/settings?tab=addresses&error=' + encodeURIComponent('Could not update address.'));
@@ -573,17 +546,10 @@ router.post('/settings/edit-address/:addressId', async (req, res) => {
 router.post('/settings/delete-address/:addressId', async (req, res) => {
     try {
         const db = req.app.locals.client.db(req.app.locals.dbName);
-        const usersCollection = db.collection('users');
         const userId = req.session.user.userId;
         const { addressId } = req.params;
-        
-        await usersCollection.updateOne(
-            { userId: userId },
-            { $pull: { addresses: { addressId: addressId } } }
-        );
-
+        await db.collection('users').updateOne({ userId: userId }, { $pull: { addresses: { addressId: addressId } } });
         res.redirect('/account/settings?tab=addresses&message=' + encodeURIComponent('Address removed successfully!'));
-
     } catch (err) {
         console.error("Error deleting address:", err);
         res.redirect('/account/settings?tab=addresses&error=' + encodeURIComponent('Could not remove address.'));

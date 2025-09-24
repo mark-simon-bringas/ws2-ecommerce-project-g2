@@ -716,7 +716,7 @@ li {
 .checkout-radio-group label {
     padding: 1rem;
     border-radius: 12px;
-    font-weight: 600;
+    font-weight: 500;
     text-align: center;
     border-width: 2px;
     display: flex;
@@ -985,6 +985,7 @@ li {
     .dropdown .con-1.dropdown-search-panel {
         left: 50%;
         transform: translateX(-50%);
+        width: 850px;
         max-width: 90vw;
         top: 1rem;
         padding: 1.5rem;
@@ -1113,6 +1114,7 @@ li {
         background-color: var(--sidebar-link-active-bg); color: var(--sidebar-link-active-color);
         font-weight: 600;
     }
+    
     .dashboard-main-content {
         padding: 3rem; width: calc(100% - 260px);
         height: calc(100vh - 44px); overflow-y: auto;
@@ -1522,8 +1524,6 @@ li {
     }
 }
 
-/* Add these new rules to the end of your existing style.css file */
-
 /* --- Custom Styles for Checkout Address Selector --- */
 .address-selector-group {
     border: 1px solid var(--border-color);
@@ -1579,3 +1579,108 @@ li {
     z-index: 2;
 }
 
+/* --- ADDED: Support Page Styles --- */
+.support-page-container {
+    background-color: #fff;
+}
+.support-hero {
+    padding: 4rem 1.5rem 5rem;
+    background-color: var(--bg-color);
+    text-align: center;
+}
+.support-search-bar {
+    max-width: 600px;
+    margin: -3rem auto 3rem;
+    position: relative;
+    z-index: 2;
+}
+.support-search-bar .input-group-text {
+    background-color: transparent;
+    border: none;
+    font-size: 1.2rem;
+    color: var(--text-color-secondary);
+}
+.support-search-bar .form-control {
+    border: none;
+    font-size: 1.2rem;
+    font-weight: 500;
+}
+.support-search-bar .input-group {
+    background-color: var(--card-bg-color);
+    border-radius: 980px;
+    padding: 0.5rem 0.5rem 0.5rem 1rem;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+}
+.popular-topics {
+    text-align: center;
+    margin-bottom: 4rem;
+}
+.popular-topics a {
+    color: var(--text-color-secondary);
+    text-decoration: underline;
+    margin: 0 0.5rem;
+}
+
+.support-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+    max-width: 900px;
+    margin: 0 auto;
+}
+.support-card {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    background-color: var(--card-bg-color);
+    border-radius: 16px;
+    padding: 2rem;
+    text-decoration: none;
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+    transition: all 0.2s ease-in-out;
+}
+.support-card:hover {
+    border-color: var(--link-color);
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+}
+.support-card-icon {
+    font-size: 2rem;
+    color: var(--link-color);
+}
+.support-card-body {
+    flex-grow: 1;
+}
+.support-card-title {
+    font-weight: 600;
+    font-size: 1.25rem;
+    margin-bottom: 0.25rem;
+    color: var(--text-color);
+}
+.support-card-text {
+    color: var(--text-color-secondary);
+    margin-bottom: 0;
+}
+.support-card-arrow {
+    font-size: 1.5rem;
+    color: var(--border-color);
+    transition: transform 0.2s ease-in-out;
+}
+.support-card:hover .support-card-arrow {
+    transform: translateX(5px);
+    color: var(--link-color);
+}
+
+@media (min-width: 768px) {
+    .support-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+@media (min-width: 992px) {
+    .support-hero {
+        margin-left: -3rem;
+        margin-right: -3rem;
+    }
+}

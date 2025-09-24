@@ -1,6 +1,5 @@
 document.addEventListener('DOMContentLoaded', function() {
-    // --- Skeleton Preloader Logic (FIXED) ---
-    // Find all parent containers that have a skeleton loader inside them.
+    // --- Skeleton Preloader Logic ---
     const containersWithLoaders = document.querySelectorAll('.content-wrapper, .container, .my-5');
 
     containersWithLoaders.forEach(container => {
@@ -8,52 +7,58 @@ document.addEventListener('DOMContentLoaded', function() {
         const contentToLoad = container.querySelector(':scope > .content-to-load');
         
         if (skeletonLoader && contentToLoad) {
-            // This now correctly hides the content and shows the skeleton
-            // as soon as the HTML document is parsed.
             container.classList.add('is-loading');
-            console.log('Skeleton loader activated for a container.');
-
-            // Use a minimal timeout to ensure the browser has a moment to render the skeleton
-            // before we reveal the content. This prevents a "flash" of unstyled content.
             setTimeout(() => {
                 container.classList.remove('is-loading');
-                console.log('Content revealed for a container.');
-            }, 100); // A small delay is often enough
+            }, 100);
         }
     });
-
 
     // --- Location Data for Mini-Cart ---
     const locationData = JSON.parse(document.body.dataset.location || '{}');
 
-    // --- Desktop Navbar Dropdown Logic ---
-    const desktopNavLinks = document.querySelectorAll(".navbar-desktop .list-menu");
-    const desktopSearchBtn = document.getElementById('desktop-search-btn');
+    // --- Desktop Navbar Dropdown Logic (UPDATED) ---
+    const desktopNavLinks = document.querySelectorAll(".navbar-desktop .list-menu, #desktop-search-btn");
     const dropdownContainer = document.querySelector(".dropdown");
     const contentPanels = document.querySelectorAll(".dropdown .con-1");
 
     if (desktopNavLinks.length > 0 && dropdownContainer) {
         const closeDropdown = () => {
             dropdownContainer.style.height = "0px";
-            contentPanels.forEach(panel => panel.style.opacity = "0");
+            contentPanels.forEach(panel => {
+                panel.style.opacity = "0";
+                panel.style.pointerEvents = "none"; // Make invisible panels non-interactive
+            });
         };
         const openDropdown = (activeIndex) => {
             dropdownContainer.style.height = "280px";
             contentPanels.forEach((panel, index) => {
-                panel.style.opacity = (index === activeIndex) ? "1" : "0";
+                if (index === activeIndex) {
+                    panel.style.opacity = "1";
+                    panel.style.pointerEvents = "auto"; // Make the active panel interactive
+                } else {
+                    panel.style.opacity = "0";
+                    panel.style.pointerEvents = "none"; // Make all other panels non-interactive
+                }
             });
         };
-        desktopNavLinks.forEach((link, index) => {
-            link.addEventListener("mouseover", () => openDropdown(index));
+
+        desktopNavLinks.forEach(link => {
+            const panelIndex = parseInt(link.dataset.panel, 10);
+            if (!isNaN(panelIndex)) {
+                const eventType = link.id === 'desktop-search-btn' ? 'click' : 'mouseover';
+                link.addEventListener(eventType, (e) => {
+                    if(e.type === 'click') e.preventDefault();
+                    const isAlreadyOpen = dropdownContainer.style.height === "280px" && contentPanels[panelIndex].style.opacity === "1";
+                    if (e.type === 'click' && isAlreadyOpen) {
+                        closeDropdown();
+                    } else {
+                        openDropdown(panelIndex);
+                    }
+                });
+            }
         });
-        if (desktopSearchBtn) {
-            desktopSearchBtn.addEventListener('click', (e) => {
-                e.preventDefault();
-                const searchPanelIndex = 4;
-                const isSearchOpen = dropdownContainer.style.height === "280px" && contentPanels[searchPanelIndex].style.opacity === "1";
-                isSearchOpen ? closeDropdown() : openDropdown(searchPanelIndex);
-            });
-        }
+
         dropdownContainer.addEventListener("mouseleave", closeDropdown);
     }
 

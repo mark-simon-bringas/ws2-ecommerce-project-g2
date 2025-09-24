@@ -3,7 +3,7 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const { MongoClient } = require('mongodb');
-const session = require('express-session'); 
+const session = require('express-session');
 const path = require('path');
 const ejsLayouts = require('express-ejs-layouts');
 const geoip = require('geoip-lite');
@@ -28,41 +28,42 @@ app.use(session({
     secret: process.env.SESSION_SECRET || 'dev-secret',
     resave: false,
     saveUninitialized: false,
-    cookie: { 
-        secure: process.env.NODE_ENV === 'production', 
+    cookie: {
+        secure: process.env.NODE_ENV === 'production',
         secure: false,
-        maxAge: 15 * 60 * 1000 
-    } 
+        maxAge: 15 * 60 * 1000
+    }
 }));
 
-// UPDATED: Middleware now passes the current country code explicitly
 app.use(async (req, res, next) => {
     res.locals.currentUser = req.session.user;
     res.locals.cart = req.session.cart;
-    res.locals.path = req.originalUrl; // Use originalUrl to capture query params
-    
-    // Country and Currency Detection
+    res.locals.path = req.originalUrl;
+
     const ip = req.ip === '::1' || req.ip === '127.0.0.1' ? '122.54.69.1' : req.ip;
     const geo = geoip.lookup(ip);
-    
-    const countryCode = req.session.country_override || (geo ? geo.country : 'US');
-    
-    res.locals.currentCountryCode = countryCode; // Pass the active code for the dropdown
-    res.locals.locationData = getCountryData(countryCode);
-    res.locals.countryData = countryData; 
 
-    // If an admin is logged in, count the number of new orders
+    const countryCode = req.session.country_override || (geo ? geo.country : 'US');
+
+    res.locals.currentCountryCode = countryCode;
+    res.locals.locationData = getCountryData(countryCode);
+    res.locals.countryData = countryData;
+
     if (req.session.user && req.session.user.role === 'admin') {
         try {
             const db = req.app.locals.client.db(req.app.locals.dbName);
             const newOrderCount = await db.collection('orders').countDocuments({ isNew: true });
+            const newTicketCount = await db.collection('support_tickets').countDocuments({ status: 'Open' });
             res.locals.newOrderCount = newOrderCount;
+            res.locals.newTicketCount = newTicketCount;
         } catch (err) {
-            console.error("Error fetching new order count:", err);
+            console.error("Error fetching admin counts:", err);
             res.locals.newOrderCount = 0;
+            res.locals.newTicketCount = 0;
         }
     } else {
         res.locals.newOrderCount = 0;
+        res.locals.newTicketCount = 0;
     }
 
     next();
@@ -86,9 +87,9 @@ async function main() {
         const productsRoute = require('./routes/products');
         const cartRoute = require('./routes/cart');
         const checkoutRoute = require('./routes/checkout');
-        const accountRoute = require('./routes/account'); 
+        const accountRoute = require('./routes/account');
+        const supportRoute = require('./routes/support');
 
-        // ADDED: Route to handle currency change
         app.post('/currency/change', (req, res) => {
             const { country } = req.body;
             if (country && countryData[country]) {
@@ -104,13 +105,14 @@ async function main() {
         app.use('/cart', cartRoute);
         app.use('/checkout', checkoutRoute);
         app.use('/account', accountRoute);
-       
+        app.use('/support', supportRoute); 
+
         app.listen(port, () => {
             console.log(`Server running on port ${port}`);
         });
     } catch (err) {
         console.error("MongoDB connection failed", err);
-        process.exit(1); 
+        process.exit(1);
     }
 }
 

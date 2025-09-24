@@ -1,0 +1,59 @@
+<div class="page-header d-flex justify-content-between align-items-center">
+    <div>
+        <h1>Support Inbox</h1>
+        <p class="text-body-secondary">View and respond to customer support tickets.</p>
+    </div>
+</div>
+
+<div class="dashboard-card">
+    <div class="card-body">
+        <% if (tickets && tickets.length > 0) { %>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Ticket ID</th>
+                            <th>Subject</th>
+                            <th>Customer</th>
+                            <th>Status</th>
+                            <th>Last Updated</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% tickets.forEach(ticket => { %>
+                            <tr>
+                                <td>
+                                    <a href="/account/admin/tickets/<%= ticket.ticketId %>" class="fw-semibold">
+                                        #<%= ticket.ticketId %>
+                                    </a>
+                                </td>
+                                <td><%= ticket.subject %></td>
+                                <td><%= ticket.userEmail %></td>
+                                <td>
+                                    <% if (ticket.status === 'Open') { %>
+                                        <span class="badge bg-primary-subtle text-primary-emphasis rounded-pill"><%= ticket.status %></span>
+                                    <% } else if (ticket.status === 'Answered') { %>
+                                        <span class="badge bg-success-subtle text-success-emphasis rounded-pill"><%= ticket.status %></span>
+                                    <% } else { %>
+                                        <span class="badge bg-secondary-subtle text-secondary-emphasis rounded-pill"><%= ticket.status %></span>
+                                    <% } %>
+                                </td>
+                                <td><%= new Date(ticket.updatedAt).toLocaleString() %></td>
+                                <td>
+                                    <a href="/account/admin/tickets/<%= ticket.ticketId %>" class="btn btn-sm btn-outline-secondary">
+                                        <i class="bi bi-eye"></i> View
+                                    </a>
+                                </td>
+                            </tr>
+                        <% }) %>
+                    </tbody>
+                </table>
+            </div>
+        <% } else { %>
+            <div class="text-center p-5">
+                <p class="lead text-body-secondary">There are no support tickets yet.</p>
+            </div>
+        <% } %>
+    </div>
+</div>

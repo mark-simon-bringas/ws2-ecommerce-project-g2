@@ -1,0 +1,247 @@
+/* public/css/support.css */
+
+/* ADDED: Failsafe container to prevent mobile overflow on all support pages */
+.support-page-wrapper {
+    width: 100%;
+    overflow-x: hidden;
+}
+
+.support-page-container {
+    background-color: #fff;
+}
+
+.support-hero {
+    padding: 4rem 1.5rem 5rem;
+    background-color: var(--bg-color);
+    text-align: center;
+}
+
+/* Fix: Apply negative margins only on desktop to prevent mobile overflow */
+@media (min-width: 992px) {
+    .support-hero {
+        margin-left: -3rem;
+        margin-right: -3rem;
+    }
+}
+
+.support-search-bar {
+    max-width: 600px;
+    margin: -3rem auto 3rem;
+    position: relative;
+    z-index: 2;
+}
+.support-search-bar .input-group-text {
+    background-color: transparent;
+    border: none;
+    font-size: 1.2rem;
+    color: var(--text-color-secondary);
+}
+.support-search-bar .form-control {
+    border: none;
+    font-size: 1.2rem;
+    font-weight: 500;
+}
+.support-search-bar .input-group {
+    background-color: var(--card-bg-color);
+    border-radius: 980px;
+    padding: 0.5rem 0.5rem 0.5rem 1rem;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+}
+.popular-topics {
+    text-align: center;
+    margin-top: 4rem;
+    padding-top: 2rem;
+    border-top: 1px solid var(--border-color);
+}
+.popular-topics a {
+    color: var(--text-color-secondary);
+    text-decoration: underline;
+    margin: 0 0.5rem;
+}
+
+.support-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+    max-width: 900px;
+    margin: 0 auto;
+}
+.support-card {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    background-color: var(--card-bg-color);
+    border-radius: 16px;
+    padding: 2rem;
+    text-decoration: none;
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+    transition: all 0.2s ease-in-out;
+}
+.support-card:hover {
+    border-color: var(--link-color);
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+}
+.support-card-icon {
+    font-size: 2rem;
+    color: var(--link-color);
+}
+.support-card-body {
+    flex-grow: 1;
+}
+.support-card-title {
+    font-weight: 600;
+    font-size: 1.25rem;
+    margin-bottom: 0.25rem;
+    color: var(--text-color);
+}
+.support-card-text {
+    color: var(--text-color-secondary);
+    margin-bottom: 0;
+}
+.support-card-arrow {
+    font-size: 1.5rem;
+    color: var(--border-color);
+    transition: transform 0.2s ease-in-out;
+}
+.support-card:hover .support-card-arrow {
+    transform: translateX(5px);
+    color: var(--link-color);
+}
+
+.support-form-card {
+    background-color: var(--card-bg-color);
+    padding: 2rem;
+    border-radius: 16px;
+    border: 1px solid var(--border-color);
+    height: 100%;
+}
+
+.support-form-card .form-label {
+    font-weight: 500;
+}
+
+/* --- Chat Ticket Detail Styles --- */
+.chat-container {
+    max-width: 800px;
+    margin: 0 auto;
+    background-color: #fff;
+    border-radius: 16px;
+    border: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    height: calc(85vh); /* Take up most of the viewport height */
+    overflow: hidden;
+}
+
+.chat-header {
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid var(--border-color);
+    background-color: var(--bg-color);
+}
+
+.chat-header h1 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-bottom: 0;
+}
+
+.chat-header .badge {
+    font-size: 0.8rem;
+}
+
+.chat-messages {
+    flex-grow: 1;
+    overflow-y: auto;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+}
+
+.chat-message {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 1rem;
+    max-width: 75%;
+}
+
+.message-bubble {
+    padding: 0.75rem 1rem;
+    border-radius: 18px;
+    line-height: 1.5;
+}
+
+.message-meta {
+    font-size: 0.75rem;
+    color: var(--text-color-secondary);
+    padding: 0 0.5rem;
+    margin-top: 0.25rem;
+}
+
+/* User's messages (on the right) */
+.user-message {
+    align-self: flex-end;
+    align-items: flex-end;
+}
+.user-message .message-bubble {
+    background-color: var(--btn-primary-bg);
+    color: #fff;
+    border-bottom-right-radius: 4px;
+}
+
+/* Support/Admin's messages (on the left) */
+.support-message {
+    align-self: flex-start;
+    align-items: flex-start;
+}
+.support-message .message-bubble {
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    border-bottom-left-radius: 4px;
+}
+
+.chat-reply-form {
+    padding: 1rem 1.5rem;
+    border-top: 1px solid var(--border-color);
+    background-color: var(--bg-color);
+}
+
+.chat-reply-form .form-control {
+    border-radius: 980px;
+    padding-right: 50px; /* Space for the send button */
+}
+
+.chat-reply-form .input-group {
+    position: relative;
+}
+
+.chat-reply-form .btn-send {
+    position: absolute;
+    right: 6px;
+    top: 50%;
+    transform: translateY(-50%);
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    z-index: 5;
+}
+
+@media (min-width: 768px) {
+    .support-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .chat-container {
+        height: calc(100vh - 48px); /* Full height minus navbar */
+        border-radius: 0;
+        border-left: none;
+        border-right: none;
+    }
+}

@@ -310,7 +310,8 @@ router.get('/success/:orderId', async (req, res) => {
 
         res.render('order-success', {
             title: "Order Confirmation",
-            order: order
+            order: order,
+            pageStyle: 'order-success' // ADDED: Specific flag for styling
         });
 
     } catch (err) {

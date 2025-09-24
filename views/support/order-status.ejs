@@ -1,0 +1,137 @@
+<div class="support-page-container pt-5">
+    <div class="container">
+        <% if (!order) { %>
+            <div class="row justify-content-center">
+                <div class="col-lg-6">
+                    <div class="auth-container" style="min-height: auto; padding-top: 0;">
+                        <div class="auth-card" style="border: 1px solid var(--border-color);">
+                            <div class="text-center mb-4">
+                                <h1 class="h2 mb-3">Order Status</h1>
+                                <p class="text-body-secondary">Enter your order information below to see its status.</p>
+                            </div>
+
+                            <form action="/support/order-status" method="POST">
+                                <div class="mb-3">
+                                    <label for="orderId" class="form-label">Order ID</label>
+                                    <input type="text" class="form-control form-control-lg" id="orderId" name="orderId" placeholder="Last 7 digits of your order ID" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="email" class="form-label">Email Address</label>
+                                    <input type="email" class="form-control form-control-lg" id="email" name="email" placeholder="Email used for the order" required>
+                                </div>
+                                <div class="d-grid">
+                                    <button type="submit" class="btn btn-primary btn-lg">Track Order</button>
+                                </div>
+                            </form>
+
+                            <% if (error) { %>
+                                <div class="alert alert-danger text-center mt-4" role="alert">
+                                    <%= error %>
+                                </div>
+                            <% } %>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        <% } else { %>
+            <div class="order-success-page">
+                <div class="row gx-lg-5">
+                    <div class="col-lg-7">
+                        <div class="d-flex align-items-center gap-3 mb-4 success-header">
+                            <i class="bi bi-check-circle-fill"></i>
+                            <h1 class="h2 mb-0 fw-bold">Order Found</h1>
+                        </div>
+
+                        <div class="confirmation-card">
+                            <div class="card-section">
+                                <h5 class="fw-semibold">Your order is confirmed</h5>
+                                <p class="text-body-secondary">Order ID: #<%= order._id.toString().toUpperCase() %></p>
+                            </div>
+                            <div class="card-section">
+                                <h6 class="fw-semibold">Shipping to:</h6>
+                                <p class="text-body-secondary mb-0">
+                                    <%= order.customer.firstName %> <%= order.customer.lastName %><br>
+                                    <%= order.shippingAddress.address %><br>
+                                    <%= order.shippingAddress.state %>, <%= order.shippingAddress.zip %>
+                                </p>
+                            </div>
+                             <div class="card-section">
+                                <h6 class="fw-semibold">Payment</h6>
+                                <p class="text-body-secondary mb-0">
+                                    <% if (order.paymentDetails.last4) { %>
+                                        <i class="bi bi-credit-card-fill"></i> <%= order.paymentDetails.method %> ending in <%= order.paymentDetails.last4 %>
+                                    <% } else { %>
+                                        <i class="bi bi-cash-stack"></i> <%= order.paymentDetails.method %>
+                                    <% } %>
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="whats-next-timeline my-5">
+                            <div class="timeline-step <%= ['Processing', 'Shipped', 'Delivered'].includes(order.status) ? 'active' : '' %>">
+                                <div class="timeline-icon"><i class="bi bi-check-lg"></i></div>
+                                <div class="timeline-content">
+                                    <strong>Order Confirmed</strong>
+                                    <p>We've received your order.</p>
+                                </div>
+                            </div>
+                            <div class="timeline-step <%= ['Shipped', 'Delivered'].includes(order.status) ? 'active' : '' %>">
+                                <div class="timeline-icon"><i class="bi bi-truck"></i></div>
+                                <div class="timeline-content">
+                                    <strong>Order Shipped</strong>
+                                    <p>We'll notify you once it's on its way.</p>
+                                </div>
+                            </div>
+                            <div class="timeline-step <%= ['Delivered'].includes(order.status) ? 'active' : '' %>">
+                                <div class="timeline-icon"><i class="bi bi-box-seam-fill"></i></div>
+                                <div class="timeline-content">
+                                    <strong>Delivered</strong>
+                                    <p>Your order has arrived.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-none d-lg-flex justify-content-between align-items-center">
+                             <a href="/support/order-status" class="btn btn-primary">Track Another Order</a>
+                             <a href="/support/contact" class="text-body-secondary small">Need help? Contact Us</a>
+                        </div>
+
+                    </div>
+                    <div class="col-lg-5">
+                        <h4 class="mb-3 fw-bold">Order Summary</h4>
+                        <div class="summary-box">
+                            <ul class="list-group list-group-flush">
+                               <li class="list-group-item d-flex justify-content-between px-0">
+                                   <span>Subtotal</span>
+                                   <strong><%= locationData.symbol %><%= order.subtotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></strong>
+                               </li>
+                               <li class="list-group-item d-flex justify-content-between px-0">
+                                   <span>Delivery/Shipping</span>
+                                   <strong><%= order.shippingCost > 0 ? locationData.symbol + order.shippingCost.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : 'Free' %></strong>
+                               </li>
+                               <li class="list-group-item d-flex justify-content-between px-0 fs-5">
+                                   <strong class="fw-bolder">Total</strong>
+                                   <strong class="fw-bolder"><%= locationData.symbol %><%= order.total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></strong>
+                               </li>
+                            </ul>
+                        </div>
+                        <% order.items.forEach(item => { %>
+                           <div class="summary-product-item mt-3">
+                               <img src="<%= item.thumbnailUrl %>" alt="<%= item.name %>">
+                               <div class="summary-product-details">
+                                   <p class="summary-product-title"><%= item.name %></p>
+                                   <p class="summary-product-meta">Qty: <%= item.qty %></p>
+                                   <p class="summary-product-meta">Size: <%= item.size %></p>
+                               </div>
+                               <p class="summary-product-price"><%= locationData.symbol %><%= item.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></p>
+                           </div>
+                        <% }) %>
+                    </div>
+                </div>
+                <div class="d-grid d-lg-none mt-4">
+                    <a href="/support/order-status" class="btn btn-primary">Track Another Order</a>
+                </div>
+            </div>
+        <% } %>
+    </div>
+</div>
