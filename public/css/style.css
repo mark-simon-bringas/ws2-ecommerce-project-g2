@@ -991,7 +991,6 @@ li {
     .dropdown .con-1.dropdown-search-panel {
         left: 50%;
         transform: translateX(-50%);
-        width: 850px;
         max-width: 90vw;
         top: 1rem;
         padding: 1.5rem;
