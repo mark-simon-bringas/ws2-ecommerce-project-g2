@@ -1,0 +1,20 @@
+<div class="floating-success-container">
+    <div class="success-content">
+        <div class="success-icon">
+            <i class="bi bi-check-circle-fill"></i>
+        </div>
+        
+        <h1 class="h2 mb-3">Ticket Submitted Successfully</h1>
+        <p class="lead text-body-secondary">
+            Your request has been received. Please save your Ticket ID for future reference. A member of our support team will respond shortly.
+        </p>
+
+        <div class="alert alert-info mt-4">
+            Your Ticket ID is: <strong><%= ticketId %></strong>
+        </div>
+        
+        <a href="/support/tickets/<%= ticketId %>?email=<%= encodeURIComponent(email) %>" class="btn btn-primary btn-lg mt-4">
+            View Your Ticket
+        </a>
+    </div>
+</div>

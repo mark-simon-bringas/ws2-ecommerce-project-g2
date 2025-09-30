@@ -6,6 +6,47 @@ const axios = require('axios');
 const { ObjectId } = require('mongodb');
 const { convertCurrency } = require('./currency');
 
+// --- Helper function to apply sales to products ---
+async function applySalesToProducts(products, db) {
+    if (!products || products.length === 0) {
+        return [];
+    }
+
+    const now = new Date();
+    const activeSales = await db.collection('sales').find({
+        startDate: { $lte: now },
+        endDate: { $gte: now }
+    }).toArray();
+
+    if (activeSales.length === 0) {
+        return products.map(p => ({ ...p, onSale: false }));
+    }
+
+    const saleMap = new Map();
+    activeSales.forEach(sale => {
+        sale.productIds.forEach(productId => {
+            saleMap.set(productId.toString(), {
+                discountPercentage: sale.discountPercentage
+            });
+        });
+    });
+
+    return products.map(product => {
+        const saleInfo = saleMap.get(product._id.toString());
+        if (saleInfo) {
+            const salePrice = product.retailPrice * (1 - saleInfo.discountPercentage / 100);
+            return {
+                ...product,
+                onSale: true,
+                salePrice: parseFloat(salePrice.toFixed(2)),
+                discountPercentage: saleInfo.discountPercentage
+            };
+        }
+        return { ...product, onSale: false };
+    });
+}
+
+
 // Middleware to check if the user is logged in
 const isLoggedIn = (req, res, next) => {
     if (!req.session.user) {
@@ -33,13 +74,11 @@ router.get('/', async (req, res) => {
         let userWishlist = [];
         if (req.session.user) {
             const user = await usersCollection.findOne({ userId: req.session.user.userId });
-            if (user && user.wishlist) {
-                userWishlist = user.wishlist;
-            }
+            userWishlist = user?.wishlist || [];
         }
 
         let query = {};
-        let sort = {};
+        let sort = { importedAt: -1 }; 
         let pageTitle = "Shop All";
 
         if (req.query.category) {
@@ -57,10 +96,31 @@ router.get('/', async (req, res) => {
             pageTitle = "New Arrivals";
         }
 
-        const products = await productsCollection.find(query).sort(sort).toArray();
+        let products = await productsCollection.aggregate([
+            { $match: query },
+            { $sort: sort },
+            {
+                $lookup: {
+                    from: 'reviews',
+                    localField: '_id',
+                    foreignField: 'productId',
+                    as: 'reviews'
+                }
+            },
+            {
+                $addFields: {
+                    averageRating: { $avg: '$reviews.rating' }
+                }
+            }
+        ]).toArray();
         
+        products = await applySalesToProducts(products, db);
+
         const productsWithConvertedPrices = await Promise.all(products.map(async (product) => {
             product.convertedPrice = await convertCurrency(product.retailPrice, currency);
+            if (product.onSale) {
+                product.convertedSalePrice = await convertCurrency(product.salePrice, currency);
+            }
             return product;
         }));
 
@@ -77,6 +137,54 @@ router.get('/', async (req, res) => {
     }
 });
 
+// ADDED: Route for dedicated sale page
+router.get('/sale/:saleId', async (req, res) => {
+    try {
+        const db = req.app.locals.client.db(req.app.locals.dbName);
+        const { saleId } = req.params;
+        const salesCollection = db.collection('sales');
+        const productsCollection = db.collection('products');
+        const usersCollection = db.collection('users');
+        const currency = res.locals.locationData.currency;
+        
+        const sale = await salesCollection.findOne({ _id: new ObjectId(saleId) });
+
+        if (!sale) {
+            return res.status(404).send("Sale not found.");
+        }
+        
+        let userWishlist = [];
+        if (req.session.user) {
+            const user = await usersCollection.findOne({ userId: req.session.user.userId });
+            userWishlist = user?.wishlist || [];
+        }
+
+        let products = await productsCollection.find({ _id: { $in: sale.productIds } }).toArray();
+        products = await applySalesToProducts(products, db);
+        
+        const productsWithConvertedPrices = await Promise.all(products.map(async (product) => {
+            product.convertedPrice = await convertCurrency(product.retailPrice, currency);
+            if (product.onSale) {
+                product.convertedSalePrice = await convertCurrency(product.salePrice, currency);
+            }
+            return product;
+        }));
+        
+        // Use the shop.ejs template to display the sale products
+        res.render('shop', {
+            title: sale.name,
+            pageTitle: sale.name,
+            products: productsWithConvertedPrices,
+            wishlist: userWishlist
+        });
+
+    } catch (err) {
+        console.error("Error fetching sale page:", err);
+        res.status(500).send("Error loading sale page.");
+    }
+});
+
+
 // GET /products/search - Handle search queries
 router.get('/search', async (req, res) => {
     try {
@@ -89,9 +197,7 @@ router.get('/search', async (req, res) => {
         let userWishlist = [];
         if (req.session.user) {
             const user = await usersCollection.findOne({ userId: req.session.user.userId });
-            if (user && user.wishlist) {
-                userWishlist = user.wishlist;
-            }
+            userWishlist = user?.wishlist || [];
         }
 
         const query = {
@@ -101,11 +207,32 @@ router.get('/search', async (req, res) => {
             ]
         };
 
-        const products = await productsCollection.find(query).toArray();
+        let products = await productsCollection.aggregate([
+            { $match: query },
+            {
+                $lookup: {
+                    from: 'reviews',
+                    localField: '_id',
+                    foreignField: 'productId',
+                    as: 'reviews'
+                }
+            },
+            {
+                $addFields: {
+                    averageRating: { $avg: '$reviews.rating' }
+                }
+            }
+        ]).toArray();
+
         const pageTitle = `Search results for "${searchQuery}"`;
+        
+        products = await applySalesToProducts(products, db);
 
         const productsWithConvertedPrices = await Promise.all(products.map(async (product) => {
             product.convertedPrice = await convertCurrency(product.retailPrice, currency);
+            if (product.onSale) {
+                product.convertedSalePrice = await convertCurrency(product.salePrice, currency);
+            }
             return product;
         }));
 
@@ -193,7 +320,6 @@ router.get('/manage', isAdmin, async (req, res) => {
     }
 });
 
-// UPDATED: Route now handles the hasDescription filter
 router.post('/search', isAdmin, async (req, res) => {
     const { query, brand, gender, hasDescription } = req.body;
 
@@ -222,7 +348,6 @@ router.post('/search', isAdmin, async (req, res) => {
         const response = await axios.request(options);
         let apiProducts = response.data.results;
 
-        // Filter results if the checkbox was checked
         if (hasDescription === 'true') {
             apiProducts = apiProducts.filter(product => product.story && product.story.trim() !== '');
         }
@@ -260,13 +385,12 @@ router.post('/search', isAdmin, async (req, res) => {
     }
 });
 
-// Route now receives 'id's and fetches details with the correct endpoint
 router.post('/import-multiple', isAdmin, async (req, res) => {
     try {
         const db = req.app.locals.client.db(req.app.locals.dbName);
         const productsCollection = db.collection('products');
         const activityLogCollection = db.collection('activity_log');
-        let { selectedProducts: selectedIds } = req.body; // Renamed for clarity
+        let { selectedProducts: selectedIds } = req.body;
         if (!selectedIds) { return res.redirect('/products/manage'); }
         if (!Array.isArray(selectedIds)) { selectedIds = [selectedIds]; }
 
@@ -275,7 +399,6 @@ router.post('/import-multiple', isAdmin, async (req, res) => {
 
         for (const id of selectedIds) {
             try {
-                // Fetch full product details using the correct 'id'
                 const options = {
                     method: 'GET',
                     url: `https://the-sneaker-database.p.rapidapi.com/sneakers/${id}`,
@@ -337,8 +460,6 @@ router.post('/import-multiple', isAdmin, async (req, res) => {
     }
 });
 
-
-// Route to delete a single product and log the action
 router.post('/delete', isAdmin, async (req, res) => {
     try {
         const db = req.app.locals.client.db(req.app.locals.dbName);
@@ -372,7 +493,6 @@ router.post('/delete', isAdmin, async (req, res) => {
     }
 });
 
-// Route to handle bulk deletion and log the action
 router.post('/delete-multiple', isAdmin, async (req, res) => {
     try {
         const db = req.app.locals.client.db(req.app.locals.dbName);
@@ -416,7 +536,6 @@ router.post('/delete-multiple', isAdmin, async (req, res) => {
     }
 });
 
-// Route to show the edit stock and price page
 router.get('/stock/:id', isAdmin, async (req, res) => {
     try {
         const db = req.app.locals.client.db(req.app.locals.dbName);
@@ -425,7 +544,7 @@ router.get('/stock/:id', isAdmin, async (req, res) => {
 
         const product = await productsCollection.findOne({ _id: new ObjectId(productId) });
         if (!product) {
-            return res.status(404).send("Product not found.");
+            return res.status(404).render('404', { title: "Product Not Found" });
         }
 
         res.render('account/edit-stock', {
@@ -439,7 +558,6 @@ router.get('/stock/:id', isAdmin, async (req, res) => {
     }
 });
 
-// Route to handle the stock and price update
 router.post('/stock/:id', isAdmin, async (req, res) => {
     const productId = req.params.id;
     const { retailPrice, stock: newStockLevels } = req.body;
@@ -501,7 +619,6 @@ router.post('/stock/:id', isAdmin, async (req, res) => {
     }
 });
 
-// Route to show the "Add a Review" form
 router.get('/:sku/review', isLoggedIn, async (req, res) => {
     try {
         const db = req.app.locals.client.db(req.app.locals.dbName);
@@ -511,7 +628,7 @@ router.get('/:sku/review', isLoggedIn, async (req, res) => {
 
         const product = await productsCollection.findOne({ sku: sku });
         if (!product) {
-            return res.status(404).send("Product not found.");
+            return res.status(404).render('404', { title: "Product Not Found" });
         }
 
         const hasPurchased = await ordersCollection.findOne({
@@ -542,7 +659,6 @@ router.get('/:sku/review', isLoggedIn, async (req, res) => {
     }
 });
 
-// Route to handle the "Add a Review" form submission
 router.post('/:sku/review', isLoggedIn, async (req, res) => {
     try {
         const db = req.app.locals.client.db(req.app.locals.dbName);
@@ -555,7 +671,10 @@ router.post('/:sku/review', isLoggedIn, async (req, res) => {
             userId: req.session.user.userId,
             rating: parseInt(rating),
             comment: comment,
-            createdAt: new Date()
+            createdAt: new Date(),
+            author: {
+                firstName: req.session.user.firstName,
+            }
         };
 
         await reviewsCollection.insertOne(newReview);
@@ -568,8 +687,6 @@ router.post('/:sku/review', isLoggedIn, async (req, res) => {
     }
 });
 
-
-// Route for a single Product Detail Page (PDP)
 router.get('/:sku', async (req, res) => {
     try {
         const db = req.app.locals.client.db(req.app.locals.dbName);
@@ -583,13 +700,14 @@ router.get('/:sku', async (req, res) => {
             return res.status(404).send("Page not found.");
         }
 
-        const product = await productsCollection.findOne({ sku: sku });
+        let product = await productsCollection.findOne({ sku: sku });
 
         if (!product) {
-            return res.status(404).send("Product not found");
+            return res.status(404).render('404', { title: "Product Not Found" });
         }
         
-        const [reviews, user, relatedProducts] = await Promise.all([
+        let relatedProducts = [];
+        const [reviews, user] = await Promise.all([
             reviewsCollection.aggregate([
                 { $match: { productId: product._id } },
                 { $sort: { createdAt: -1 } },
@@ -598,20 +716,32 @@ router.get('/:sku', async (req, res) => {
             ]).toArray(),
             
             req.session.user ? usersCollection.findOne({ userId: req.session.user.userId }) : null,
-
-            productsCollection.find({
-                brand: product.brand,
-                _id: { $ne: product._id }
-            }).limit(8).toArray()
         ]);
+        
+        // Apply sales logic after fetching the main product
+        [product] = await applySalesToProducts([product], db);
 
-        const isWishlisted = user && user.wishlist && user.wishlist.some(id => id.equals(product._id));
-        const userWishlist = user ? user.wishlist : [];
+        // Fetch related products after we know the brand of the main product
+        relatedProducts = await productsCollection.find({
+            brand: product.brand,
+            _id: { $ne: product._id }
+        }).limit(8).toArray();
+        relatedProducts = await applySalesToProducts(relatedProducts, db);
 
-        // Convert all prices before rendering
+        const userWishlist = user?.wishlist || [];
+        const isWishlisted = userWishlist.some(id => id.equals(product._id));
+
+        // Convert currencies for all products
         product.convertedPrice = await convertCurrency(product.retailPrice, currency);
+        if (product.onSale) {
+            product.convertedSalePrice = await convertCurrency(product.salePrice, currency);
+        }
+
         const relatedProductsWithConvertedPrices = await Promise.all(relatedProducts.map(async (p) => {
             p.convertedPrice = await convertCurrency(p.retailPrice, currency);
+            if (p.onSale) {
+                p.convertedSalePrice = await convertCurrency(p.salePrice, currency);
+            }
             return p;
         }));
 
@@ -629,6 +759,5 @@ router.get('/:sku', async (req, res) => {
         res.status(500).send("Error loading product page.");
     }
 });
-
 
 module.exports = router;

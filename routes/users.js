@@ -16,7 +16,6 @@ router.get('/register', (req, res) => {
 });
 
 // Handle registration form submission
-// Handle registration form submission
 router.post('/register', async (req, res) => {
     try {
         const { v4: uuidv4 } = await import('uuid');
@@ -25,12 +24,10 @@ router.post('/register', async (req, res) => {
 
         const existingUser = await usersCollection.findOne({ email: req.body.email });
         if (existingUser) {
-            // Render the page with an error message
             return res.status(400).render('register', {
                 title: "Register",
                 errors: [{ msg: "An account with this email already exists." }],
                 page: 'auth',
-                // Keep the form data so the user doesn't have to re-enter everything
                 firstName: req.body.firstName,
                 lastName: req.body.lastName,
                 email: req.body.email
@@ -53,7 +50,6 @@ router.post('/register', async (req, res) => {
                 title: "Register",
                 errors: pwdStrength,
                 page: 'auth',
-                // Keep the form data
                 firstName: req.body.firstName,
                 lastName: req.body.lastName,
                 email: req.body.email
@@ -75,6 +71,7 @@ router.post('/register', async (req, res) => {
             isEmailVerified: false,
             verificationToken: token,
             tokenExpiry: new Date(Date.now() + 3600000),
+            wishlist: [],
             createdAt: currentDate,
             updatedAt: currentDate
         };
@@ -108,13 +105,13 @@ router.get('/login', (req, res) => {
     res.render('login', { 
         title: "Login",
         message: message,
-        error: req.query.error, // Added to handle potential redirect errors
+        error: req.query.error,
+        redirect: req.query.redirect, 
         page: 'auth' 
     });
 });
 
 // Handle login form submission
-// --- Updated ---
 router.post('/login', async (req, res) => {
     try {
         const db = req.app.locals.client.db(req.app.locals.dbName);
@@ -122,14 +119,13 @@ router.post('/login', async (req, res) => {
 
         const user = await usersCollection.findOne({ email: req.body.email });
         
-        // Check password validity. Note: We check the user object *after* the password check
-        // to avoid revealing whether an email is registered (timing attack prevention).
         const isPasswordValid = user ? await bcrypt.compare(req.body.password, user.passwordHash) : false;
 
         if (!user || !isPasswordValid) {
             return res.status(401).render('login', {
                 title: "Login",
-                error: 'Invalid email or password.', // Pass a specific error message
+                error: 'Invalid email or password.',
+                redirect: req.body.redirect,
                 page: 'auth'
             });
         }
@@ -138,6 +134,7 @@ router.post('/login', async (req, res) => {
              return res.status(401).render('login', {
                 title: "Login",
                 error: 'Please verify your email before logging in.',
+                redirect: req.body.redirect,
                 page: 'auth'
             });
         }
@@ -146,11 +143,11 @@ router.post('/login', async (req, res) => {
              return res.status(403).render('login', {
                 title: "Login",
                 error: 'This account is not active.',
+                redirect: req.body.redirect,
                 page: 'auth'
             });
         }
 
-        // If all checks pass, create session
         req.session.user = {
             userId: user.userId,
             firstName: user.firstName,
@@ -159,7 +156,9 @@ router.post('/login', async (req, res) => {
             role: user.role,
             isEmailVerified: user.isEmailVerified
         };
-        res.redirect('/account');
+        
+        const redirectUrl = req.body.redirect || '/account';
+        res.redirect(redirectUrl);
 
     } catch (err) {
         console.error("Error during login:", err);
@@ -194,17 +193,16 @@ router.get('/verify/:token', async (req, res) => {
     }
 });
 
-// UPDATED: Old dashboard route now redirects to /account
+// Old dashboard route now redirects to /account
 router.get('/dashboard', (req, res) => {
     res.redirect('/account');
 });
 
-// UPDATED: Old admin route now redirects to the admin section of the account page
+// Old admin route now redirects to the admin section of the account page
 router.get('/admin', (req, res) => {
     if (!req.session.user || req.session.user.role !== 'admin') {
         return res.redirect('/users/login');
     }
-    // We'll build this route in account.js later
     res.redirect('/account/admin'); 
 });
 

@@ -1,0 +1,100 @@
+<div class="page-header d-flex justify-content-between align-items-center">
+    <div>
+        <h1>Sales Management</h1>
+        <p class="text-body-secondary">Create and manage scheduled sales for your products.</p>
+    </div>
+</div>
+
+<% if (typeof message !== 'undefined' && message) { %>
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <%= message %>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+<% } %>
+<% if (typeof error !== 'undefined' && error) { %>
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <%= error %>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+<% } %>
+
+<div class="row g-4">
+    <div class="col-lg-5">
+        <div class="dashboard-card">
+            <div class="card-body">
+                <h5 class="card-title fw-bold mb-4">Create a New Sale</h5>
+                <form action="/account/admin/sales/create" method="POST">
+                    <div class="mb-3">
+                        <label for="saleName" class="form-label">Sale Name</label>
+                        <input type="text" class="form-control" id="saleName" name="saleName" placeholder="e.g., Summer Kick-off" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="discountPercentage" class="form-label">Discount Percentage</label>
+                        <div class="input-group">
+                            <input type="number" class="form-control" id="discountPercentage" name="discountPercentage" min="1" max="100" required>
+                            <span class="input-group-text">%</span>
+                        </div>
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-md-6 mb-3">
+                            <label for="startDate" class="form-label">Start Date</label>
+                            <input type="date" class="form-control" id="startDate" name="startDate" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="endDate" class="form-label">End Date</label>
+                            <input type="date" class="form-control" id="endDate" name="endDate" required>
+                        </div>
+                    </div>
+                     <div class="mb-3">
+                        <label for="productIds" class="form-label">Select Products</label>
+                        <select class="form-select" id="productIds" name="productIds" multiple required size="10">
+                            <% products.forEach(product => { %>
+                                <option value="<%= product._id %>"><%= product.name %></option>
+                            <% }) %>
+                        </select>
+                        <small class="form-text text-body-secondary">Hold Ctrl (or Cmd on Mac) to select multiple products.</small>
+                    </div>
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary">Create Sale</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-7">
+        <div class="dashboard-card">
+            <div class="card-body">
+                 <h5 class="card-title fw-bold mb-4">Active & Upcoming Sales</h5>
+                 <% if (sales && sales.length > 0) { %>
+                    <div class="list-group">
+                        <% sales.forEach(sale => { %>
+                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-0 fw-semibold"><%= sale.name %> - <%= sale.discountPercentage %>% OFF</h6>
+                                    <small class="text-body-secondary">
+                                        <%= new Date(sale.startDate).toLocaleDateString() %> – <%= new Date(sale.endDate).toLocaleDateString() %>
+                                    </small>
+                                </div>
+                                <div>
+                                    <% const now = new Date(); %>
+                                    <% const startDate = new Date(sale.startDate); %>
+                                    <% const endDate = new Date(sale.endDate); endDate.setHours(23, 59, 59, 999); %>
+
+                                    <% if (now >= startDate && now <= endDate) { %>
+                                        <span class="badge bg-success-subtle text-success-emphasis rounded-pill">Active</span>
+                                    <% } else if (now > endDate) { %>
+                                        <span class="badge bg-secondary-subtle text-secondary-emphasis rounded-pill">Expired</span>
+                                    <% } else { %>
+                                        <span class="badge bg-info-subtle text-info-emphasis rounded-pill">Scheduled</span>
+                                    <% } %>
+                                </div>
+                            </div>
+                        <% }) %>
+                    </div>
+                 <% } else { %>
+                    <p class="text-body-secondary text-center p-4">There are no sales scheduled.</p>
+                 <% } %>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,36 +1,64 @@
-// public/js/main.js
-
 document.addEventListener('DOMContentLoaded', function() {
+    // --- Skeleton Preloader Logic ---
+    const containersWithLoaders = document.querySelectorAll('.content-wrapper, .container, .my-5');
+
+    containersWithLoaders.forEach(container => {
+        const skeletonLoader = container.querySelector(':scope > .skeleton-loader');
+        const contentToLoad = container.querySelector(':scope > .content-to-load');
+        
+        if (skeletonLoader && contentToLoad) {
+            container.classList.add('is-loading');
+            setTimeout(() => {
+                container.classList.remove('is-loading');
+            }, 100);
+        }
+    });
+
+    // --- Location Data for Mini-Cart ---
     const locationData = JSON.parse(document.body.dataset.location || '{}');
 
-    // --- Desktop Navbar Dropdown Logic ---
-    const desktopNavLinks = document.querySelectorAll(".navbar-desktop .list-menu");
-    const desktopSearchBtn = document.getElementById('desktop-search-btn');
+    // --- Desktop Navbar Dropdown Logic (UPDATED) ---
+    const desktopNavLinks = document.querySelectorAll(".navbar-desktop .list-menu, #desktop-search-btn");
     const dropdownContainer = document.querySelector(".dropdown");
     const contentPanels = document.querySelectorAll(".dropdown .con-1");
 
     if (desktopNavLinks.length > 0 && dropdownContainer) {
         const closeDropdown = () => {
             dropdownContainer.style.height = "0px";
-            contentPanels.forEach(panel => panel.style.opacity = "0");
+            contentPanels.forEach(panel => {
+                panel.style.opacity = "0";
+                panel.style.pointerEvents = "none"; // Make invisible panels non-interactive
+            });
         };
         const openDropdown = (activeIndex) => {
             dropdownContainer.style.height = "280px";
             contentPanels.forEach((panel, index) => {
-                panel.style.opacity = (index === activeIndex) ? "1" : "0";
+                if (index === activeIndex) {
+                    panel.style.opacity = "1";
+                    panel.style.pointerEvents = "auto"; // Make the active panel interactive
+                } else {
+                    panel.style.opacity = "0";
+                    panel.style.pointerEvents = "none"; // Make all other panels non-interactive
+                }
             });
         };
-        desktopNavLinks.forEach((link, index) => {
-            link.addEventListener("mouseover", () => openDropdown(index));
+
+        desktopNavLinks.forEach(link => {
+            const panelIndex = parseInt(link.dataset.panel, 10);
+            if (!isNaN(panelIndex)) {
+                const eventType = link.id === 'desktop-search-btn' ? 'click' : 'mouseover';
+                link.addEventListener(eventType, (e) => {
+                    if(e.type === 'click') e.preventDefault();
+                    const isAlreadyOpen = dropdownContainer.style.height === "280px" && contentPanels[panelIndex].style.opacity === "1";
+                    if (e.type === 'click' && isAlreadyOpen) {
+                        closeDropdown();
+                    } else {
+                        openDropdown(panelIndex);
+                    }
+                });
+            }
         });
-        if (desktopSearchBtn) {
-            desktopSearchBtn.addEventListener('click', (e) => {
-                e.preventDefault();
-                const searchPanelIndex = 4;
-                const isSearchOpen = dropdownContainer.style.height === "280px" && contentPanels[searchPanelIndex].style.opacity === "1";
-                isSearchOpen ? closeDropdown() : openDropdown(searchPanelIndex);
-            });
-        }
+
         dropdownContainer.addEventListener("mouseleave", closeDropdown);
     }
 
@@ -320,12 +348,84 @@ document.addEventListener('DOMContentLoaded', function() {
             checkoutOptions.classList.add('is-active');
         });
 
-        // Close the options if the user clicks outside of them
         document.addEventListener('click', function(event) {
             if (!mobileCheckoutBtn.contains(event.target) && !checkoutOptions.contains(event.target)) {
                 mobileCheckoutBtn.style.display = 'block'; // Show the main button again
                 checkoutOptions.classList.remove('is-active');
             }
         });
+    }
+
+    // --- Checkout Page Interactivity ---
+    const checkoutContainer = document.querySelector('.checkout-container');
+    if (checkoutContainer) {
+        // Delivery method toggle
+        const deliveryRadios = document.querySelectorAll('input[name="delivery-method"]');
+        const shippingForm = document.getElementById('shipping-form');
+        const pickupForm = document.getElementById('pickup-form');
+        deliveryRadios.forEach(radio => {
+            radio.addEventListener('change', function() {
+                if (this.value === 'ship') {
+                    shippingForm.classList.remove('d-none');
+                    pickupForm.classList.add('d-none');
+                } else {
+                    shippingForm.classList.add('d-none');
+                    pickupForm.classList.remove('d-none');
+                }
+            });
+        });
+
+        // Payment method toggle
+        const paymentRadios = document.querySelectorAll('input[name="payment-method"]');
+        const paymentDetails = document.querySelectorAll('.payment-details-content');
+        const ccFields = document.querySelectorAll('#payment-details-cc [name^="cc-"]');
+
+        paymentRadios.forEach(radio => {
+            radio.addEventListener('change', function() {
+                paymentDetails.forEach(detail => detail.classList.add('d-none'));
+                const selectedDetail = document.getElementById(`payment-details-${this.value}`);
+                if (selectedDetail) {
+                    selectedDetail.classList.remove('d-none');
+                }
+                const isCCSelected = this.value === 'cc';
+                ccFields.forEach(field => {
+                    field.required = isCCSelected;
+                });
+            });
+        });
+        document.querySelector('input[name="payment-method"]:checked').dispatchEvent(new Event('change'));
+
+        // Phone number field initialization
+        const phoneInput = document.querySelector("#phone");
+        if (phoneInput) {
+            window.intlTelInput(phoneInput, {
+                initialCountry: "auto",
+                geoIpLookup: function(callback) {
+                    fetch("https://ipapi.co/json")
+                        .then(res => res.json())
+                        .then(data => callback(data.country_code))
+                        .catch(() => callback("us"));
+                },
+                utilsScript: "https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/js/utils.js",
+            });
+        }
+
+        // Billing address checkbox logic
+        const sameAsShippingCheckbox = document.getElementById('sameAsShipping');
+        const billingAddressForm = document.getElementById('billing-address-form');
+        const billingInputs = billingAddressForm.querySelectorAll('input, select');
+
+        const toggleBillingForm = () => {
+            if (sameAsShippingCheckbox.checked) {
+                billingAddressForm.classList.add('d-none');
+                billingInputs.forEach(input => input.required = false);
+            } else {
+                billingAddressForm.classList.remove('d-none');
+                billingInputs.forEach(input => input.required = true);
+            }
+        };
+
+        sameAsShippingCheckbox.addEventListener('change', toggleBillingForm);
+        toggleBillingForm(); // Set initial state on page load
     }
 });

@@ -44,10 +44,13 @@
                                         </form>
                                     </div>
                                     <% if (currentUser) { %>
-                                        <form action="/cart/move-to-wishlist" method="POST">
+                                        <form action="/cart/add-to-wishlist-from-cart" method="POST" class="wishlist-form-cart">
                                             <input type="hidden" name="itemId" value="<%= item.itemId %>">
                                             <input type="hidden" name="productId" value="<%= item.productId %>">
-                                            <button type="submit" class="btn btn-sm btn-light rounded-circle ms-2" title="Move to Wishlist"><i class="bi bi-heart"></i></button>
+                                            <% const isItemWishlisted = wishlist.some(id => id.equals(item.productId)); %>
+                                            <button type="submit" class="btn btn-sm btn-light rounded-circle ms-2" title="Add to Wishlist">
+                                                <i class="bi <%= isItemWishlisted ? 'bi-heart-fill' : 'bi-heart' %>"></i>
+                                            </button>
                                         </form>
                                     <% } %>
                                 </div>
@@ -71,14 +74,16 @@
                     <span>Subtotal</span>
                     <span><%= locationData.symbol %><%= (cart.convertedTotalPrice || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></span>
                 </div>
-                <div class="summary-item">
-                    <span>Estimated Delivery & Handling</span>
-                    <span>Free</span>
-                </div>
+                <% if (cart && cart.items.length > 0) { %>
+                    <div class="summary-item">
+                        <span>Estimated Delivery & Handling</span>
+                        <span><%= shippingCost > 0 ? locationData.symbol + shippingCost.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : 'Free' %></span>
+                    </div>
+                <% } %>
                 <hr>
                 <div class="summary-total">
                     <span>Total</span>
-                    <span><%= locationData.symbol %><%= (cart.convertedTotalPrice || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></span>
+                    <span><%= locationData.symbol %><%= (cart && cart.items.length > 0 ? totalWithShipping : 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></span>
                 </div>
                 <hr>
                 <div class="d-none d-lg-grid gap-3" id="desktop-checkout-buttons">
@@ -122,6 +127,8 @@
                     </div>
                 <% }) %>
             </div>
+        <% } else if (currentUser) { %>
+            <p class="text-body-secondary">Your favorite items will appear here. <a href="/products" class="text-dark fw-semibold">Start exploring!</a></p>
         <% } else { %>
             <p class="text-body-secondary">Want to view your favourites? <a href="/users/login" class="text-dark fw-semibold">Sign in</a> or <a href="/users/register" class="text-dark fw-semibold">Join us</a>.</p>
         <% } %>
@@ -132,16 +139,16 @@
     <div class="checkout-options" id="checkout-options">
         <div class="d-grid gap-3 p-3">
              <% if (currentUser) { %>
-                <a href="/checkout" class="btn btn-primary btn-lg <%= (cart && cart.items.length > 0) ? '' : 'disabled' %>">
-                    Member Checkout
-                </a>
-            <% } else { %>
-                <a href="/checkout" class="btn btn-primary btn-lg <%= (cart && cart.items.length > 0) ? '' : 'disabled' %>">
-                    Guest Checkout
-                </a>
-                <a href="/users/login" class="btn btn-outline-secondary btn-lg <%= (cart && cart.items.length > 0) ? '' : 'disabled' %>">
-                    Member Login
-                </a>
+                 <a href="/checkout" class="btn btn-primary btn-lg <%= (cart && cart.items.length > 0) ? '' : 'disabled' %>">
+                     Member Checkout
+                 </a>
+             <% } else { %>
+                 <a href="/checkout" class="btn btn-primary btn-lg <%= (cart && cart.items.length > 0) ? '' : 'disabled' %>">
+                     Guest Checkout
+                 </a>
+                 <a href="/users/login" class="btn btn-outline-secondary btn-lg <%= (cart && cart.items.length > 0) ? '' : 'disabled' %>">
+                     Member Login
+                 </a>
             <% } %>
         </div>
     </div>
@@ -149,3 +156,54 @@
         Go to Checkout
     </button>
 </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const wishlistForms = document.querySelectorAll('.wishlist-form-cart');
+        
+        wishlistForms.forEach(form => {
+            form.addEventListener('submit', function(event) {
+                event.preventDefault();
+                const productId = this.querySelector('input[name="productId"]').value;
+                const button = this.querySelector('button');
+                const icon = button.querySelector('i');
+                
+                button.disabled = true;
+
+                const isCurrentlyWishlisted = icon.classList.contains('bi-heart-fill');
+                const actionUrl = isCurrentlyWishlisted ? '/cart/remove-from-wishlist' : '/cart/add-to-wishlist-from-cart';
+                
+                fetch(actionUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: `productId=${productId}&itemId=${this.querySelector('input[name="itemId"]').value}`
+                })
+                .then(response => {
+                    if (response.redirected) {
+                        window.location.href = response.url;
+                        return;
+                    }
+                    if (response.ok) {
+                        if (isCurrentlyWishlisted) {
+                            icon.classList.remove('bi-heart-fill');
+                            icon.classList.add('bi-heart');
+                            button.title = 'Add to Wishlist';
+                        } else {
+                            icon.classList.remove('bi-heart');
+                            icon.classList.add('bi-heart-fill');
+                            button.title = 'Remove from Wishlist';
+                        }
+                    } else {
+                        console.error('Server error:', response.status);
+                        button.disabled = false;
+                    }
+                    return response.text(); 
+                })
+                .catch(error => {
+                    console.error('Error handling wishlist action:', error);
+                    button.disabled = false;
+                });
+            });
+        });
+    });
+</script>

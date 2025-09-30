@@ -1,0 +1,182 @@
+/* public/css/order-success.css */
+
+.order-success-page .success-header {
+    align-items: center;
+}
+.order-success-page .success-header .bi-check-circle-fill {
+    font-size: 2.5rem;
+    color: #28a745; /* A standard, pleasant green */
+}
+.order-success-page .success-header h1 {
+    font-size: 1.75rem;
+}
+
+.order-success-page .confirmation-card {
+    background-color: #fff;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    overflow: hidden;
+}
+.order-success-page .card-section {
+    padding: 1.5rem;
+}
+.order-success-page .card-section + .card-section {
+    border-top: 1px solid #dee2e6;
+}
+.order-success-page .btn-primary {
+    padding: 0.7rem 1.5rem;
+    background-color: var(--nike-black);
+    border-color: var(--nike-black);
+    font-weight: 600;
+}
+.order-success-page .btn-primary:hover {
+    background-color: #333;
+    border-color: #333;
+}
+.order-success-page .summary-box {
+    background-color: #fff;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 1.5rem;
+}
+.order-success-page .summary-box .list-group-item {
+    background: none;
+    border: none;
+    padding: 0.75rem 0;
+}
+.order-success-page .summary-box .list-group-item.fs-5 {
+    padding-top: 1rem;
+    border-top: 1px solid #dee2e6;
+}
+.order-success-page .summary-product-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+}
+.order-success-page .summary-product-item img {
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    width: 64px;
+    height: 64px;
+    object-fit: contain;
+    border: 1px solid #dee2e6;
+}
+
+/* --- Horizontal Timeline Styles (Desktop First) --- */
+.whats-next-timeline {
+    position: relative;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 1rem 0;
+}
+
+.timeline-step {
+    flex: 1;
+    text-align: center;
+    position: relative;
+}
+
+.timeline-icon {
+    width: 2.5rem;
+    height: 2.5rem;
+    background-color: #fff;
+    border: 2px solid #adb5bd;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 0.75rem;
+    font-size: 1.2rem;
+    color: #adb5bd;
+    position: relative;
+    z-index: 2;
+    transition: all 0.3s ease;
+}
+
+/* The connecting line for DESKTOP */
+.timeline-step:not(:first-child)::before {
+    content: '';
+    position: absolute;
+    top: 1.25rem;
+    right: 50%;
+    width: 100%;
+    height: 2px;
+    background-color: #dee2e6;
+    z-index: 1;
+    transition: background-color 0.3s ease;
+}
+
+.timeline-step.active .timeline-icon {
+    background-color: var(--nike-black);
+    border-color: var(--nike-black);
+    color: #fff;
+}
+
+.timeline-step.active::before {
+    background-color: var(--nike-black);
+}
+
+.timeline-content strong {
+    font-size: 0.95rem;
+    font-weight: 600;
+}
+.timeline-content p {
+    font-size: 0.8rem;
+    margin-bottom: 0;
+    color: var(--text-color-secondary);
+}
+
+
+/* --- Mobile Styles --- */
+@media (max-width: 991.98px) {
+    .order-success-page .col-lg-5 {
+        margin-top: 2.5rem;
+    }
+}
+
+@media (max-width: 575.98px) {
+    .whats-next-timeline {
+        display: block;
+        padding-left: 1.25rem; /* Space for the icon's center */
+    }
+    
+    .timeline-step {
+        position: relative;
+        padding-left: 2.5rem;
+        padding-bottom: 2.5rem;
+        text-align: left;
+    }
+    .timeline-step:last-child {
+        padding-bottom: 0;
+    }
+
+    /* Hide the horizontal line from desktop view */
+    .timeline-step:not(:first-child)::before {
+        display: none;
+    }
+
+    /* Create the vertical line for mobile using ::after */
+    .timeline-step:not(:last-child)::after {
+        content: '';
+        position: absolute;
+        left: 0; /* Align with the icon's center */
+        top: 2.5rem; /* Start after the icon */
+        width: 2px;
+        height: calc(100% - 1.25rem);
+        background-color: #dee2e6;
+        z-index: 1;
+        transition: background-color 0.3s ease;
+    }
+
+    .timeline-step.active:not(:last-child)::after {
+        background-color: var(--nike-black);
+    }
+    
+    .timeline-icon {
+        position: absolute;
+        left: -1.20rem; 
+        top: 0;
+        margin: 0;
+    }
+}

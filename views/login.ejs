@@ -17,13 +17,14 @@
         <% } %>
          
         <form action="/users/login" method="POST">
+            <input type="hidden" name="redirect" value="<%= typeof redirect !== 'undefined' ? redirect : '' %>">
             <div class="mb-3">
               <label for="email" class="form-label">Email address</label>
               <input type="email" class="form-control form-control-lg" id="email" name="email" required>
             </div>
      
             <div class="mb-3">
-              <label for="password" class="form-label">Password</label>
+               <label for="password" class="form-label">Password</label>
               <input type="password" class="form-control form-control-lg" id="password" name="password" required>
             </div>
             

@@ -1,0 +1,146 @@
+/* public/css/preloader.css */
+
+/* --- General Skeleton Styles --- */
+.skeleton-loader {
+    display: none; /* Hidden by default, shown via JS if content isn't loaded */
+}
+
+.skeleton {
+    background-color: #e9ecef;
+    border-radius: 8px;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Shimmer Animation */
+.skeleton::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -150%;
+    width: 150%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.5), transparent);
+    animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+    0% {
+        left: -150%;
+    }
+    100% {
+        left: 150%;
+    }
+}
+
+/* --- Skeleton Styles for Shop Page --- */
+.skeleton-grid {
+    display: grid;
+    grid-template-columns: repeat(1, 1fr);
+    gap: 1.5rem;
+}
+
+.skeleton-card {
+    background-color: #fff;
+    border-radius: 1rem;
+    overflow: hidden;
+}
+
+.skeleton-card .skeleton-image {
+    width: 100%;
+    padding-bottom: 75%; /* Aspect ratio for the image */
+    border-radius: 1rem 1rem 0 0;
+}
+
+.skeleton-card .skeleton-body {
+    padding: 1rem;
+}
+
+.skeleton-line {
+    height: 1rem;
+    margin-bottom: 0.5rem;
+}
+
+.skeleton-line.short {
+    width: 60%;
+}
+
+/* --- Skeleton Styles for Product Detail Page --- */
+.skeleton-pdp-layout {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 2rem;
+    max-width: 1080px; 
+    margin: 0 auto;
+    padding: 0 2rem;
+}
+
+.skeleton-pdp-image {
+    width: 100%;
+    padding-bottom: 100%; /* Square aspect ratio */
+    border-radius: 18px;
+}
+
+.skeleton-pdp-line-title {
+    height: 2.5rem;
+    width: 80%;
+    margin-bottom: 1rem;
+}
+
+.skeleton-pdp-line-price {
+    height: 2rem;
+    width: 40%;
+    margin-bottom: 2rem;
+}
+
+.skeleton-pdp-line-text {
+    height: 1rem;
+    margin-bottom: 0.75rem;
+}
+
+.skeleton-pdp-button {
+    height: 50px;
+    border-radius: 980px;
+    margin-top: 1rem;
+}
+
+/* --- Skeleton Styles for Hero Carousel --- */
+.skeleton-hero {
+    height: 90vh;
+    min-height: 600px;
+    border-radius: 0;
+}
+
+
+/* Responsive Grid for Shop Skeletons */
+@media (min-width: 576px) {
+    .skeleton-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (min-width: 992px) {
+    .skeleton-grid {
+        grid-template-columns: repeat(4, 1fr);
+    }
+    .skeleton-pdp-layout {
+        grid-template-columns: 45fr 55fr;
+        gap: 5rem;
+    }
+}
+
+/* --- Visibility Control --- */
+/* By default, hide the content that needs to be preloaded */
+.is-loading .content-to-load {
+    visibility: hidden;
+    opacity: 0;
+    height: 0;
+    overflow: hidden;
+    position: absolute; /* Prevent layout shift */
+    width: 100%;
+}
+
+/* When the content is loading, display the skeleton loader */
+.is-loading .skeleton-loader {
+    display: block;
+}

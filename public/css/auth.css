@@ -70,7 +70,7 @@
     transition: color 0.3s ease-in-out; 
 }
 
-/* --- Added: Interactive Star Rating Styles --- */
+/* --- Interactive Star Rating Styles --- */
 .star-rating {
     display: flex;
     flex-direction: row-reverse; /* This is key to the hover effect */
@@ -85,15 +85,30 @@
     cursor: pointer;
     transition: color 0.2s ease;
 }
-/* The magic: style stars on hover and for selected rating */
 .star-rating input[type="radio"]:checked ~ label,
 .star-rating:hover label:hover,
 .star-rating:hover label:hover ~ label {
     color: black;
 }
 
+/* --- Styles for Simple Success/Info Cards --- */
+.simple-success-card .success-icon {
+    font-size: 3.5rem;
+    color: #34c759; /* Apple green for success */
+    margin-bottom: 1.5rem;
+}
 
-/* --- Responsive adjustments for smaller screens (no border) --- */
+.simple-success-card h1 {
+    font-weight: 600;
+}
+
+.simple-success-card .lead {
+    max-width: 400px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* --- Responsive adjustments --- */
 @media (max-width: 576px) {
     .auth-container {
         align-items: flex-start; 

@@ -5,16 +5,57 @@ const router = express.Router();
 const { ObjectId } = require('mongodb');
 const { convertCurrency } = require('./currency');
 
+// Define shipping constants (using USD as the base currency)
+const SHIPPING_COST_BASE = 5; // e.g., $5 shipping
+const FREE_SHIPPING_THRESHOLD_BASE = 150; // e.g., free shipping on orders over $150
+
+// ADDED: Re-usable sales logic function
+async function applySalesToProducts(products, db) {
+    if (!products || products.length === 0) {
+        return [];
+    }
+    const now = new Date();
+    const activeSales = await db.collection('sales').find({
+        startDate: { $lte: now },
+        endDate: { $gte: now }
+    }).toArray();
+    if (activeSales.length === 0) {
+        return products.map(p => ({ ...p, onSale: false }));
+    }
+    const saleMap = new Map();
+    activeSales.forEach(sale => {
+        sale.productIds.forEach(productId => {
+            saleMap.set(productId.toString(), {
+                discountPercentage: sale.discountPercentage
+            });
+        });
+    });
+    return products.map(product => {
+        const saleInfo = saleMap.get(product._id.toString());
+        if (saleInfo) {
+            const salePrice = product.retailPrice * (1 - saleInfo.discountPercentage / 100);
+            return {
+                ...product,
+                onSale: true,
+                salePrice: parseFloat(salePrice.toFixed(2)),
+                discountPercentage: saleInfo.discountPercentage
+            };
+        }
+        return { ...product, onSale: false };
+    });
+}
+
+
 // GET /cart - Display the shopping cart page
 router.get('/', async (req, res) => {
     try {
+        const db = req.app.locals.client.db(req.app.locals.dbName);
         const currency = res.locals.locationData.currency;
         let wishlistProducts = [];
         let userWishlist = [];
         let cart = req.session.cart || { items: [], totalQty: 0, totalPrice: 0 };
 
         if (req.session.user) {
-            const db = req.app.locals.client.db(req.app.locals.dbName);
             const usersCollection = db.collection('users');
             const productsCollection = db.collection('products');
             
@@ -25,12 +66,11 @@ router.get('/', async (req, res) => {
                 if (user.wishlist.length > 0) {
                     wishlistProducts = await productsCollection.find({
                         _id: { $in: user.wishlist }
-                    }).limit(4).toArray();
+                    }).toArray();
                 }
             }
         }
 
-        // Perform currency conversions before rendering
         if (cart.items.length > 0) {
             cart.items = await Promise.all(cart.items.map(async (item) => {
                 item.convertedPrice = await convertCurrency(item.price, currency);
@@ -38,7 +78,7 @@ router.get('/', async (req, res) => {
             }));
             cart.convertedTotalPrice = await convertCurrency(cart.totalPrice, currency);
         } else {
-            cart.convertedTotalPrice = 0; // Explicitly set to 0 if cart is empty
+            cart.convertedTotalPrice = 0;
         }
 
         if (wishlistProducts.length > 0) {
@@ -48,11 +88,27 @@ router.get('/', async (req, res) => {
             }));
         }
 
+        // UPDATED: Shipping cost calculation
+        const now = new Date();
+        const activeSale = await db.collection('sales').findOne({
+            startDate: { $lte: now },
+            endDate: { $gte: now }
+        });
+
+        const shippingCost = (activeSale || cart.totalPrice >= FREE_SHIPPING_THRESHOLD_BASE) ? 0 : SHIPPING_COST_BASE;
+        const totalWithShipping = cart.totalPrice + shippingCost;
+        
+        const convertedShippingCost = await convertCurrency(shippingCost, currency);
+        const convertedTotalWithShipping = await convertCurrency(totalWithShipping, currency);
+
         res.render('cart', {
             title: "Your Cart",
             cart: cart,
             wishlistProducts: wishlistProducts,
-            wishlist: userWishlist
+            wishlist: userWishlist,
+            message: req.query.message,
+            shippingCost: convertedShippingCost,
+            totalWithShipping: convertedTotalWithShipping
         });
 
     } catch (err) {
@@ -61,28 +117,28 @@ router.get('/', async (req, res) => {
     }
 });
 
-// UPDATED: POST /cart/add - Now returns JSON instead of redirecting
+// POST /cart/add - Now uses sale price in calculations
 router.post('/add', async (req, res) => {
     try {
         const { productId, sku, size } = req.body;
         const currency = res.locals.locationData.currency;
+        const db = req.app.locals.client.db(req.app.locals.dbName);
 
         if (!req.session.cart) {
-            req.session.cart = {
-                items: [],
-                totalQty: 0,
-                totalPrice: 0
-            };
+            req.session.cart = { items: [], totalQty: 0, totalPrice: 0 };
         }
         const cart = req.session.cart;
 
-        const db = req.app.locals.client.db(req.app.locals.dbName);
         const productsCollection = db.collection('products');
-        const product = await productsCollection.findOne({ _id: new ObjectId(productId) });
+        let product = await productsCollection.findOne({ _id: new ObjectId(productId) });
 
         if (!product) {
             return res.status(404).json({ success: false, message: 'Product not found' });
         }
+        
+        [product] = await applySalesToProducts([product], db);
+        
+        const pricePerUnit = product.onSale ? product.salePrice : product.retailPrice;
 
         const itemId = `${sku}_${size}`;
         const existingItemIndex = cart.items.findIndex(item => item.itemId === itemId);
@@ -90,7 +146,7 @@ router.post('/add', async (req, res) => {
 
         if (existingItemIndex > -1) {
             cart.items[existingItemIndex].qty++;
-            cart.items[existingItemIndex].price = cart.items[existingItemIndex].qty * product.retailPrice;
+            cart.items[existingItemIndex].price = cart.items[existingItemIndex].qty * pricePerUnit;
             addedItem = cart.items[existingItemIndex];
         } else {
             addedItem = {
@@ -101,9 +157,9 @@ router.post('/add', async (req, res) => {
                 brand: product.brand,
                 thumbnailUrl: product.thumbnailUrl,
                 size: size,
-                unitPrice: product.retailPrice,
+                unitPrice: pricePerUnit,
                 qty: 1,
-                price: product.retailPrice
+                price: pricePerUnit
             };
             cart.items.push(addedItem);
         }
@@ -143,19 +199,18 @@ router.post('/remove', (req, res) => {
     res.redirect('/cart');
 });
 
-// ADDED: POST /cart/update-quantity - Increment or decrement an item's quantity
+// POST /cart/update-quantity - Increment or decrement an item's quantity
 router.post('/update-quantity', (req, res) => {
-    const { itemId, change } = req.body; // change will be '1' or '-1'
-    const cart = req.session.cart;
+    const { itemId, change } = req.body;
     const changeAmount = parseInt(change, 10);
 
-    if (cart && cart.items && !isNaN(changeAmount)) {
+    if (req.session.cart && req.session.cart.items && !isNaN(changeAmount)) {
+        const cart = req.session.cart;
         const itemIndex = cart.items.findIndex(item => item.itemId === itemId);
         if (itemIndex > -1) {
             const item = cart.items[itemIndex];
             item.qty += changeAmount;
 
-            // Remove item if quantity drops to 0 or less
             if (item.qty <= 0) {
                 cart.items.splice(itemIndex, 1);
             } else {
@@ -170,36 +225,49 @@ router.post('/update-quantity', (req, res) => {
     res.redirect('/cart');
 });
 
-// ADDED: POST /cart/move-to-wishlist - Move an item from cart to wishlist
-router.post('/move-to-wishlist', async (req, res) => {
+// POST /cart/add-to-wishlist-from-cart
+router.post('/add-to-wishlist-from-cart', async (req, res) => {
     if (!req.session.user) {
-        return res.redirect('/users/login');
+        return res.status(401).send('Unauthorized');
     }
     try {
-        const { itemId, productId } = req.body;
+        const { productId } = req.body;
         const userId = req.session.user.userId;
         const productObjectId = new ObjectId(productId);
-        const cart = req.session.cart;
 
-        // Add to wishlist
         const db = req.app.locals.client.db(req.app.locals.dbName);
         await db.collection('users').updateOne(
             { userId: userId },
-            { $addToSet: { wishlist: productObjectId } } // Use $addToSet to avoid duplicates
+            { $addToSet: { wishlist: productObjectId } }
         );
 
-        // Remove from cart
-        if (cart && cart.items) {
-            cart.items = cart.items.filter(item => item.itemId !== itemId);
-            cart.totalQty = cart.items.reduce((total, item) => total + item.qty, 0);
-            cart.totalPrice = cart.items.reduce((total, item) => total + item.price, 0);
-        }
-        
         res.redirect('/cart');
-
     } catch (err) {
-        console.error("Error moving item to wishlist:", err);
-        res.status(500).send("An error occurred.");
+        console.error("Error adding item to wishlist:", err);
+        res.status(500).send('An error occurred.');
+    }
+});
+
+// POST /cart/remove-from-wishlist
+router.post('/remove-from-wishlist', async (req, res) => {
+    if (!req.session.user) {
+        return res.status(401).send('Unauthorized');
+    }
+    try {
+        const { productId } = req.body;
+        const userId = req.session.user.userId;
+        const productObjectId = new ObjectId(productId);
+
+        const db = req.app.locals.client.db(req.app.locals.dbName);
+        await db.collection('users').updateOne(
+            { userId: userId },
+            { $pull: { wishlist: productObjectId } }
+        );
+
+        res.redirect('/cart');
+    } catch (err) {
+        console.error("Error removing item from wishlist:", err);
+        res.status(500).send('An error occurred.');
     }
 });
 

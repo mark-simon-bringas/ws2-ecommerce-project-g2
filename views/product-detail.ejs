@@ -1,227 +1,260 @@
-<div class="my-5"> 
-    <div class="product-detail-layout">
-
-        <div class="product-detail-layout__gallery">
-            <div class="product-image-container">
-                <% if (product.imageUrl) { %>
-                    <div class="img-magnifier-container">
-                        <img id="productImage" src="<%= product.imageUrl %>" alt="<%= product.name %>" class="img-fluid">
-                    </div>
-                <% } else { %>
-                    <div class="img-magnifier-container">
-                        <img id="productImage" src="https://via.placeholder.com/800x800.png?text=No+Image" alt="No Image Available" class="img-fluid">
-                    </div>
-                <% } %>
-            </div>
-
-            <div class="product-extra-details">
-                <div class="detail-item">
-                    <i class="bi bi-rulers"></i>
-                    <div>
-                        <h6 class="detail-item__title">True to Size</h6>
-                        <p class="detail-item__text">Fits just right.</p>
-                    </div>
-                </div>
-                <div class="detail-item">
-                    <i class="bi bi-feather"></i>
-                    <div>
-                        <h6 class="detail-item__title">Lightweight</h6>
-                        <p class="detail-item__text">Cushioned for comfort.</p>
-                    </div>
-                </div>
-                <div class="detail-item">
-                    <i class="bi bi-grip-horizontal"></i>
-                    <div>
-                        <h6 class="detail-item__title">Durable Traction</h6>
-                        <p class="detail-item__text">A sole that grips.</p>
-                    </div>
-                </div>
-                <div class="detail-item">
-                    <i class="bi bi-award"></i>
-                    <div>
-                        <h6 class="detail-item__title">Premium Materials</h6>
-                        <p class="detail-item__text">Crafted with care.</p>
-                    </div>
-                </div>
+<div class="my-5 is-loading">
+    <div class="skeleton-loader">
+        <div class="skeleton-pdp-layout">
+            <div class="skeleton skeleton-pdp-image"></div>
+            <div>
+                <div class="skeleton skeleton-line" style="width: 30%; height: 1rem; margin-bottom: 1rem;"></div>
+                <div class="skeleton skeleton-pdp-line-title"></div>
+                <div class="skeleton skeleton-pdp-line-price"></div>
+                <div class="skeleton skeleton-line" style="height: 1.5rem; width: 40%; margin-top: 2rem; margin-bottom: 1rem;"></div>
+                <div class="skeleton skeleton-line" style="height: 4rem; border-radius: 8px; margin-bottom: 1rem;"></div>
+                <div class="skeleton skeleton-pdp-button"></div>
+                <div class="skeleton skeleton-pdp-button" style="background-color: #f5f5f7; margin-top: 0.5rem;"></div>
             </div>
         </div>
+    </div>
 
-        <div class="product-detail-layout__info">
-            <div class="product-info-panel">
-                <p class="text-body-secondary mb-2"><%= product.brand %></p>
-                <h1 class="product-title display-5 fw-bold"><%= product.name %></h1>
-                <p class="product-price h3 my-3"><%= locationData.symbol %><%= product.convertedPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></p>
-                
-                <% 
-                    const standardSizes = ['8', '8.5', '9', '9.5', '10', '10.5', '11', '12'];
-                    const isCompletelyOutOfStock = product.stock && standardSizes.every(size => {
-                        const safeSizeKey = size.replace('.', '_');
-                        return product.stock[safeSizeKey] <= 0;
-                    });
-                %>
+    <div class="content-to-load">
+        <div class="product-detail-layout">
 
-                <form id="add-to-cart-form" action="/cart/add" method="POST" class="d-grid gap-3">
-                    <input type="hidden" name="productId" value="<%= product._id %>">
-                    <input type="hidden" name="sku" value="<%= product.sku %>">
-
-                    <div class="mb-2">
-                        <label class="form-label d-flex justify-content-between">
-                            <strong>Select Size</strong>
-                            <a href="#" class="small text-body-secondary">Size Guide</a>
-                        </label>
-                        <div class="size-selector">
-                            <% standardSizes.forEach(size => { %>
-                                <% 
-                                    const safeSizeKey = size.replace('.', '_');
-                                    const isSizeAvailable = product.stock && product.stock[safeSizeKey] > 0;
-                                %>
-                                <input type="radio" class="btn-check" name="size" id="size-<%= size %>" value="<%= size %>" autocomplete="off" required <%= !isSizeAvailable ? 'disabled' : '' %>>
-                                <label class="btn btn-outline-secondary <%= !isSizeAvailable ? 'disabled' : '' %>" for="size-<%= size %>"><%= size %></label>
-                            <% }) %>
+            <div class="product-detail-layout__gallery">
+                <div class="product-image-container">
+                    <% if (product.imageUrl) { %>
+                        <div class="img-magnifier-container">
+                            <img id="productImage" src="<%= product.imageUrl %>" alt="<%= product.name %>" class="img-fluid">
                         </div>
+                    <% } else { %>
+                        <div class="img-magnifier-container">
+                            <img id="productImage" src="https://via.placeholder.com/800x800.png?text=No+Image" alt="No Image Available" class="img-fluid">
+                        </div>
+                    <% } %>
+                </div>
+
+                <div class="product-extra-details">
+                    <div class="detail-item">
+                        <i class="bi bi-rulers"></i>
+                        <div>
+                            <h6 class="detail-item__title">True to Size</h6>
+                            <p class="detail-item__text">Fits just right.</p>
+                        </div>
+                    </div>
+                    <div class="detail-item">
+                        <i class="bi bi-feather"></i>
+                        <div>
+                            <h6 class="detail-item__title">Lightweight</h6>
+                            <p class="detail-item__text">Cushioned for comfort.</p>
+                        </div>
+                    </div>
+                    <div class="detail-item">
+                        <i class="bi bi-grip-horizontal"></i>
+                        <div>
+                            <h6 class="detail-item__title">Durable Traction</h6>
+                            <p class="detail-item__text">A sole that grips.</p>
+                        </div>
+                    </div>
+                    <div class="detail-item">
+                        <i class="bi bi-award"></i>
+                        <div>
+                            <h6 class="detail-item__title">Premium Materials</h6>
+                            <p class="detail-item__text">Crafted with care.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="product-detail-layout__info">
+                <div class="product-info-panel">
+                    <p class="text-body-secondary mb-2"><%= product.brand %></p>
+                    <h1 class="product-title display-5 fw-bold"><%= product.name %></h1>
+                    <div class="product-price h3 my-3 d-flex flex-wrap align-items-baseline">
+                        <% if (product.onSale) { %>
+                            <span class="fw-bold text-dark me-2"><%= locationData.symbol %><%= product.convertedSalePrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></span>
+                            <del class="text-body-secondary me-2"><%= locationData.symbol %><%= product.convertedPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></del>
+                            <span class="text-success fw-bold"><%= product.discountPercentage %>% OFF</span>
+                        <% } else { %>
+                            <span class="fw-bold text-dark"><%= locationData.symbol %><%= product.convertedPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></span>
+                        <% } %>
                     </div>
                     
-                    <% if (isCompletelyOutOfStock) { %>
-                        <button type="button" class="btn btn-primary btn-lg" disabled>Out of Stock</button>
-                    <% } else { %>
-                        <button type="submit" class="btn btn-primary btn-lg">Add to Bag</button>
-                    <% } %>
-                </form>
+                    <% 
+                        const standardSizes = ['8', '8.5', '9', '9.5', '10', '10.5', '11', '12'];
+                        const isCompletelyOutOfStock = product.stock && standardSizes.every(size => {
+                            const safeSizeKey = size.replace('.', '_');
+                            return !product.stock[safeSizeKey] || product.stock[safeSizeKey] <= 0;
+                        });
+                    %>
 
-                <div class="d-grid mt-3">
-                    <% if (currentUser) { %>
-                        <form id="wishlist-toggle-form">
-                            <input type="hidden" name="productId" value="<%= product._id %>">
-                            <button type="submit" class="btn btn-outline-secondary btn-lg w-100 d-flex align-items-center justify-content-center gap-2">
-                                <span><%- isWishlisted ? 'In Favorites' : 'Favorite' %></span>
-                                <i class="bi <%- isWishlisted ? 'bi-heart-fill' : 'bi-heart' %>"></i>
-                            </button>
-                        </form>
-                    <% } else { %>
-                        <a href="/users/login" class="btn btn-outline-secondary btn-lg d-flex align-items-center justify-content-center gap-2">
-                            <span>Favorite</span>
-                            <i class="bi bi-heart"></i>
-                        </a>
-                    <% } %>
-                </div>
+                    <form id="add-to-cart-form" action="/cart/add" method="POST" class="d-grid gap-3">
+                        <input type="hidden" name="productId" value="<%= product._id %>">
+                        <input type="hidden" name="sku" value="<%= product.sku %>">
 
-                <div class="mt-5">
-                    <% if (product.description) { %>
-                        <p class="text-body-secondary"><%= product.description %></p>
-                    <% } %>
-                    <ul class="list-unstyled text-body-secondary">
-                        <% if (product.colorway) { %>
-                            <li>Colour Shown: <%= product.colorway %></li>
-                        <% } %>
-                        <li>Style: <%= product.sku %></li>
-                    </ul>
-                    <a href="#" class="fw-semibold text-dark view-details-link" data-bs-toggle="modal" data-bs-target="#productDetailsModal">
-                        View Product Details
-                    </a>
-                </div>
-
-                <div class="accordion product-details-accordion mt-4" id="deliveryAndReviewsAccordion">
-                    <div class="accordion-item">
-                        <h2 class="accordion-header">
-                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseDelivery" aria-expanded="false" aria-controls="collapseDelivery">
-                                Free Delivery and Returns
-                            </button>
-                        </h2>
-                        <div id="collapseDelivery" class="accordion-collapse collapse" data-bs-parent="#deliveryAndReviewsAccordion">
-                            <div class="accordion-body">
-                                <p>Your order of ₱7,500 or more gets free standard delivery.</p>
-                                <ul class="list-unstyled text-body-secondary small">
-                                    <li class="mb-2">Standard delivered 5-9 Business Days</li>
-                                    <li>Express delivered 2-4 Business Days</li>
-                                </ul>
-                                <p class="small text-body-secondary mt-3">Orders are processed and delivered Monday-Friday (excluding public holidays).</p>
+                        <div class="mb-2">
+                            <label class="form-label d-flex justify-content-between">
+                                <strong>Select Size</strong>
+                                <a href="#" class="small text-body-secondary">Size Guide</a>
+                            </label>
+                            <div class="size-selector">
+                                <% standardSizes.forEach(size => { %>
+                                    <% 
+                                        const safeSizeKey = size.replace('.', '_');
+                                        const isSizeAvailable = product.stock && product.stock[safeSizeKey] > 0;
+                                    %>
+                                    <input type="radio" class="btn-check" name="size" id="size-<%= size %>" value="<%= size %>" autocomplete="off" required <%= !isSizeAvailable ? 'disabled' : '' %>>
+                                    <label class="btn btn-outline-secondary <%= !isSizeAvailable ? 'disabled' : '' %>" for="size-<%= size %>"><%= size %></label>
+                                <% }) %>
                             </div>
                         </div>
-                    </div>
-                    <div class="accordion-item">
-                        <h2 class="accordion-header">
-                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseReviews" aria-expanded="false" aria-controls="collapseReviews">
-                                Reviews (<%= reviews.length %>)
-                                <% if (reviews && reviews.length > 0) {
-                                    const averageRating = reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length;
-                                %>
-                                    <span class="review-rating ms-3">
-                                        <% for(let i = 1; i <= 5; i++) { %>
-                                            <i class="bi <%= i <= averageRating ? 'bi-star-fill' : 'bi-star' %>"></i>
-                                        <% } %>
-                                    </span>
-                                <% } %>
-                            </button>
-                        </h2>
-                        <div id="collapseReviews" class="accordion-collapse collapse" data-bs-parent="#deliveryAndReviewsAccordion">
-                            <div class="accordion-body">
-                                <div class="text-end mb-4">
-                                    <a href="/products/<%= product.sku %>/review" class="btn btn-outline-secondary">Write a Review</a>
-                                </div>
-                                <% if (reviews && reviews.length > 0) { %>
-                                    <div class="review-list">
-                                        <% reviews.forEach(review => { %>
-                                            <div class="review-card">
-                                                <div class="review-rating">
-                                                    <% for(let i = 1; i <= 5; i++) { %>
-                                                        <i class="bi <%= i <= review.rating ? 'bi-star-fill' : 'bi-star' %>"></i>
-                                                    <% } %>
-                                                </div>
-                                                <p class="review-body mb-1"><%= review.comment %></p>
-                                                <p class="small text-body-secondary"><%= review.author.firstName %> - <%= new Date(review.createdAt).toLocaleDateString() %></p>
-                                            </div>
-                                        <% }) %>
-                                    </div>
-                                <% } else { %>
-                                    <p class="text-body-secondary text-center">No reviews yet. Be the first to share your thoughts!</p>
-                                <% } %>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<% if (relatedProducts && relatedProducts.length > 0) { %>
-<section class="product-carousel-section container-fluid my-5 py-5">
-    <div class="container">
-        <div class="section-header">
-            <h2 class="display-5 fw-bold mb-0">You Might Also Like</h2>
-        </div>
-    </div>
-    <div class="product-carousel">
-        <% relatedProducts.forEach(relatedProduct => { %>
-            <div class="product-card">
-                <div class="product-card-img-container">
-                    <a href="/products/<%= relatedProduct.sku %>" class="product-card-img-link"></a>
-                    <img src="<%= relatedProduct.thumbnailUrl %>" class="product-card-img" alt="<%= relatedProduct.name %>">
-                    <div class="product-card-actions">
-                        <% if (currentUser) { %>
-                            <button type="button" class="btn-action wishlist-toggle-btn" title="Toggle Wishlist" data-product-id="<%= relatedProduct._id %>">
-                                <% const isWishlisted = wishlist.some(id => id.equals(relatedProduct._id)); %>
-                                <i class="bi <%= isWishlisted ? 'bi-heart-fill' : 'bi-heart' %>"></i>
-                            </button>
+                        
+                        <% if (isCompletelyOutOfStock) { %>
+                            <button type="button" class="btn btn-primary btn-lg" disabled>Out of Stock</button>
                         <% } else { %>
-                            <a href="/users/login" class="btn-action" title="Login to Add to Wishlist">
+                            <button type="submit" class="btn btn-primary btn-lg">Add to Bag</button>
+                        <% } %>
+                    </form>
+
+                    <div class="d-grid mt-3">
+                        <% if (currentUser) { %>
+                            <form id="wishlist-toggle-form">
+                                <input type="hidden" name="productId" value="<%= product._id %>">
+                                <button type="submit" class="btn btn-outline-secondary btn-lg w-100 d-flex align-items-center justify-content-center gap-2">
+                                    <span><%- isWishlisted ? 'In Favorites' : 'Favorite' %></span>
+                                    <i class="bi <%- isWishlisted ? 'bi-heart-fill' : 'bi-heart' %>"></i>
+                                </button>
+                            </form>
+                        <% } else { %>
+                            <a href="/users/login?redirect=<%= path %>" class="btn btn-outline-secondary btn-lg d-flex align-items-center justify-content-center gap-2">
+                                <span>Favorite</span>
                                 <i class="bi bi-heart"></i>
                             </a>
                         <% } %>
-                        <button type="button" class="btn-action" title="Add to Cart" data-bs-toggle="modal" data-bs-target="#productModal-<%= relatedProduct.sku %>"><i class="bi bi-bag-plus"></i></button>
+                    </div>
+
+                    <div class="mt-5">
+                        <% if (product.description) { %>
+                            <p class="text-body-secondary"><%= product.description %></p>
+                        <% } %>
+                        <ul class="list-unstyled text-body-secondary">
+                            <% if (product.colorway) { %>
+                                <li>Colour Shown: <%= product.colorway %></li>
+                            <% } %>
+                            <li>Style: <%= product.sku %></li>
+                        </ul>
+                        <a href="#" class="fw-semibold text-dark view-details-link" data-bs-toggle="modal" data-bs-target="#productDetailsModal">
+                            View Product Details
+                        </a>
+                    </div>
+
+                    <div class="accordion product-details-accordion mt-4" id="deliveryAndReviewsAccordion">
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseDelivery" aria-expanded="false" aria-controls="collapseDelivery">
+                                    Free Delivery and Returns
+                                </button>
+                            </h2>
+                            <div id="collapseDelivery" class="accordion-collapse collapse" data-bs-parent="#deliveryAndReviewsAccordion">
+                                <div class="accordion-body">
+                                    <p>Your order of ₱7,500 or more gets free standard delivery.</p>
+                                    <ul class="list-unstyled text-body-secondary small">
+                                        <li class="mb-2">Standard delivered 5-9 Business Days</li>
+                                        <li>Express delivered 2-4 Business Days</li>
+                                    </ul>
+                                     <p class="small text-body-secondary mt-3">Orders are processed and delivered Monday-Friday (excluding public holidays).</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseReviews" aria-expanded="false" aria-controls="collapseReviews">
+                                    Reviews (<%= reviews.length %>)
+                                    <% if (reviews && reviews.length > 0) {
+                                        const averageRating = reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length;
+                                    %>
+                                        <span class="review-rating ms-3">
+                                            <% for(let i = 1; i <= 5; i++) { %>
+                                                <i class="bi <%= i <= averageRating ? 'bi-star-fill' : 'bi-star' %>"></i>
+                                            <% } %>
+                                        </span>
+                                    <% } %>
+                                </button>
+                            </h2>
+                            <div id="collapseReviews" class="accordion-collapse collapse" data-bs-parent="#deliveryAndReviewsAccordion">
+                                <div class="accordion-body">
+                                    <div class="text-end mb-4">
+                                        <a href="/products/<%= product.sku %>/review" class="btn btn-outline-secondary">Write a Review</a>
+                                    </div>
+                                    <% if (reviews && reviews.length > 0) { %>
+                                        <div class="review-list">
+                                            <% reviews.forEach(review => { %>
+                                                <div class="review-card">
+                                                    <div class="review-rating">
+                                                        <% for(let i = 1; i <= 5; i++) { %>
+                                                            <i class="bi <%= i <= review.rating ? 'bi-star-fill' : 'bi-star' %>"></i>
+                                                        <% } %>
+                                                    </div>
+                                                    <p class="review-body mb-1"><%= review.comment %></p>
+                                                    <p class="small text-body-secondary"><%= review.author.firstName %> - <%= new Date(review.createdAt).toLocaleDateString() %></p>
+                                                </div>
+                                            <% }) %>
+                                        </div>
+                                    <% } else { %>
+                                        <p class="text-body-secondary text-center">No reviews yet. Be the first to share your thoughts!</p>
+                                    <% } %>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
-                <div class="product-card-body">
-                    <a href="/products/<%= relatedProduct.sku %>" class="text-decoration-none">
-                        <div class="product-title"><%= relatedProduct.name %></div>
-                        <div class="product-price"><%= locationData.symbol %><%= relatedProduct.convertedPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></div>
-                    </a>
+            </div>
+        </div>
+
+        <% if (relatedProducts && relatedProducts.length > 0) { %>
+        <section class="product-carousel-section container-fluid my-5 py-5">
+            <div class="container">
+                <div class="section-header">
+                    <h2 class="display-5 fw-bold mb-0">You Might Also Like</h2>
                 </div>
             </div>
-        <% }) %>
+            <div class="product-carousel">
+                <% relatedProducts.forEach(relatedProduct => { %>
+                    <div class="product-card">
+                        <div class="product-card-img-container">
+                            <a href="/products/<%= relatedProduct.sku %>" class="product-card-img-link"></a>
+                            <img src="<%= relatedProduct.thumbnailUrl %>" class="product-card-img" alt="<%= relatedProduct.name %>">
+                            <div class="product-card-actions">
+                                <% if (currentUser) { %>
+                                    <button type="button" class="btn-action wishlist-toggle-btn" title="Toggle Wishlist" data-product-id="<%= relatedProduct._id %>">
+                                        <% const isWishlisted = wishlist.some(id => id.equals(relatedProduct._id)); %>
+                                        <i class="bi <%= isWishlisted ? 'bi-heart-fill' : 'bi-heart' %>"></i>
+                                    </button>
+                                <% } else { %>
+                                    <a href="/users/login?redirect=<%= path %>" class="btn-action" title="Login to Add to Wishlist">
+                                        <i class="bi bi-heart"></i>
+                                    </a>
+                                <% } %>
+                                <button type="button" class="btn-action" title="Add to Cart" data-bs-toggle="modal" data-bs-target="#productModal-<%= relatedProduct.sku %>"><i class="bi bi-bag-plus"></i></button>
+                            </div>
+                        </div>
+                        <div class="product-card-body">
+                            <a href="/products/<%= relatedProduct.sku %>" class="text-decoration-none">
+                                <div class="product-title"><%= relatedProduct.name %></div>
+                                <div class="product-price">
+                                     <% if (relatedProduct.onSale) { %>
+                                        <span class="fw-bold text-dark"><%= locationData.symbol %><%= relatedProduct.convertedSalePrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></span>
+                                        <del class="text-body-secondary ms-2"><%= locationData.symbol %><%= relatedProduct.convertedPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></del>
+                                        <span class="text-success fw-bold ms-2"><%= relatedProduct.discountPercentage %>% OFF</span>
+                                    <% } else { %>
+                                        <span><%= locationData.symbol %><%= relatedProduct.convertedPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></span>
+                                    <% } %>
+                                </div>
+                            </a>
+                        </div>
+                    </div>
+                <% }) %>
+            </div>
+        </section>
+        <% } %>
     </div>
-</section>
-<% } %>
+</div>
 
 <div class="modal fade" id="productDetailsModal" tabindex="-1" aria-labelledby="productDetailsModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
@@ -231,7 +264,15 @@
             <img src="<%= product.thumbnailUrl %>" alt="<%= product.name %>" class="product-modal-header__image">
             <div class="product-modal-header__info">
                 <h1 class="modal-title fs-5" id="productDetailsModalLabel"><%= product.name %></h1>
-                <p class="product-price mb-0"><%= locationData.symbol %><%= product.convertedPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></p>
+                <div class="product-price mb-0 d-flex flex-wrap align-items-baseline">
+                    <% if (product.onSale) { %>
+                        <span class="fw-bold text-dark me-2"><%= locationData.symbol %><%= product.convertedSalePrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></span>
+                        <del class="text-body-secondary me-2"><%= locationData.symbol %><%= product.convertedPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></del>
+                        <span class="text-success fw-bold"><%= product.discountPercentage %>% OFF</span>
+                    <% } else { %>
+                        <span class="fw-bold text-dark"><%= locationData.symbol %><%= product.convertedPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></span>
+                    <% } %>
+                </div>
             </div>
         </div>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -295,11 +336,8 @@
 </script>
 <% } %>
 
-
-
 <script>
 document.addEventListener("DOMContentLoaded", function () {
-    // Only initialize the magnifier on screens wider than 992px
     if (window.innerWidth >= 992) {
         const img = document.getElementById("productImage");
         if (img) {
@@ -311,14 +349,12 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     }
 });
-
 function initMagnifier(imgId) {
     const img = document.getElementById(imgId);
     if (!img) return;
 
     const oldLens = img.parentElement.querySelector(".img-magnifier-lens");
     if (oldLens) oldLens.remove();
-    
     const lens = document.createElement("div");
     lens.setAttribute("class", "img-magnifier-lens");
     const lensImg = document.createElement("img");
@@ -329,21 +365,17 @@ function initMagnifier(imgId) {
     const zoom = 2;
     lensImg.style.width = img.offsetWidth * zoom + "px";
     lensImg.style.height = img.offsetHeight * zoom + "px";
-
     function moveLens(e) {
         e.preventDefault();
         const rect = img.getBoundingClientRect();
         let x = e.clientX - rect.left;
         let y = e.clientY - rect.top;
-        
         lens.style.left = (x - lens.offsetWidth / 2) + "px";
         lens.style.top = (y - lens.offsetHeight / 2) + "px";
-
         if (x < 0) x = 0;
         if (y < 0) y = 0;
         if (x > img.offsetWidth) x = img.offsetWidth;
         if (y > img.offsetHeight) y = img.offsetHeight;
-
         lensImg.style.left = -(x * zoom - lens.offsetWidth / 2) + "px";
         lensImg.style.top = -(y * zoom - lens.offsetHeight / 2) + "px";
     }
@@ -355,3 +387,88 @@ function initMagnifier(imgId) {
     lens.addEventListener("mousemove", moveLens);
 }
 </script>
+
+<% if (relatedProducts && relatedProducts.length > 0) { %>
+    <% relatedProducts.forEach(product => { %>
+        <% const standardSizes = ['8', '8.5', '9', '9.5', '10', '10.5', '11', '12']; %>
+        <div class="modal fade quick-add-modal" id="productModal-<%= product.sku %>" tabindex="-1" aria-labelledby="productModalLabel-<%= product.sku %>" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <% if (product.brand.toLowerCase() === 'adidas') { %>
+                            <img src="https://upload.wikimedia.org/wikipedia/commons/2/20/Adidas_Logo.svg" alt="Adidas" class="brand-logo">
+                        <% } else if (product.brand.toLowerCase() === 'jordan') { %>
+                             <img src="https://upload.wikimedia.org/wikipedia/en/thumb/3/37/Jumpman_logo.svg/1200px-Jumpman_logo.svg.png" alt="Jordan" class="brand-logo">
+                        <% } else if (product.brand.toLowerCase() === 'new balance') { %>
+                             <img src="https://logos-world.net/wp-content/uploads/2020/09/New-Balance-Emblem-700x394.png" alt="New Balance" class="brand-logo">
+                        <% } else { %>
+                            <img src="https://upload.wikimedia.org/wikipedia/commons/a/a6/Logo_NIKE.svg" alt="Nike" class="brand-logo">
+                        <% } %>
+                        <i class="bi bi-x-lg action-icon" data-bs-dismiss="modal" aria-label="Close"></i>
+                    </div>
+                    <div class="modal-body">
+                        <div class="product-image-wrapper">
+                            <img src="<%= product.thumbnailUrl %>" alt="<%= product.name %>" class="product-image">
+                        </div>
+                        <div class="product-details-wrapper">
+                            <div class="product-info">
+                                <h2><%= product.name %></h2>
+                                <p class="sku">SKU: <%= product.sku %></p>
+                                <div class="price-and-rating">
+                                    <div class="price mb-0 d-flex flex-wrap align-items-baseline">
+                                        <% if (product.onSale) { %>
+                                            <span class="fw-bold text-dark me-2"><%= locationData.symbol %><%= product.convertedSalePrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></span>
+                                            <del class="text-body-secondary me-2"><%= locationData.symbol %><%= product.convertedPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></del>
+                                            <span class="text-success fw-bold"><%= product.discountPercentage %>% OFF</span>
+                                        <% } else { %>
+                                            <span class="fw-bold text-dark"><%= locationData.symbol %><%= product.convertedPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></span>
+                                        <% } %>
+                                    </div>
+                                    <div class="rating">
+                                        <% 
+                                            const averageRating = product.averageRating || 0; 
+                                            const fullStars = Math.floor(averageRating);
+                                            const halfStar = averageRating % 1 >= 0.5 ? 1 : 0;
+                                            const emptyStars = 5 - fullStars - halfStar;
+                                        %>
+                                        <% if (averageRating > 0) { %>
+                                            <% for(let i = 0; i < fullStars; i++) { %><i class="bi bi-star-fill"></i><% } %>
+                                            <% if (halfStar) { %><i class="bi bi-star-half"></i><% } %>
+                                            <% for(let i = 0; i < emptyStars; i++) { %><i class="bi bi-star"></i><% } %>
+                                        <% } else { %>
+                                            <small class="text-body-secondary">No reviews</small>
+                                        <% } %>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <form action="/cart/add" method="POST" id="form-add-<%= product.sku %>" class="mt-3">
+                                <input type="hidden" name="productId" value="<%= product._id %>">
+                                <input type="hidden" name="sku" value="<%= product.sku %>">
+                                <div>
+                                    <div class="size-selection-header">
+                                        <i class="bi bi-rulers"></i>
+                                        <span>Select Size</span>
+                                    </div>
+                                    <div class="size-selector">
+                                        <% standardSizes.forEach(size => { %>
+                                            <% 
+                                                const safeSizeKey = size.replace('.', '_');
+                                                const isSizeAvailable = product.stock && product.stock[safeSizeKey] > 0;
+                                            %>
+                                            <input type="radio" class="btn-check" name="size" id="modal-size-<%= product.sku %>-<%= size %>" value="<%= size %>" autocomplete="off" required <%= !isSizeAvailable ? 'disabled' : '' %>>
+                                            <label class="btn btn-outline-secondary <%= !isSizeAvailable ? 'disabled' : '' %>" for="modal-size-<%= product.sku %>-<%= size %>"><%= size %></label>
+                                        <% }) %>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="submit" form="form-add-<%= product.sku %>" class="btn btn-primary btn-lg w-100 add-to-cart-btn">Add to Cart</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    <% }) %>
+<% } %>

@@ -1,0 +1,139 @@
+<div class="container my-5">
+    <div class="text-center mb-5">
+        <h1 class="display-4 fw-bold">Support Center</h1>
+        <p class="lead text-body-secondary">We're here to help. Find answers to common questions or create a new support ticket.</p>
+    </div>
+
+    <% if (typeof error !== 'undefined' && error) { %>
+        <div class="alert alert-danger text-center col-lg-8 mx-auto" role="alert">
+            <%= error %>
+        </div>
+    <% } %>
+    <% if (typeof success !== 'undefined' && success) { %>
+        <div class="alert alert-success text-center col-lg-8 mx-auto" role="alert">
+            <%= success %>
+        </div>
+    <% } %>
+
+    <div class="row g-4">
+        <div class="col-lg-8">
+            <div class="card mb-4">
+                <div class="card-header d-flex align-items-center bg-transparent border-0 pt-3">
+                    <i class="bi bi-question-circle-fill fs-4 me-2 text-dark"></i>
+                    <h4 class="mb-0 fw-bold">Frequently Asked Questions</h4>
+                </div>
+                <div class="card-body">
+                     <div class="accordion accordion-flush" id="faqAccordion">
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="false" aria-controls="collapseOne">
+                                    How can I track my order?
+                                </button>
+                            </h2>
+                            <div id="collapseOne" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                                <div class="accordion-body">
+                                    You can track your order status by visiting our <a href="/support/order-status">Order Status</a> page and entering your Order ID and email address. If you have an account, you can also view your full order history in your dashboard.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
+                                    What is your return policy?
+                                </button>
+                            </h2>
+                            <div id="collapseTwo" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                                <div class="accordion-body">
+                                   We have a 30-day return policy. To be eligible for a return, your item must be in the same condition that you received it: unworn, with tags, and in its original packaging. Please visit our <a href="/support/returns">Returns Page</a> for more details on how to start a return.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                 <div class="card-header d-flex align-items-center bg-transparent border-0 pt-3">
+                    <i class="bi bi-pencil-square fs-4 me-2 text-dark"></i>
+                    <h4 class="mb-0 fw-bold">Create a New Ticket</h4>
+                </div>
+                <div class="card-body">
+                    <p class="text-body-secondary">Couldn't find an answer? Our team will get back to you shortly.</p>
+                    <form action="/support/contact" method="POST" class="mt-3">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="name" class="form-label">Full Name</label>
+                                <input type="text" class="form-control" id="name" name="name" value="<%= currentUser ? currentUser.firstName + ' ' + currentUser.lastName : '' %>" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="create-email" class="form-label">Email Address</label>
+                                <input type="email" class="form-control" id="create-email" name="email" value="<%= currentUser ? currentUser.email : '' %>" required>
+                            </div>
+                            <div class="col-12">
+                                <label for="subject" class="form-label">Subject</label>
+                                <select class="form-select" id="subject" name="subject" required>
+                                    <option value="Order Inquiry">Order Inquiry</option>
+                                    <option value="Shipping & Delivery">Shipping & Delivery</option>
+                                    <option value="Return Request">Return Request</option>
+                                    <option value="Technical Issue">Technical Issue</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+                            <div class="col-12">
+                                <label for="message" class="form-label">How can we help?</label>
+                                <textarea class="form-control" id="message" name="message" rows="4" required></textarea>
+                            </div>
+                            <div class="col-12">
+                                <button type="submit" class="btn btn-primary">Submit Ticket</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="support-sidebar-card mb-4">
+                <h5 class="fw-bold mb-3">Find an Existing Ticket</h5>
+                <p class="text-body-secondary small mb-3">Check the status of a previous request.</p>
+                <form action="/support/tickets/find" method="POST">
+                    <div class="mb-3">
+                        <label for="ticketId" class="form-label">Ticket ID</label>
+                        <input type="text" class="form-control" id="ticketId" name="ticketId" placeholder="e.g., A1B2C3D" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="find-email" class="form-label">Email Address</label>
+                        <input type="email" class="form-control" id="find-email" name="email" placeholder="Email used for the ticket" required>
+                    </div>
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-outline-secondary">Find Ticket</button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="support-sidebar-card">
+                <h5 class="fw-bold mb-3">Quick Links</h5>
+                <ul class="list-unstyled d-flex flex-column gap-2">
+                    <li>
+                        <a href="/support/order-status" class="text-dark fw-medium d-flex align-items-center gap-2">
+                            <i class="bi bi-box-seam"></i>
+                            <span>Track Your Order</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/support/shipping" class="text-dark fw-medium d-flex align-items-center gap-2">
+                            <i class="bi bi-truck"></i>
+                            <span>Shipping Policy</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/support/returns" class="text-dark fw-medium d-flex align-items-center gap-2">
+                            <i class="bi bi-arrow-counterclockwise"></i>
+                            <span>Return Policy</span>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,175 @@
+<div class="container my-5">
+    <div class="row g-4">
+        <div class="col-lg-8">
+            <div class="chat-container">
+                <div class="chat-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h1 class="mb-0">Ticket #<%= ticket.ticketId %></h1>
+                            <p class="text-body-secondary small mb-0">Regarding: <%= ticket.subject %></p>
+                        </div>
+                        <div>
+                            <% if (ticket.status === 'Open') { %>
+                                <span class="badge bg-primary-subtle text-primary-emphasis rounded-pill"><%= ticket.status %></span>
+                            <% } else if (ticket.status === 'Answered') { %>
+                                <span class="badge bg-success-subtle text-success-emphasis rounded-pill"><%= ticket.status %></span>
+                            <% } else { %>
+                                <span class="badge bg-secondary-subtle text-secondary-emphasis rounded-pill"><%= ticket.status %></span>
+                            <% } %>
+                        </div>
+                    </div>
+                </div>
+                <div class="chat-messages" id="chat-messages">
+                    <% ticket.messages.forEach(message => { %>
+                        <% if (message.sender === 'user') { %>
+                            <div class="chat-message user-message">
+                                <div class="message-bubble">
+                                    <%- message.message.replace(/\n/g, '<br>') %>
+                                </div>
+                                <div class="message-meta">
+                                    <%= message.name %> • <%= new Date(message.timestamp).toLocaleString() %>
+                                </div>
+                            </div>
+                        <% } else { %>
+                            <div class="chat-message support-message">
+                                <div class="message-bubble">
+                                    <%- message.message.replace(/\n/g, '<br>') %>
+                                </div>
+                                <div class="message-meta">
+                                    <%= message.adminName || 'Support Team' %> • <%= new Date(message.timestamp).toLocaleString() %>
+                                </div>
+                            </div>
+                        <% } %>
+                    <% }) %>
+                </div>
+
+                <% if (ticket.status !== 'Closed') { %>
+                    <div class="chat-reply-form">
+                        <form id="reply-form">
+                            <input type="hidden" name="userEmail" value="<%= ticket.userEmail %>">
+                            <div class="input-group">
+                                <textarea class="form-control" id="message-input" placeholder="Type your reply..." rows="1" required></textarea>
+                                <button type="submit" class="btn btn-primary btn-send" aria-label="Send Message">
+                                    <i class="bi bi-arrow-up"></i>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                <% } else { %>
+                    <div class="chat-reply-form text-center">
+                        <p class="text-body-secondary mb-0">This ticket has been closed. To reopen it, please <a href="/support/contact">create a new ticket</a> and reference ticket ID #<%= ticket.ticketId %>.</p>
+                    </div>
+                <% } %>
+            </div>
+        </div>
+        <div class="col-lg-4">
+             <div class="support-sidebar-card">
+                <h5 class="fw-bold mb-3">Quick Links</h5>
+                <ul class="list-unstyled d-flex flex-column gap-2">
+                    <li>
+                        <a href="/support/order-status" class="text-dark fw-medium d-flex align-items-center gap-2">
+                            <i class="bi bi-box-seam"></i>
+                            <span>Track Your Order</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/support/shipping" class="text-dark fw-medium d-flex align-items-center gap-2">
+                            <i class="bi bi-truck"></i>
+                            <span>Shipping Policy</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/support/returns" class="text-dark fw-medium d-flex align-items-center gap-2">
+                            <i class="bi bi-arrow-counterclockwise"></i>
+                            <span>Return Policy</span>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<script src="/socket.io/socket.io.js"></script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const socket = io();
+        const chatMessages = document.getElementById('chat-messages');
+        const replyForm = document.getElementById('reply-form');
+        const messageInput = document.getElementById('message-input');
+        const ticketId = '<%= ticket.ticketId %>';
+        const userName = '<%= ticket.messages[0].name %>';
+
+        // 1. Join the specific ticket room
+        socket.emit('joinTicket', ticketId);
+
+        // 2. Listen for new messages from the server
+        socket.on('newMessage', (message) => {
+            appendMessage(message);
+        });
+
+        // 3. Handle form submission to send a message
+        if (replyForm) {
+            replyForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                sendMessage();
+            });
+
+            messageInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage();
+                }
+            });
+        }
+
+        function sendMessage() {
+            const messageText = messageInput.value.trim();
+            if (messageText) {
+                const messageData = {
+                    ticketId: ticketId,
+                    message: messageText,
+                    sender: 'user',
+                    name: userName
+                };
+                socket.emit('chatMessage', messageData);
+                messageInput.value = '';
+                messageInput.style.height = 'auto'; // Reset textarea height
+            }
+        }
+
+        function appendMessage(message) {
+            const messageElement = document.createElement('div');
+            const isUserMessage = message.sender === 'user';
+            
+            messageElement.classList.add('chat-message', isUserMessage ? 'user-message' : 'support-message');
+            
+            const bubble = document.createElement('div');
+            bubble.classList.add('message-bubble');
+            bubble.innerHTML = message.message.replace(/\n/g, '<br>');
+
+            const meta = document.createElement('div');
+            meta.classList.add('message-meta');
+            const senderName = isUserMessage ? message.name : (message.adminName || 'Support Team');
+            meta.textContent = `${senderName} • ${new Date(message.timestamp).toLocaleString()}`;
+
+            messageElement.appendChild(bubble);
+            messageElement.appendChild(meta);
+            chatMessages.appendChild(messageElement);
+            chatMessages.scrollTop = chatMessages.scrollHeight; // Auto-scroll to bottom
+        }
+
+        // Initial scroll to bottom
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+
+        // Auto-expand textarea
+        if(messageInput) {
+            messageInput.addEventListener('input', function () {
+                this.style.height = 'auto';
+                this.style.height = (this.scrollHeight) + 'px';
+            });
+        }
+    });
+</script>
