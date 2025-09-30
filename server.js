@@ -163,6 +163,12 @@ async function main() {
         app.use('/account', accountRoute);
         app.use('/support', supportRoute); 
 
+        
+        app.use((req, res) => {
+        res.status(404).render("404", { title: "Page Not Found" });
+        });
+
+
     
         server.listen(port, () => {
             console.log(`Server running on port ${port}`);
@@ -172,7 +178,6 @@ async function main() {
         process.exit(1);
     }
 }
-
 
 
 main();

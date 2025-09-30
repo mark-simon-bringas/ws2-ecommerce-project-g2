@@ -544,7 +544,7 @@ router.get('/stock/:id', isAdmin, async (req, res) => {
 
         const product = await productsCollection.findOne({ _id: new ObjectId(productId) });
         if (!product) {
-            return res.status(404).send("Product not found.");
+            return res.status(404).render('404', { title: "Product Not Found" });
         }
 
         res.render('account/edit-stock', {
@@ -628,7 +628,7 @@ router.get('/:sku/review', isLoggedIn, async (req, res) => {
 
         const product = await productsCollection.findOne({ sku: sku });
         if (!product) {
-            return res.status(404).send("Product not found.");
+            return res.status(404).render('404', { title: "Product Not Found" });
         }
 
         const hasPurchased = await ordersCollection.findOne({
@@ -703,7 +703,7 @@ router.get('/:sku', async (req, res) => {
         let product = await productsCollection.findOne({ sku: sku });
 
         if (!product) {
-            return res.status(404).send("Product not found");
+            return res.status(404).render('404', { title: "Product Not Found" });
         }
         
         let relatedProducts = [];
