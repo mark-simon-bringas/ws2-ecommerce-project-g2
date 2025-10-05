@@ -10,14 +10,14 @@ const geoip = require('geoip-lite');
 const { getCountryData, countryData } = require('./utils/currencyMap');
 require('dotenv').config();
 
-// --- ADDED: HTTP and Socket.IO ---
+
 const http = require('http');
 const { Server } = require("socket.io");
 
 const app = express();
 const port = process.env.PORT || 5000;
 
-// --- ADDED: Create HTTP server for Socket.IO ---
+
 const server = http.createServer(app);
 const io = new Server(server);
 
@@ -84,7 +84,7 @@ const client = new MongoClient(uri);
 app.locals.client = client;
 app.locals.dbName = process.env.DB_NAME || "ecommerceDB";
 
-// --- Socket.IO Connection Logic ---
+
 io.on('connection', (socket) => {
     console.log('A user connected to the chat server.');
 
@@ -105,11 +105,9 @@ io.on('connection', (socket) => {
                 message: data.message,
                 timestamp: new Date()
             };
-            
-            // Determine the new status based on who sent the message
+           
             const newStatus = data.sender === 'admin' ? 'Answered' : 'Open';
 
-            // Save the new message and update the status
             await ticketsCollection.updateOne(
                 { ticketId: data.ticketId },
                 {
@@ -118,7 +116,6 @@ io.on('connection', (socket) => {
                 }
             );
 
-            // Broadcast the new message to everyone in the ticket room
             io.to(data.ticketId).emit('newMessage', newMessage);
 
         } catch (err) {
@@ -162,12 +159,20 @@ async function main() {
         app.use('/checkout', checkoutRoute);
         app.use('/account', accountRoute);
         app.use('/support', supportRoute); 
-
         
+        // 404 handler for unmatched routes
         app.use((req, res) => {
-        res.status(404).render("404", { title: "Page Not Found" });
+            res.status(404).render("404", { title: "Page Not Found" });
         });
 
+        // Global error handler for 500 errors
+        app.use((err, req, res, next) => {
+           //pang de-bug
+            console.error(err.stack);
+            
+            // Render the 500 error page 
+            res.status(500).render('500', { title: 'Server Error' });
+        });
 
     
         server.listen(port, () => {
