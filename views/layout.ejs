@@ -371,3 +371,22 @@
     <script src="/js/main.js"></script>
 </body>
 </html>
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+<script>
+    function onTurnstileSuccess(token) {
+    const widget = document.getElementById('turnstile-widget');
+
+    // Exit if the widget element isn't found
+    if (!widget) {
+        return;
+    }
+
+    // 1. Immediately apply the success style for instant feedback
+    widget.classList.add('turnstile-success');
+
+    // 2. Set a timer to hide the widget after 3 seconds
+    setTimeout(() => {
+        widget.classList.add('turnstile-hidden');
+    }, 3000);
+}
+</script>

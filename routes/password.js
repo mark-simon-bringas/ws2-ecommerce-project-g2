@@ -1,4 +1,5 @@
 const express = require('express');
+const verifyTurnstile = require('../utils/turnstileVerify');
 const router = express.Router();
 const { Resend } = require('resend');
 const resend = new Resend(process.env.RESEND_API_KEY);
@@ -77,6 +78,7 @@ router.get('/reset/:token', async (req, res) => {
         res.render('reset-password', { 
             title: "Reset Password", 
             token: req.params.token,
+            turnstileSiteKey: process.env.TURNSTILE_SITEKEY,
             page: 'auth'
         });
 
@@ -94,10 +96,23 @@ router.post('/reset/:token', async (req, res) => {
         const db = req.app.locals.client.db(req.app.locals.dbName);
         const usersCollection = db.collection('users');
 
+        const token = req.body['cf-turnstile-response'];
+        const ip = req.ip;
+        const result = await verifyTurnstile(token, ip);
+
         const user = await usersCollection.findOne({
             resetToken: req.params.token,
             resetExpiry: { $gt: new Date() }
         });
+
+        if (!result.success) {
+         return res.render('reset-password', {
+            title: 'Reset Password',
+            token: req.params.token,
+            error: 'Human verification failed. Please try again.',
+            turnstileSiteKey: process.env.TURNSTILE_SITEKEY
+            });
+        }
 
         if (!user) {
             return res.send("Password reset link is invalid or has expired.");

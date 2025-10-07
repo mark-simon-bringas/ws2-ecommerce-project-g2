@@ -42,79 +42,24 @@
                 <input type="password" id="confirmPassword" name="confirmPassword" class="form-control form-control-lg" required>
             </div>
 
-            <div class="d-grid mb-3">
+            <div class="d-flex justify-content-center my-3">
+                <div 
+                    id="turnstile-widget" 
+                    class="cf-turnstile" 
+                    data-sitekey="<%= turnstileSiteKey %>" 
+                    data-theme="dark"
+                    data-callback="onTurnstileSuccess">
+                </div>
+            </div>
+
+            <div class="d-grid">
                 <button type="submit" class="btn btn-primary btn-lg">Create Account</button>
             </div>
         </form>
 
         <p class="text-center text-body-secondary mt-4">
-            Already have an account? <a href="/users/login">Sign in</a>
+            Already have an account?
+            <a href="/users/login">Sign in</a>
         </p>
     </div>
 </div>
-
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const passwordInput = document.getElementById('password');
-        const confirmPasswordInput = document.getElementById('confirmPassword');
-        const createAccountButton = document.querySelector('.btn-primary');
-        const form = document.querySelector('form');
-
-        const checks = {
-            length: { el: document.getElementById('length-check'), regex: /.{8,}/ },
-            upper: { el: document.getElementById('upper-check'), regex: /[A-Z]/ },
-            lower: { el: document.getElementById('lower-check'), regex: /[a-z]/ },
-            number: { el: document.getElementById('number-check'), regex: /[0-9]/ },
-            special: { el: document.getElementById('special-check'), regex: /[!@#$%^&*()_\+\-=\[\]{};':"\\|,.<>\/?`~]/ }
-        };
-
-        const validatePasswordCriteria = () => {
-            const password = passwordInput.value;
-            let allCriteriaMet = true;
-            for (const key in checks) {
-                const check = checks[key];
-                const icon = check.el.querySelector('.iconify');
-                
-                if (check.regex.test(password)) {
-                    check.el.classList.remove('invalid');
-                    check.el.classList.add('valid');
-                    icon.dataset.icon = 'material-symbols:check-circle-outline-rounded';
-                } else {
-                    check.el.classList.remove('valid');
-                    check.el.classList.add('invalid');
-                    icon.dataset.icon = 'material-symbols:cancel-outline-rounded';
-                    allCriteriaMet = false;
-                }
-            }
-            return allCriteriaMet;
-        };
-
-        const validatePasswordsMatch = () => {
-            const password = passwordInput.value;
-            const confirmPassword = confirmPasswordInput.value;
-            return password === confirmPassword && password.length > 0;
-        };
-
-        const updateButtonState = () => {
-            const passwordCriteriaMet = validatePasswordCriteria();
-            const passwordsMatch = validatePasswordsMatch();
-            
-            if (passwordCriteriaMet && passwordsMatch) {
-                createAccountButton.removeAttribute('disabled');
-            } else {
-                createAccountButton.setAttribute('disabled', 'disabled');
-            }
-        };
-
-        passwordInput.addEventListener('input', updateButtonState);
-        confirmPasswordInput.addEventListener('input', updateButtonState);
-   
-        updateButtonState();
-
-        form.addEventListener('submit', function(event) {
-            if (createAccountButton.hasAttribute('disabled')) {
-                event.preventDefault();
-            }
-        });
-    });
-</script>

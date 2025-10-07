@@ -5,19 +5,40 @@ const { title } = require('process');
 const saltRounds = 12;
 const { Resend } = require('resend');
 const resend = new Resend(process.env.RESEND_API_KEY);
+const verifyTurnstile = require('../utils/turnstileVerify'); // Import the helper function
 
 // Show registration form
 router.get('/register', (req, res) => {
     res.render('register', { 
         title: "Register",
         errors: [],
-        page: 'auth'
+        page: 'auth',
+        turnstileSiteKey: process.env.TURNSTILE_SITEKEY // Pass site key to the view
     });
 });
 
 // Handle registration form submission
 router.post('/register', async (req, res) => {
     try {
+        // --- Turnstile Verification ---
+        const token = req.body['cf-turnstile-response']; 
+        const ip = req.ip;
+        const result = await verifyTurnstile(token, ip);
+
+        if (!result.success) { 
+            // If verification fails, re-render the form with an error.
+            return res.status(400).render('register', { 
+                title: "Register",
+                errors: [{ msg: 'Human verification failed. Please try again.' }],
+                page: 'auth',
+                firstName: req.body.firstName,
+                lastName: req.body.lastName,
+                email: req.body.email,
+                turnstileSiteKey: process.env.TURNSTILE_SITEKEY
+            });
+        }
+        // --- End Verification ---
+
         const { v4: uuidv4 } = await import('uuid');
         const db = req.app.locals.client.db(req.app.locals.dbName);
         const usersCollection = db.collection('users');
@@ -30,7 +51,8 @@ router.post('/register', async (req, res) => {
                 page: 'auth',
                 firstName: req.body.firstName,
                 lastName: req.body.lastName,
-                email: req.body.email
+                email: req.body.email,
+                turnstileSiteKey: process.env.TURNSTILE_SITEKEY
             });
         }
 
@@ -52,13 +74,14 @@ router.post('/register', async (req, res) => {
                 page: 'auth',
                 firstName: req.body.firstName,
                 lastName: req.body.lastName,
-                email: req.body.email
+                email: req.body.email,
+                turnstileSiteKey: process.env.TURNSTILE_SITEKEY
             });
         }
 
         const hashedPassword = await bcrypt.hash(userPassword, saltRounds);
         const currentDate = new Date();
-        const token = uuidv4();
+        const verificationToken = uuidv4();
 
         const newUser = {
             userId: uuidv4(),
@@ -69,7 +92,7 @@ router.post('/register', async (req, res) => {
             role: 'customer',
             accountStatus: 'active',
             isEmailVerified: false,
-            verificationToken: token,
+            verificationToken: verificationToken,
             tokenExpiry: new Date(Date.now() + 3600000),
             wishlist: [],
             createdAt: currentDate,
@@ -79,7 +102,7 @@ router.post('/register', async (req, res) => {
         await usersCollection.insertOne(newUser);
         
         const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
-        const verificationUrl = `${baseUrl}/users/verify/${token}`;
+        const verificationUrl = `${baseUrl}/users/verify/${verificationToken}`;
 
         await resend.emails.send({
             from: process.env.RESEND_FROM_EMAIL,
@@ -107,13 +130,30 @@ router.get('/login', (req, res) => {
         message: message,
         error: req.query.error,
         redirect: req.query.redirect, 
-        page: 'auth' 
+        page: 'auth',
+        turnstileSiteKey: process.env.TURNSTILE_SITEKEY // Pass site key to the view
     });
 });
 
 // Handle login form submission
 router.post('/login', async (req, res) => {
     try {
+        // --- Turnstile Verification ---
+        const token = req.body['cf-turnstile-response']; 
+        const ip = req.ip;
+        const result = await verifyTurnstile(token, ip); 
+
+        if (!result.success) { 
+             return res.status(401).render('login', { 
+                title: "Login",
+                error: 'Human verification failed. Please try again.',
+                redirect: req.body.redirect,
+                page: 'auth',
+                turnstileSiteKey: process.env.TURNSTILE_SITEKEY
+            });
+        }
+        // --- End Verification ---
+        
         const db = req.app.locals.client.db(req.app.locals.dbName);
         const usersCollection = db.collection('users');
 
@@ -126,7 +166,8 @@ router.post('/login', async (req, res) => {
                 title: "Login",
                 error: 'Invalid email or password.',
                 redirect: req.body.redirect,
-                page: 'auth'
+                page: 'auth',
+                turnstileSiteKey: process.env.TURNSTILE_SITEKEY
             });
         }
         
@@ -135,7 +176,8 @@ router.post('/login', async (req, res) => {
                 title: "Login",
                 error: 'Please verify your email before logging in.',
                 redirect: req.body.redirect,
-                page: 'auth'
+                page: 'auth',
+                turnstileSiteKey: process.env.TURNSTILE_SITEKEY
             });
         }
 
@@ -144,7 +186,8 @@ router.post('/login', async (req, res) => {
                 title: "Login",
                 error: 'This account is not active.',
                 redirect: req.body.redirect,
-                page: 'auth'
+                page: 'auth',
+                turnstileSiteKey: process.env.TURNSTILE_SITEKEY
             });
         }
 

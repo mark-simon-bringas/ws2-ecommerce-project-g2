@@ -28,17 +28,28 @@
               <input type="password" class="form-control form-control-lg" id="password" name="password" required>
             </div>
             
-            <div class="d-grid mb-3">
+            <div class="d-flex justify-content-center my-3">
+                <div 
+                    id="turnstile-widget" 
+                    class="cf-turnstile" 
+                    data-sitekey="<%= turnstileSiteKey %>" 
+                    data-theme="dark"
+                    data-callback="onTurnstileSuccess">
+                </div>
+            </div>
+            
+            <div class="d-grid">
                 <button type="submit" class="btn btn-primary btn-lg">Sign In</button>
             </div>
 
-            <div class="text-center">
+            <div class="text-center mt-3">
                 <a href="/password/forgot">Forgot Password?</a>
             </div>
         </form>
 
         <p class="text-center text-body-secondary mt-5">
-            Don't have an account? <a href="/users/register">Register here</a>
+            Don't have an account?
+            <a href="/users/register">Register here</a>
         </p>
     </div>
 </div>

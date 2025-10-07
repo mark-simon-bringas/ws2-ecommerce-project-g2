@@ -108,6 +108,31 @@
     margin-right: auto;
 }
 
+/* Base style for the widget */
+.cf-turnstile {
+    /* Add border-color and box-shadow to the transition */
+    transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out, height 0.5s ease-in-out, margin 0.5s ease-in-out, border-color 0.3s ease, box-shadow 0.3s ease;
+    
+    /* Add a transparent border to prevent the page from jumping when the colored border appears */
+    border: 2px solid transparent;
+    border-radius: 5px; /* Optional: Rounds the corners of the new border */
+}
+
+/* NEW: The immediate success state */
+.turnstile-success {
+    border-color: #28a745; /* A nice success green */
+    box-shadow: 0 0 8px rgba(40, 167, 69, 0.6); /* Adds the glow effect */
+}
+
+/* The delayed hidden state (no changes here) */
+.turnstile-hidden {
+    opacity: 0;
+    transform: scaleY(0);
+    height: 0 !important;
+    margin: 0 !important;
+    border-color: transparent;
+}
+
 /* --- Responsive adjustments --- */
 @media (max-width: 576px) {
     .auth-container {
