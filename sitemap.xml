@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+
+  <url>
+    <loc>https://www.sneakslab.shop/</loc>
+    <lastmod>2025-10-24T00:00:00+00:00</lastmod>
+    <priority>1.00</priority>
+  </url>
+  <url>
+    <loc>https://www.sneakslab.shop/products</loc>
+    <lastmod>2025-10-24T00:00:00+00:00</lastmod>
+    <priority>0.80</priority>
+  </url>
+
+  <url>
+    <loc>https://www.sneakslab.shop/products?category=men</loc>
+    <lastmod>2025-10-24T00:00:00+00:00</lastmod>
+    <priority>0.70</priority>
+  </url>
+  <url>
+    <loc>https://www.sneakslab.shop/products?category=women</loc>
+    <lastmod>2025-10-24T00:00:00+00:00</lastmod>
+    <priority>0.70</priority>
+  </url>
+  
+  <url>
+    <loc>https://www.sneakslab.shop/products?brand=Nike</loc>
+    <lastmod>2025-10-24T00:00:00+00:00</lastmod>
+    <priority>0.70</priority>
+  </url>
+   <url>
+    <loc>https://www.sneakslab.shop/products?brand=Jordan</loc>
+    <lastmod>2025-10-24T00:00:00+00:00</lastmod>
+    <priority>0.70</priority>
+  </url>
+   <url>
+    <loc>https://www.sneakslab.shop/products?brand=Adidas</loc>
+    <lastmod>2025-10-24T00:00:00+00:00</lastmod>
+    <priority>0.70</priority>
+  </url>
+   <url>
+    <loc>https://www.sneakslab.shop/products?brand=New%20Balance</loc> {/* Note: URL encoding for space */}
+    <lastmod>2025-10-24T00:00:00+00:00</lastmod>
+    <priority>0.70</priority>
+  </url>
+
+  <url>
+    <loc>https://www.sneakslab.shop/about</loc>
+    <lastmod>2025-10-24T00:00:00+00:00</lastmod>
+    <priority>0.50</priority>
+  </url>
+  <url>
+    <loc>https://www.sneakslab.shop/legal</loc>
+    <lastmod>2025-10-24T00:00:00+00:00</lastmod>
+    <priority>0.50</priority>
+  </url>
+
+  <url>
+    <loc>https://www.sneakslab.shop/users/login</loc>
+    <lastmod>2025-10-24T00:00:00+00:00</lastmod>
+    <priority>0.50</priority>
+  </url>
+  <url>
+    <loc>https://www.sneakslab.shop/users/register</loc>
+    <lastmod>2025-10-24T00:00:00+00:00</lastmod>
+    <priority>0.50</priority>
+  </url>
+  <url>
+    <loc>https://www.sneakslab.shop/password/forgot</loc>
+    <lastmod>2025-10-24T00:00:00+00:00</lastmod>
+    <priority>0.50</priority>
+  </url>
+
+  <url>
+    <loc>https://www.sneakslab.shop/support</loc>
+    <lastmod>2025-10-24T00:00:00+00:00</lastmod>
+    <priority>0.50</priority>
+  </url>
+  <url>
+    <loc>https://www.sneakslab.shop/support/contact</loc>
+    <lastmod>2025-10-24T00:00:00+00:00</lastmod>
+    <priority>0.50</priority>
+  </url>
+  <url>
+    <loc>https://www.sneakslab.shop/support/order-status</loc>
+    <lastmod>2025-10-24T00:00:00+00:00</lastmod>
+    <priority>0.50</priority>
+  </url>
+  <url>
+    <loc>https://www.sneakslab.shop/support/shipping</loc>
+    <lastmod>2025-10-24T00:00:00+00:00</lastmod>
+    <priority>0.50</priority>
+  </url>
+  <url>
+    <loc>https://www.sneakslab.shop/support/returns</loc>
+    <lastmod>2025-10-24T00:00:00+00:00</lastmod>
+    <priority>0.50</priority>
+  </url>
+
+</urlset>
