@@ -1,0 +1,13 @@
+# Allow all reputable crawlers by default
+User-agent: *
+Allow: /
+
+# Block access to admin-specific sections
+Disallow: /account/admin/
+
+# Block access to user-specific account settings (optional, but good practice)
+Disallow: /account/settings/
+Disallow: /account/orders/
+Disallow: /account/wishlist/
+
+Sitemap: https://www.sneakslab.shop/sitemap.xml
