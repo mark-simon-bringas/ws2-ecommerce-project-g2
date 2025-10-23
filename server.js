@@ -2,12 +2,13 @@
 
 const express = require('express');
 const bodyParser = require('body-parser');
-const { MongoClient } = require('mongodb');
+const { MongoClient, ObjectId } = require('mongodb'); // Added ObjectId
 const session = require('express-session');
 const path = require('path');
 const ejsLayouts = require('express-ejs-layouts');
 const geoip = require('geoip-lite');
 const { getCountryData, countryData } = require('./utils/currencyMap');
+// REMOVED: const { create } = require('xmlbuilder2'); // Ensure this is removed or commented out
 require('dotenv').config();
 
 
@@ -24,7 +25,7 @@ const io = new Server(server);
 // Middleware
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.json());
-app.use(express.static('public'));
+app.use(express.static('public')); // Serve static files
 
 // -- View Engine Setup --
 app.set('views', path.join(__dirname, 'views'));
@@ -38,77 +39,112 @@ app.use(session({
     saveUninitialized: false,
     cookie: {
         secure: process.env.NODE_ENV === 'production',
-        secure: false,
-        maxAge: 15 * 60 * 1000
+        // secure: false, // Commented out duplicate
+        maxAge: 15 * 60 * 1000 // Session timeout: 15 minutes
     }
 }));
 
+// Middleware to set local variables for views
 app.use(async (req, res, next) => {
     res.locals.currentUser = req.session.user;
     res.locals.cart = req.session.cart;
     res.locals.path = req.originalUrl;
 
-    const ip = req.ip === '::1' || req.ip === '127.0.0.1' ? '122.54.69.1' : req.ip;
+    // Use a default IP for localhost testing, otherwise use the request IP
+    const ip = ['::1', '127.0.0.1', '::ffff:127.0.0.1'].includes(req.ip) ? '122.54.69.1' : req.ip; // Added ::ffff:127.0.0.1 for some Node versions
     const geo = geoip.lookup(ip);
 
-    const countryCode = req.session.country_override || (geo ? geo.country : 'US');
+    // Determine country code from session override or geoip lookup
+    const countryCode = req.session.country_override || (geo ? geo.country : 'US'); // Default to 'US'
 
     res.locals.currentCountryCode = countryCode;
     res.locals.locationData = getCountryData(countryCode);
-    res.locals.countryData = countryData;
+    res.locals.countryData = countryData; // Pass all country data for the dropdown
 
+    // Fetch admin counts only if admin is logged in
     if (req.session.user && req.session.user.role === 'admin') {
         try {
-            const db = req.app.locals.client.db(req.app.locals.dbName);
-            const newOrderCount = await db.collection('orders').countDocuments({ isNew: true });
-            const newTicketCount = await db.collection('support_tickets').countDocuments({ status: 'Open' });
-            res.locals.newOrderCount = newOrderCount;
-            res.locals.newTicketCount = newTicketCount;
+            // Check if MongoDB client is connected before querying
+            if (req.app.locals.client && req.app.locals.client.topology && req.app.locals.client.topology.isConnected()) {
+                const db = req.app.locals.client.db(req.app.locals.dbName);
+                const [newOrderCount, newTicketCount] = await Promise.all([
+                    db.collection('orders').countDocuments({ isNew: true }),
+                    db.collection('support_tickets').countDocuments({ status: 'Open' })
+                ]);
+                res.locals.newOrderCount = newOrderCount;
+                res.locals.newTicketCount = newTicketCount;
+            } else {
+                 console.warn("Admin counts skipped: MongoDB client not connected.");
+                 res.locals.newOrderCount = 0;
+                 res.locals.newTicketCount = 0;
+            }
         } catch (err) {
             console.error("Error fetching admin counts:", err);
             res.locals.newOrderCount = 0;
             res.locals.newTicketCount = 0;
         }
     } else {
+        // Ensure these locals are always defined, even if not admin
         res.locals.newOrderCount = 0;
         res.locals.newTicketCount = 0;
     }
 
-    next();
+    next(); // Proceed to the next middleware or route
 });
 
 // MongoDB Setup
 const uri = process.env.MONGO_URI;
+if (!uri) {
+    console.error("FATAL ERROR: MONGO_URI environment variable is not set.");
+    process.exit(1);
+}
 const client = new MongoClient(uri);
 
+// Store client and dbName globally for access in routes
 app.locals.client = client;
 app.locals.dbName = process.env.DB_NAME || "ecommerceDB";
 
 
+// Socket.IO Setup for real-time chat
 io.on('connection', (socket) => {
-    console.log('A user connected to the chat server.');
+    console.log(`Socket connected: ${socket.id}`);
 
+    // Join a room specific to a ticket
     socket.on('joinTicket', (ticketId) => {
-        socket.join(ticketId);
-        console.log(`User joined ticket room: ${ticketId}`);
+        if (ticketId) {
+            socket.join(ticketId);
+            console.log(`Socket ${socket.id} joined ticket room: ${ticketId}`);
+        } else {
+            console.warn(`Socket ${socket.id} attempted to join an undefined ticket room.`);
+        }
     });
 
+    // Handle incoming chat messages
     socket.on('chatMessage', async (data) => {
+        // Basic validation
+        if (!data || !data.ticketId || !data.message || !data.sender) {
+            console.error('Invalid chat message data received:', data);
+            socket.emit('chatError', 'Invalid message data.'); // Send error back to sender
+            return;
+        }
+
         try {
             const db = app.locals.client.db(app.locals.dbName);
             const ticketsCollection = db.collection('support_tickets');
-            
+
             const newMessage = {
-                sender: data.sender,
-                name: data.name,
-                adminName: data.adminName || null,
-                message: data.message,
+                sender: data.sender, // Should be 'user' or 'admin'
+                name: data.name || 'User', // User's name from ticket or default
+                adminName: data.adminName || null, // Admin's name if sender is admin
+                message: data.message.trim(), // Trim whitespace
                 timestamp: new Date()
             };
-           
+
+            // Determine the new status based on who sent the message
             const newStatus = data.sender === 'admin' ? 'Answered' : 'Open';
 
-            await ticketsCollection.updateOne(
+            // Update the ticket in the database
+            const updateResult = await ticketsCollection.updateOne(
                 { ticketId: data.ticketId },
                 {
                     $push: { messages: newMessage },
@@ -116,24 +152,152 @@ io.on('connection', (socket) => {
                 }
             );
 
-            io.to(data.ticketId).emit('newMessage', newMessage);
+            if (updateResult.modifiedCount === 1) {
+                // Emit the new message ONLY to clients in the specific ticket room
+                io.to(data.ticketId).emit('newMessage', newMessage);
+                 console.log(`Message in room ${data.ticketId} by ${newMessage.sender}: ${newMessage.message}`);
+            } else {
+                 console.error(`Failed to update database for ticket ${data.ticketId}. Message not broadcasted.`);
+                 socket.emit('chatError', 'Could not save message to database.');
+            }
 
         } catch (err) {
-            console.error('Error handling chat message:', err);
+            console.error('Database error handling chat message:', err);
+            socket.emit('chatError', 'Server error processing message.');
         }
     });
 
-    socket.on('disconnect', () => {
-        console.log('User disconnected from the chat server.');
+    // Handle disconnection
+    socket.on('disconnect', (reason) => {
+        console.log(`Socket disconnected: ${socket.id}, Reason: ${reason}`);
     });
 });
 
 
+// =================================== //
+// ===== DYNAMIC SITEMAP ROUTE ===== //
+// =================================== //
+// Placed before general routes
+app.get('/sitemap.xml', async (req, res, next) => { // Added next for error handling
+    console.log(`Received request for /sitemap.xml at ${new Date().toISOString()}`); // Log request
+    try {
+        // *** Use dynamic import HERE ***
+        const { create } = await import('xmlbuilder2');
+        console.log('xmlbuilder2 imported successfully in sitemap route.'); // Log import success
+
+        // Check DB connection
+        if (!req.app.locals.client || !req.app.locals.client.topology || !req.app.locals.client.topology.isConnected()) {
+             console.error("Sitemap generation failed: Database not connected.");
+             throw new Error("Sitemap generation failed: Database not connected.");
+        }
+
+        const db = req.app.locals.client.db(req.app.locals.dbName);
+        const productsCollection = db.collection('products');
+        // *** Use your LIVE domain here from environment variable ***
+        const baseUrl = process.env.BASE_URL_LIVE || 'https://www.sneakslab.shop'; // Fallback just in case
+        console.log(`Sitemap using base URL: ${baseUrl}`); // Log base URL
+
+        // Start XML structure
+        const root = create({ version: '1.0', encoding: 'UTF-8' })
+            .ele('urlset', { xmlns: 'http://www.sitemaps.org/schemas/sitemap/0.9' });
+
+        // Static Pages Definition
+        const staticPages = [
+            { loc: '/', priority: '1.00' },
+            { loc: '/products', priority: '0.90' },
+            { loc: '/about', priority: '0.50' },
+            { loc: '/legal', priority: '0.50' },
+            { loc: '/users/login', priority: '0.50' },
+            { loc: '/users/register', priority: '0.50' },
+            { loc: '/password/forgot', priority: '0.50' },
+            { loc: '/support', priority: '0.50' },
+            { loc: '/support/contact', priority: '0.50' },
+            { loc: '/support/order-status', priority: '0.50' },
+            { loc: '/support/shipping', priority: '0.50' },
+            { loc: '/support/returns', priority: '0.50' },
+            // Category/Brand Pages
+            { loc: '/products?category=men', priority: '0.80' },
+            { loc: '/products?category=women', priority: '0.80' },
+            { loc: '/products?brand=Nike', priority: '0.85' },
+            { loc: '/products?brand=Jordan', priority: '0.85' },
+            { loc: '/products?brand=Adidas', priority: '0.85' },
+            { loc: '/products?brand=New%20Balance', priority: '0.85' }, // URL Encoded space
+            { loc: '/products?new=true', priority: '0.80' },
+        ];
+        const today = new Date().toISOString().split('T')[0]; // Format as YYYY-MM-DD
+
+        // Add Static Pages to XML
+        console.log(`Adding ${staticPages.length} static pages to sitemap...`); // Log count
+        staticPages.forEach(page => {
+             // Ensure URL encoding for query parameters
+             const urlPath = page.loc.includes('?') ? page.loc.split('?')[0] + '?' + encodeURI(page.loc.split('?')[1]) : page.loc;
+            root.ele('url')
+                .ele('loc').txt(baseUrl + urlPath).up()
+                .ele('lastmod').txt(today).up() // Use simplified date for static pages
+                .ele('priority').txt(page.priority).up()
+            .up();
+        });
+        console.log('Static pages added.'); // Log completion
+
+        // Add Dynamic Product Pages to XML
+        console.log('Fetching dynamic product pages...'); // Log fetching start
+        const productsCursor = productsCollection.find({}, { projection: { sku: 1, updatedAt: 1, importedAt: 1 } });
+        let productCount = 0;
+
+        // Process products using cursor iteration
+        for await (const product of productsCursor) {
+             productCount++;
+             if (!product.sku) {
+                console.warn(`Skipping product ID ${product._id} - missing SKU.`);
+                continue; // Skip products without an SKU
+             }
+             // Prefer updatedAt, fallback to importedAt, fallback to today's date string
+             const lastModDate = product.updatedAt || product.importedAt || new Date();
+             const lastMod = lastModDate.toISOString().split('T')[0]; // Format as YYYY-MM-DD
+
+            root.ele('url')
+                 // Ensure SKU is URL-safe, though it usually is
+                .ele('loc').txt(`${baseUrl}/products/${encodeURIComponent(product.sku)}`).up()
+                .ele('lastmod').txt(lastMod).up()
+                .ele('priority').txt('0.70').up() // Priority for individual products
+            .up();
+        }
+        console.log(`Added ${productCount} dynamic product pages.`); // Log count
+
+        // Finalize XML
+        console.log('Finalizing XML...'); // Log finalization
+        const xml = root.end({ prettyPrint: true });
+
+        // Send Response
+        console.log('Sending sitemap.xml response.'); // Log sending response
+        res.header('Content-Type', 'application/xml');
+        res.status(200).send(xml);
+
+    } catch (err) {
+        // Log the specific error encountered during sitemap generation
+        console.error("ERROR in /sitemap.xml route handler:", err);
+        // Pass error to the global error handler
+        next(err);
+    }
+});
+// =================================== //
+// === END DYNAMIC SITEMAP ROUTE === //
+// =================================== //
+
+
+// --- Main Application Start Function ---
 async function main() {
     try {
+        // Connect to MongoDB
         await client.connect();
-        console.log("Connected to MongoDB Atlas");
+        console.log("Successfully connected to MongoDB Atlas");
 
+        // Test DB Connection (Optional but recommended)
+        await client.db(app.locals.dbName).command({ ping: 1 });
+        console.log("Pinged your deployment. You successfully connected to MongoDB!");
+
+
+        // --- Import Routes (AFTER DB connection established) ---
         const indexRoute = require('./routes/index');
         const usersRoute = require('./routes/users');
         const passwordRoute = require('./routes/password');
@@ -143,14 +307,27 @@ async function main() {
         const accountRoute = require('./routes/account');
         const supportRoute = require('./routes/support');
 
+        // --- Mount Routes ---
+
+        // Currency Change Route
         app.post('/currency/change', (req, res) => {
             const { country } = req.body;
             if (country && countryData[country]) {
-                req.session.country_override = country;
+                req.session.country_override = country; // Store override in session
+                console.log(`Currency override set to: ${country}`);
+            } else {
+                 delete req.session.country_override; // Clear override if invalid
+                 console.log(`Currency override cleared or invalid country received: ${country}`);
             }
-            res.redirect(req.header('Referer') || '/');
+            // Redirect back safely
+            const referrer = req.header('Referer');
+            // Basic validation to prevent open redirect vulnerabilities if Referer is manipulated
+            // Use BASE_URL_LIVE for comparison as Referer will use the live domain
+            const safeReferrer = (referrer && (referrer.startsWith(process.env.BASE_URL_LIVE || 'https://www.sneakslab.shop') || referrer.startsWith(process.env.BASE_URL || 'http://localhost:5000'))) ? referrer : '/';
+            res.redirect(safeReferrer);
         });
 
+        // Application Feature Routes (AFTER sitemap.xml)
         app.use('/', indexRoute);
         app.use('/users', usersRoute);
         app.use('/password', passwordRoute);
@@ -158,31 +335,93 @@ async function main() {
         app.use('/cart', cartRoute);
         app.use('/checkout', checkoutRoute);
         app.use('/account', accountRoute);
-        app.use('/support', supportRoute); 
-        
-        // 404 handler for unmatched routes
-        app.use((req, res) => {
-            res.status(404).render("404", { title: "Page Not Found" });
+        app.use('/support', supportRoute);
+
+        // --- Error Handlers (Must be LAST) ---
+
+        // 404 Handler for unmatched routes
+        app.use((req, res, next) => {
+             console.log(`404 Not Found triggered for route: ${req.method} ${req.originalUrl}`);
+             // Check if headers already sent
+             if (!res.headersSent) {
+                res.status(404).render("404", { title: "Page Not Found" });
+             } else {
+                 console.warn(`Headers already sent for 404 on ${req.originalUrl}, cannot render 404 page.`);
+                next(); // If headers sent, maybe another handler will deal with it
+             }
         });
 
-        // Global error handler for 500 errors
+        // Global Error Handler (500)
         app.use((err, req, res, next) => {
-           //pang de-bug
-            console.error(err.stack);
-            
-            // Render the 500 error page 
-            res.status(500).render('500', { title: 'Server Error' });
+            console.error("--- Global Error Handler Activated ---");
+            console.error(`Timestamp: ${new Date().toISOString()}`);
+            console.error(`Route: ${req.method} ${req.originalUrl}`);
+            const errorStatus = err.status || 500;
+            console.error(`Error Status: ${errorStatus}`);
+            console.error(`Error Message: ${err.message}`);
+            // Log stack trace only if not a simple 404 that somehow fell through (less likely now)
+            if (errorStatus !== 404) {
+                 console.error(err.stack); // Log the full stack trace for non-404 errors
+            }
+
+            // Avoid sending response if headers were already sent
+            if (res.headersSent) {
+                console.error("Headers already sent, cannot render 500 page. Passing error to default handler.");
+                return next(err); // Pass to default Express error handler
+            }
+
+            // Render the 500 error page
+            res.status(errorStatus).render('500', {
+                 title: 'Server Error',
+                 // Only show detailed error in development environment for security
+                 error: process.env.NODE_ENV === 'development' ? err : { message: "An unexpected error occurred." }
+            });
         });
 
-    
+
+        // Start the HTTP server (listening through the 'server' object for Socket.IO)
         server.listen(port, () => {
-            console.log(`Server running on port ${port}`);
+            console.log(`Server running and listening on http://localhost:${port}`);
+            if (process.env.NODE_ENV !== 'production') {
+                console.log(`Access sitemap locally at: http://localhost:${port}/sitemap.xml`);
+            } else {
+                 console.log(`Access sitemap live at: ${process.env.BASE_URL_LIVE || 'https://www.sneakslab.shop'}/sitemap.xml`);
+            }
         });
+
     } catch (err) {
-        console.error("MongoDB connection failed", err);
-        process.exit(1);
+        console.error("FATAL ERROR during application startup:", err);
+        process.exit(1); // Exit the process with an error code
     }
 }
 
+// --- Graceful Shutdown Logic ---
+// Function to handle shutdown logic
+async function gracefulShutdown(signal) {
+    console.log(`\n${signal} signal received: Closing server and MongoDB connection...`);
+    // Stop accepting new connections
+    server.close(async () => {
+        console.log('HTTP server closed.');
+        // Close MongoDB connection
+        if (client && client.topology && client.topology.isConnected()) {
+            await client.close();
+            console.log('MongoDB connection closed.');
+        } else {
+            console.log('MongoDB connection already closed or not established.');
+        }
+        process.exit(0); // Exit cleanly
+    });
 
+    // If server doesn't close gracefully after a timeout, force exit
+    setTimeout(() => {
+        console.error('Could not close connections gracefully, forcing shutdown.');
+        process.exit(1);
+    }, 10000); // 10 seconds timeout
+}
+
+// Listen for termination signals
+process.on('SIGINT', () => gracefulShutdown('SIGINT')); // Ctrl+C
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM')); // Render stop/restart
+
+// --- Execute the main function to start the application ---
 main();
