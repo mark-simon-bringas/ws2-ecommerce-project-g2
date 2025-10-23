@@ -1,7 +1,5 @@
 async function verifyTurnstile(token, ip) {
     const url = 'https://challenges.cloudflare.com/turnstile/v0/siteverify'; 
-    
-    // The request body must include the secret, the response token, and the user's IP[cite: 311, 312, 313].
     const body = new URLSearchParams({
         secret: process.env.TURNSTILE_SECRET,
         response: token,
