@@ -16,6 +16,7 @@ const http = require('http');
 const { Server } = require("socket.io");
 
 const app = express();
+app.set('trust proxy', 1);
 const port = process.env.PORT || 5000;
 
 
