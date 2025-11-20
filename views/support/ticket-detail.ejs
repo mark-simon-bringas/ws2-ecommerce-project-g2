@@ -1,14 +1,13 @@
-<div class="container my-5">
-    <div class="row g-4">
-        <div class="col-lg-8">
-            <div class="chat-container">
+<div class="container mt-0 my-lg-5 pt-0 support-page-wrapper">
+    <div class="row g-4 justify-content-center">
+        <div class="col-lg-8 px-0 px-lg-3"> <div class="chat-container">
                 <div class="chat-header">
                     <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <h1 class="mb-0">Ticket #<%= ticket.ticketId %></h1>
-                            <p class="text-body-secondary small mb-0">Regarding: <%= ticket.subject %></p>
+                        <div style="min-width: 0;">
+                            <h1 class="mb-0 text-truncate">Ticket #<%= ticket.ticketId %></h1>
+                            <p class="text-body-secondary small mb-0 text-truncate"><%= ticket.subject %></p>
                         </div>
-                        <div>
+                        <div class="ms-2 flex-shrink-0">
                             <% if (ticket.status === 'Open') { %>
                                 <span class="badge bg-primary-subtle text-primary-emphasis rounded-pill"><%= ticket.status %></span>
                             <% } else if (ticket.status === 'Answered') { %>
@@ -19,6 +18,7 @@
                         </div>
                     </div>
                 </div>
+                
                 <div class="chat-messages" id="chat-messages">
                     <% ticket.messages.forEach(message => { %>
                         <% if (message.sender === 'user') { %>
@@ -27,7 +27,7 @@
                                     <%- message.message.replace(/\n/g, '<br>') %>
                                 </div>
                                 <div class="message-meta">
-                                    <%= message.name %> • <%= new Date(message.timestamp).toLocaleString() %>
+                                    <%= new Date(message.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) %>
                                 </div>
                             </div>
                         <% } else { %>
@@ -36,7 +36,7 @@
                                     <%- message.message.replace(/\n/g, '<br>') %>
                                 </div>
                                 <div class="message-meta">
-                                    <%= message.adminName || 'Support Team' %> • <%= new Date(message.timestamp).toLocaleString() %>
+                                    <%= message.adminName || 'Support' %> • <%= new Date(message.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) %>
                                 </div>
                             </div>
                         <% } %>
@@ -47,22 +47,30 @@
                     <div class="chat-reply-form">
                         <form id="reply-form">
                             <input type="hidden" name="userEmail" value="<%= ticket.userEmail %>">
-                            <div class="input-group">
-                                <textarea class="form-control" id="message-input" placeholder="Type your reply..." rows="1" required></textarea>
-                                <button type="submit" class="btn btn-primary btn-send" aria-label="Send Message">
-                                    <i class="bi bi-arrow-up"></i>
+                            
+                            <div class="reply-box-wrapper">
+                                <textarea 
+                                    id="message-input" 
+                                    name="message" 
+                                    placeholder="Type a message..." 
+                                    rows="1" 
+                                    required
+                                ></textarea>
+                                <button type="submit" class="btn-send" aria-label="Send Message">
+                                    <i class="bi bi-arrow-up-short"></i>
                                 </button>
                             </div>
                         </form>
                     </div>
                 <% } else { %>
-                    <div class="chat-reply-form text-center">
-                        <p class="text-body-secondary mb-0">This ticket has been closed. To reopen it, please <a href="/support/contact">create a new ticket</a> and reference ticket ID #<%= ticket.ticketId %>.</p>
+                    <div class="chat-reply-form text-center bg-light">
+                        <p class="text-body-secondary mb-0 small">This ticket is closed. <a href="/support/contact" class="text-decoration-underline">Open a new ticket</a>.</p>
                     </div>
                 <% } %>
             </div>
         </div>
-        <div class="col-lg-4">
+        
+        <div class="col-lg-4 d-none d-lg-block">
              <div class="support-sidebar-card">
                 <h5 class="fw-bold mb-3">Quick Links</h5>
                 <ul class="list-unstyled d-flex flex-column gap-2">
@@ -102,26 +110,48 @@
         const ticketId = '<%= ticket.ticketId %>';
         const userName = '<%= ticket.messages[0].name %>';
 
+        // Scroll to bottom immediately
+        const scrollToBottom = () => {
+            if (chatMessages) {
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+        };
+        // Use requestAnimationFrame to ensure rendering is done before scrolling
+        window.requestAnimationFrame(scrollToBottom);
+
         // 1. Join the specific ticket room
         socket.emit('joinTicket', ticketId);
 
-        // 2. Listen for new messages from the server
+        // 2. Listen for new messages
         socket.on('newMessage', (message) => {
             appendMessage(message);
         });
 
-        // 3. Handle form submission to send a message
+        // 3. Auto-resize Textarea Logic
+        if (messageInput) {
+            messageInput.addEventListener('input', function() {
+                this.style.height = 'auto'; // Reset height to recalculate
+                this.style.height = (this.scrollHeight) + 'px';
+                
+                // Optional: Ensure we scroll to bottom if text grows
+                scrollToBottom();
+            });
+
+            // 4. Handle Shift+Enter vs Enter
+            messageInput.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault(); // Prevent default newline
+                    if (this.value.trim() !== '') {
+                        sendMessage(); // Submit
+                    }
+                }
+            });
+        }
+
         if (replyForm) {
             replyForm.addEventListener('submit', (e) => {
                 e.preventDefault();
                 sendMessage();
-            });
-
-            messageInput.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    sendMessage();
-                }
             });
         }
 
@@ -134,9 +164,14 @@
                     sender: 'user',
                     name: userName
                 };
+                
+                // Emit to server
                 socket.emit('chatMessage', messageData);
+                
+                // Reset Input
                 messageInput.value = '';
-                messageInput.style.height = 'auto'; // Reset textarea height
+                messageInput.style.height = 'auto'; // Reset size
+                messageInput.focus();
             }
         }
 
@@ -152,24 +187,18 @@
 
             const meta = document.createElement('div');
             meta.classList.add('message-meta');
-            const senderName = isUserMessage ? message.name : (message.adminName || 'Support Team');
-            meta.textContent = `${senderName} • ${new Date(message.timestamp).toLocaleString()}`;
+            
+            // Format time short (e.g., 10:30 AM)
+            const timeString = new Date(message.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            const senderName = isUserMessage ? '' : (message.adminName || 'Support') + ' • ';
+            
+            meta.textContent = `${senderName}${timeString}`;
 
             messageElement.appendChild(bubble);
             messageElement.appendChild(meta);
             chatMessages.appendChild(messageElement);
-            chatMessages.scrollTop = chatMessages.scrollHeight; // Auto-scroll to bottom
-        }
-
-        // Initial scroll to bottom
-        chatMessages.scrollTop = chatMessages.scrollHeight;
-
-        // Auto-expand textarea
-        if(messageInput) {
-            messageInput.addEventListener('input', function () {
-                this.style.height = 'auto';
-                this.style.height = (this.scrollHeight) + 'px';
-            });
+            
+            scrollToBottom();
         }
     });
 </script>

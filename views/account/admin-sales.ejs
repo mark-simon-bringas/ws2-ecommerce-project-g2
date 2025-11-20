@@ -19,82 +19,203 @@
 <% } %>
 
 <div class="row g-4">
-    <div class="col-lg-5">
-        <div class="dashboard-card">
+    <div class="col-lg-6">
+        <div class="dashboard-card h-100">
             <div class="card-body">
                 <h5 class="card-title fw-bold mb-4">Create a New Sale</h5>
-                <form action="/account/admin/sales/create" method="POST">
+                <form action="/account/admin/sales/create" method="POST" id="create-sale-form">
                     <div class="mb-3">
                         <label for="saleName" class="form-label">Sale Name</label>
-                        <input type="text" class="form-control" id="saleName" name="saleName" placeholder="e.g., Summer Kick-off" required>
+                        <input type="text" class="form-control form-control-clean" id="saleName" name="saleName" placeholder="e.g., Summer Kick-off" style="border: 1px solid #dee2e6;" required>
                     </div>
                     <div class="mb-3">
                         <label for="discountPercentage" class="form-label">Discount Percentage</label>
                         <div class="input-group">
-                            <input type="number" class="form-control" id="discountPercentage" name="discountPercentage" min="1" max="100" required>
-                            <span class="input-group-text">%</span>
+                            <input type="number" class="form-control form-control-clean" id="discountPercentage" name="discountPercentage" min="1" max="100" style="border: 1px solid #dee2e6;" required>
+                            <span class="input-group-text" style="border: 1px solid #dee2e6;">%</span>
                         </div>
                     </div>
-                    <div class="row g-3">
-                        <div class="col-md-6 mb-3">
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
                             <label for="startDate" class="form-label">Start Date</label>
-                            <input type="date" class="form-control" id="startDate" name="startDate" required>
+                            <input type="date" class="form-control form-control-clean" id="startDate" name="startDate" style="border: 1px solid #dee2e6;" required>
                         </div>
-                        <div class="col-md-6 mb-3">
+                        <div class="col-md-6">
                             <label for="endDate" class="form-label">End Date</label>
-                            <input type="date" class="form-control" id="endDate" name="endDate" required>
+                            <input type="date" class="form-control form-control-clean" id="endDate" name="endDate" style="border: 1px solid #dee2e6;" required>
                         </div>
                     </div>
-                     <div class="mb-3">
-                        <label for="productIds" class="form-label">Select Products</label>
-                        <select class="form-select" id="productIds" name="productIds" multiple required size="10">
+                    
+                    <div class="mb-3">
+                        <label class="form-label d-flex justify-content-between">
+                            <span>Select Products</span>
+                            <span class="badge bg-secondary-subtle text-secondary-emphasis" id="selected-count-badge">0 selected</span>
+                        </label>
+                        
+                        <div class="input-group mb-2">
+                            <span class="input-group-text bg-transparent border-end-0" style="border: 1px solid #dee2e6; border-right: none;"><i class="bi bi-search text-muted"></i></span>
+                            <input type="text" id="product-search" class="form-control form-control-clean border-start-0 ps-0" placeholder="Search by name or SKU..." style="border: 1px solid #dee2e6; border-left: none;">
+                        </div>
+
+                        <div class="product-selection-list" style="height: 350px; overflow-y: auto; border: 1px solid #dee2e6; border-radius: 8px;">
                             <% products.forEach(product => { %>
-                                <option value="<%= product._id %>"><%= product.name %></option>
+                                <div class="product-select-item d-flex align-items-center p-2 border-bottom position-relative" data-name="<%= product.name.toLowerCase() %>" data-sku="<%= product.sku.toLowerCase() %>" style="cursor: pointer; transition: background 0.2s;">
+                                    <div class="form-check me-3 pointer-events-none">
+                                        <input type="checkbox" name="productIds" value="<%= product._id %>" class="form-check-input" id="chk-<%= product._id %>" style="pointer-events: none; border: 1px solid #dee2e6;">
+                                    </div>
+                                    <img src="<%= product.thumbnailUrl %>" alt="<%= product.name %>" style="width: 40px; height: 40px; object-fit: contain; background-color: #f8f9fa; border-radius: 6px; margin-right: 12px; border: 1px solid #dee2e6;">
+                                    <div class="flex-grow-1" style="line-height: 1.2;">
+                                        <div class="fw-medium text-dark" style="font-size: 0.9rem;"><%= product.name %></div>
+                                        <div class="d-flex justify-content-between align-items-center mt-1">
+                                            <small class="text-body-secondary" style="font-size: 0.75rem;">SKU: <%= product.sku %></small>
+                                            <small class="fw-semibold text-dark">$<%= product.retailPrice %></small>
+                                        </div>
+                                    </div>
+                                    <a href="#" class="stretched-link" onclick="toggleProductSelection(event, 'chk-<%= product._id %>', this)"></a>
+                                </div>
                             <% }) %>
-                        </select>
-                        <small class="form-text text-body-secondary">Hold Ctrl (or Cmd on Mac) to select multiple products.</small>
+                        </div>
+                        <div class="d-flex justify-content-between mt-2">
+                             <small class="text-body-secondary" style="cursor: pointer;" onclick="selectAll(true)">Select All Visible</small>
+                             <small class="text-body-secondary" style="cursor: pointer;" onclick="selectAll(false)">Deselect All</small>
+                        </div>
                     </div>
-                    <div class="d-grid">
+
+                    <div class="d-grid mt-4">
                         <button type="submit" class="btn btn-primary">Create Sale</button>
                     </div>
                 </form>
             </div>
         </div>
     </div>
-    <div class="col-lg-7">
-        <div class="dashboard-card">
+    
+    <div class="col-lg-6">
+        <div class="dashboard-card h-100">
             <div class="card-body">
                  <h5 class="card-title fw-bold mb-4">Active & Upcoming Sales</h5>
                  <% if (sales && sales.length > 0) { %>
-                    <div class="list-group">
+                    <div class="d-flex flex-column gap-3">
                         <% sales.forEach(sale => { %>
-                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <% 
+                                const now = new Date();
+                                const startDate = new Date(sale.startDate);
+                                const endDate = new Date(sale.endDate);
+                                endDate.setHours(23, 59, 59, 999);
+                                let statusClass = 'bg-info-subtle text-info-emphasis';
+                                let statusText = 'Scheduled';
+
+                                if (now >= startDate && now <= endDate) {
+                                    statusClass = 'bg-success-subtle text-success-emphasis';
+                                    statusText = 'Active';
+                                } else if (now > endDate) {
+                                    statusClass = 'bg-secondary-subtle text-secondary-emphasis';
+                                    statusText = 'Expired';
+                                }
+                            %>
+                            <div class="p-3 border rounded-3 bg-white d-flex justify-content-between align-items-center shadow-sm-hover transition-all" style="border: 1px solid #dee2e6 !important;">
                                 <div>
-                                    <h6 class="mb-0 fw-semibold"><%= sale.name %> - <%= sale.discountPercentage %>% OFF</h6>
-                                    <small class="text-body-secondary">
+                                    <div class="d-flex align-items-center gap-2 mb-1">
+                                        <h6 class="mb-0 fw-bold"><%= sale.name %></h6>
+                                        <span class="badge <%= statusClass %> rounded-pill" style="font-size: 0.65rem;"><%= statusText %></span>
+                                    </div>
+                                    <div class="text-success fw-bold mb-1"><%= sale.discountPercentage %>% OFF</div>
+                                    <small class="text-body-secondary d-block">
+                                        <i class="bi bi-calendar-event me-1"></i>
                                         <%= new Date(sale.startDate).toLocaleDateString() %> – <%= new Date(sale.endDate).toLocaleDateString() %>
                                     </small>
+                                    <small class="text-body-secondary">
+                                        <i class="bi bi-box-seam me-1"></i>
+                                        <%= sale.productIds.length %> Products
+                                    </small>
                                 </div>
-                                <div>
-                                    <% const now = new Date(); %>
-                                    <% const startDate = new Date(sale.startDate); %>
-                                    <% const endDate = new Date(sale.endDate); endDate.setHours(23, 59, 59, 999); %>
-
-                                    <% if (now >= startDate && now <= endDate) { %>
-                                        <span class="badge bg-success-subtle text-success-emphasis rounded-pill">Active</span>
-                                    <% } else if (now > endDate) { %>
-                                        <span class="badge bg-secondary-subtle text-secondary-emphasis rounded-pill">Expired</span>
-                                    <% } else { %>
-                                        <span class="badge bg-info-subtle text-info-emphasis rounded-pill">Scheduled</span>
-                                    <% } %>
                                 </div>
-                            </div>
                         <% }) %>
                     </div>
                  <% } else { %>
-                    <p class="text-body-secondary text-center p-4">There are no sales scheduled.</p>
+                    <div class="text-center p-5 bg-light rounded-3">
+                        <i class="bi bi-calendar-x text-body-secondary fs-1 mb-3"></i>
+                        <p class="text-body-secondary">There are no sales scheduled.</p>
+                    </div>
                  <% } %>
             </div>
         </div>
     </div>
 </div>
+
+<script>
+    // --- Search Functionality ---
+    document.getElementById('product-search').addEventListener('input', function(e) {
+        const term = e.target.value.toLowerCase();
+        const items = document.querySelectorAll('.product-select-item');
+        
+        items.forEach(item => {
+            const name = item.dataset.name;
+            const sku = item.dataset.sku;
+            if (name.includes(term) || sku.includes(term)) {
+                item.style.display = 'flex';
+            } else {
+                item.style.display = 'none';
+            }
+        });
+    });
+
+    // --- Selection Logic ---
+    function toggleProductSelection(e, checkboxId, link) {
+        e.preventDefault(); // Prevent anchor jump
+        const checkbox = document.getElementById(checkboxId);
+        const row = link.closest('.product-select-item');
+        
+        checkbox.checked = !checkbox.checked;
+        updateRowStyle(row, checkbox.checked);
+        updateCount();
+    }
+
+    function updateRowStyle(row, isChecked) {
+        if (isChecked) {
+            row.style.backgroundColor = '#eff6ff'; // Light blue background
+            row.classList.add('border-primary');
+        } else {
+            row.style.backgroundColor = '';
+            row.classList.remove('border-primary');
+        }
+    }
+
+    function updateCount() {
+        const count = document.querySelectorAll('input[name="productIds"]:checked').length;
+        document.getElementById('selected-count-badge').textContent = `${count} selected`;
+    }
+
+    function selectAll(select) {
+        const items = document.querySelectorAll('.product-select-item');
+        items.forEach(item => {
+            if (item.style.display !== 'none') { // Only toggle visible items
+                const checkbox = item.querySelector('input[type="checkbox"]');
+                checkbox.checked = select;
+                updateRowStyle(item, select);
+            }
+        });
+        updateCount();
+    }
+    
+    // Initialize on load (in case of form validation return)
+    document.addEventListener('DOMContentLoaded', () => {
+         const items = document.querySelectorAll('.product-select-item');
+         items.forEach(item => {
+             const checkbox = item.querySelector('input[type="checkbox"]');
+             if(checkbox.checked) updateRowStyle(item, true);
+         });
+         updateCount();
+    });
+</script>
+
+<style>
+    .product-select-item:hover {
+        background-color: #f8f9fa;
+    }
+    .shadow-sm-hover:hover {
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    }
+    .transition-all {
+        transition: all 0.2s ease;
+    }
+</style>

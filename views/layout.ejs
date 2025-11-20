@@ -18,6 +18,7 @@
     <link rel="stylesheet" href="/css/mobile.css">
     <link rel="stylesheet" href="/css/modal.css">
     <link rel="stylesheet" href="/css/preloader.css">
+ 
     
     <% if (typeof page !== 'undefined' && page === 'auth') { %>
         <link rel="stylesheet" href="/css/auth.css">
@@ -49,6 +50,7 @@
         <li><a class="list-menu" href="/products?category=men" data-panel="1">Men</a></li>
         <li><a class="list-menu" href="/products?category=women" data-panel="2">Women</a></li>
         <li><a class="list-menu" href="/products?new=true" data-panel="3">New Arrivals</a></li>
+    
         <li><a class="list-menu" href="/support" data-panel="4">Support</a></li>
         <li><a href="#" id="desktop-search-btn" data-panel="5"><span class="iconify" data-icon="material-symbols:search-rounded" style="color: white;" data-width="20" data-height="20"></span></a></li>
         <li class="cart-icon-container">
@@ -63,17 +65,20 @@
         <% if (currentUser) { %>
             <li class="user-menu-container">
                 <a href="#" id="user-menu-btn">
+          
                     <span class="iconify" data-icon="material-symbols:person-outline" style="color: white;" data-width="22" data-height="22"></span>
                 </a>
                 <div class="user-dropdown-menu" id="user-dropdown">
                     <a href="/account" class="user-dropdown-link">
                         <span class="iconify" data-icon="ic:round-dashboard" data-width="20" data-height="20"></span> Account
+              
                     </a>
                     <a href="/users/logout" class="user-dropdown-link">
                         <span class="iconify" data-icon="material-symbols:logout" data-width="20" data-height="20"></span> Logout
                     </a>
                 </div>
-            </li>
+       
+             </li>
         <% } else { %>
             <li><a href="/users/login"><span class="iconify" data-icon="material-symbols:person-outline" style="color: white;" data-width="22" data-height="22"></span></a></li>
         <% } %>
@@ -104,6 +109,7 @@
             <% } else { %>
                 <li><a href="/users/login">Login</a></li>
             <% } %>
+ 
         </ul>
     </div>
 
@@ -113,15 +119,18 @@
             <div class="search-content">
                 <div class="search-input-group">
                     <span class="iconify" data-icon="material-symbols:search-rounded" data-width="28" data-height="28"></span>
-                    <input type="text" name="q" placeholder="Search sneakslab.com" required>
+         
+            <input type="text" name="q" placeholder="Search sneakslab.com" required>
                 </div>
                 
                 <div class="quick-links">
                     <span>Quick Links</span>
+              
                     <ul>
                         <li><a href="/products?new=true">→ New Arrivals</a></li>
                         <li><a href="/products/search?q=Jordan">→ Jordan</a></li>
                         <li><a href="/products/search?q=Nike Dunk">→ Nike Dunk</a></li>
+             
                     </ul>
                 </div>
             </div>
@@ -131,26 +140,31 @@
     <div class="dropdown">
       <div class="con-1"><ul class="main"><span>Shop</span><li><a href="/products">Shop the Latest</a></li><li><a href="/products?category=men">Shop Men's</a></li><li><a href="/products?category=women">Shop Women's</a></li><li><a href="/products?new=true">Shop New Arrivals</a></li></ul><ul><span>Quick Links</span><li><a href="#">Find a Store</a></li><li><a href="/account/orders">Order History</a></li><li><a href="#">Financing</a></li></ul></div>
       <div class="con-1"><ul class="main"><span>Shop Men's</span><li><a href="/products?new=true&category=men">New Releases</a></li><li><a href="/products?brand=Nike&category=men">Nike</a></li><li><a href="/products?brand=Jordan&category=men">Jordan</a></li><li><a href="/products?brand=adidas&category=men">Adidas</a></li></ul><ul><span>Featured</span><li><a href="/products?category=men">Bestsellers</a></li><li><a href="/products?category=men">Clearance</a></li></ul></div>
-      <div class="con-1"><ul class="main"><span>Shop Women's</span><li><a href="/products?new=true&category=women">New Releases</a></li><li><a href="/products?brand=Nike&category=women">Nike</a></li><li><a href="/products?brand=Jordan&category=women">Jordan</a></li><li><a href="/products?brand=adidas&category=women">Adidas</a></li></ul><ul><span>Featured</span><li><a href="/products?category=women">Bestsellers</a></li><li><a href="/products?category=women">Clearance</a></li></ul></div>
+   
+    <div class="con-1"><ul class="main"><span>Shop Women's</span><li><a href="/products?new=true&category=women">New Releases</a></li><li><a href="/products?brand=Nike&category=women">Nike</a></li><li><a href="/products?brand=Jordan&category=women">Jordan</a></li><li><a href="/products?brand=adidas&category=women">Adidas</a></li></ul><ul><span>Featured</span><li><a href="/products?category=women">Bestsellers</a></li><li><a href="/products?category=women">Clearance</a></li></ul></div>
       <div class="con-1"><ul class="main"><span>New Arrivals</span><li><a href="/products?new=true">Shop All New Arrivals</a></li><li><a href="/products?new=true&category=men">Latest Men's</a></li><li><a href="/products?new=true&category=women">Latest Women's</a></li></ul><ul><span>Featured</span><li><a href="/products?new=true">Hottest Releases</a></li></ul></div>
       <div class="con-1"><ul class="main"><span>Support</span><li><a href="/support/contact">Contact Us</a></li><li><a href="/support/order-status">Order Status</a></li><li><a href="/support/shipping">Shipping & Delivery</a></li><li><a href="/support/returns">Returns</a></li></ul><ul><span>Company</span><li><a href="/about">About Us</a></li><li><a href="/legal">Terms of Use</a></li><li><a href="/legal#privacy">Privacy Policy</a></li></ul></div>
       <div class="con-1 dropdown-search-panel">
         <form action="/products/search" method="GET">
             <div class="search-content">
-                <div class="search-input-group">
+              
+    <div class="search-input-group">
                     <span class="iconify" data-icon="material-symbols:search-rounded" data-width="28" data-height="28"></span>
                     <input type="text" name="q" placeholder="Search sneakslab.com" required>
                 </div>
                 <div class="quick-links">
+               
                     <span>Quick Links</span>
                     <ul>
                         <li><a href="/products/search?q=Jordan">Jordan</a></li>
                         <li><a href="/products/search?q=Nike Dunk">Nike Dunk</a></li>
-                        <li><a href="/products?new=true">New Arrivals</a></li>
+                      
+    <li><a href="/products?new=true">New Arrivals</a></li>
                         <li><a href="/products/search?q=Adidas Samba">Adidas Samba</a></li>
                         <li><a href="/products/search?q=Stan Smith">Adidas Stan Smith</a></li>
                         <li><a href="/products/search?q=Nike Air Force 1">Nike Air Force 1</a></li>
-                    </ul>
+          
+                </ul>
                 </div>
             </div>
         </form>
@@ -165,64 +179,82 @@
                 <aside class="dashboard-sidebar">
                     <div class="nav-container">
                         <div>
+  
                             <a href="/account" class="brand">
                                 <span class="iconify" data-icon="ion:footsteps-sharp" data-width="28" data-height="28"></span>
                                 <span>sneakslab</span>
-                            </a>
+    
+                        </a>
                             <nav class="nav flex-column">
                                 <% if (currentUser && currentUser.role === 'admin') { %>
-                                    <h6 class="nav-heading">Admin</h6>
+      
+                                <h6 class="nav-heading">Admin</h6>
                                     <a class="nav-link <%= (view === 'admin-dashboard') ? 'active' : '' %>" href="/account/admin/dashboard">
-                                        <i class="bi bi-grid-1x2-fill"></i>
+                      
+                    <i class="bi bi-grid-1x2-fill"></i>
                                         <span>Dashboard</span>
                                     </a>
+    
                                     <a class="nav-link <%= (view === 'admin-orders') ? 'active' : '' %>" href="/account/admin/orders">
                                         <i class="bi bi-list-check"></i>
                                         <span>Orders</span>
-                                        <% if (newOrderCount > 0) { %>
+              
+                            <% if (newOrderCount > 0) { %>
                                             <span class="badge rounded-pill bg-danger ms-auto"><%= newOrderCount %></span>
-                                        <% } %>
+                  
+                        <% } %>
                                     </a>
                                     <a class="nav-link <%= (view === 'admin-inbox') ? 'active' : '' %>" href="/account/admin/inbox">
                                         <i class="bi bi-envelope-fill"></i>
                                         <span>Inbox</span>
-                                        <% if (newTicketCount > 0) { %>
+           
+                                <% if (newTicketCount > 0) { %>
                                             <span class="badge rounded-pill bg-danger ms-auto"><%= newTicketCount %></span>
-                                        <% } %>
+               
+                            <% } %>
                                     </a>
                                     <a class="nav-link <%= (view === 'admin-users') ? 'active' : '' %>" href="/account/admin/users">
                                         <i class="bi bi-people-fill"></i>
                                         <span>Users</span>
-                                    </a>
+        
+                                </a>
                                     <a class="nav-link <%= (view === 'admin-products') ? 'active' : '' %>" href="/products/manage">
                                         <i class="bi bi-box-seam-fill"></i>
                                         <span>Products</span>
-                                    </a>
+              
+                        </a>
                                     <a class="nav-link <%= (view === 'admin-sales') ? 'active' : '' %>" href="/account/admin/sales">
                                         <i class="bi bi-tag-fill"></i>
                                         <span>Sales</span>
-                                    </a>
+              
+                        </a>
                                 <% } %>
                                 <h6 class="nav-heading mt-4">My Account</h6>
-                                <a class="nav-link <%= (view === 'orders') ? 'active' : '' %>" href="/account/orders">
+         
+                        <a class="nav-link <%= (view === 'orders') ? 'active' : '' %>" href="/account/orders">
                                     <i class="bi bi-receipt"></i>
                                     <span>Order History</span>
-                                </a>
+                     
+            </a>
                                 <a class="nav-link <%= (view === 'wishlist') ? 'active' : '' %>" href="/account/wishlist">
                                     <i class="bi bi-heart-fill"></i>
                                     <span>My Wishlist</span>
-                                </a>
+                     
+            </a>
                                 <a class="nav-link <%= (view === 'settings') ? 'active' : '' %>" href="/account/settings">
                                     <i class="bi bi-person-circle"></i>
                                     <span>Account Settings</span>
-                                </a>
+                     
+            </a>
                             </nav>
                         </div>
                         <a class="nav-link" href="/users/logout">
-                            <i class="bi bi-box-arrow-left"></i>
+           
+                    <i class="bi bi-box-arrow-left"></i>
                             <span>Logout</span>
                         </a>
                     </div>
+         
                 </aside>
                 <main class="dashboard-main-content">
                     <%- body %>
@@ -230,6 +262,7 @@
             </div>
         <% } else { %>
             <main>
+  
                 <%- body %>
             </main>
         <% } %>
@@ -239,20 +272,25 @@
         <div class="container">
             <div class="footer-content">
                 <div class="accordion footer-links" id="footerAccordion">
-                    <div class="footer-column">
+        
+            <div class="footer-column">
                         <h2 class="accordion-header" id="headingOne">
                             <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="false" aria-controls="collapseOne">
-                                Shop
+                          
+        Shop
                             </button>
                         </h2>
                         <div id="collapseOne" class="accordion-collapse collapse" aria-labelledby="headingOne" data-bs-parent="#footerAccordion">
-                            <ul class="footer-list">
+             
+                <ul class="footer-list">
                                 <li><a href="/products">Shop All</a></li>
                                 <li><a href="/products?category=men">Men's</a></li>
-                                <li><a href="/products?category=women">Women's</a></li>
+                 
+                <li><a href="/products?category=women">Women's</a></li>
                                 <li><a href="/products?new=true">New Arrivals</a></li>
                             </ul>
-                        </div>
+                      
+    </div>
                     </div>
                     <div class="footer-column">
                         <h2 class="accordion-header" id="headingTwo">
@@ -260,13 +298,16 @@
                                 Support
                             </button>
                         </h2>
-                        <div id="collapseTwo" class="accordion-collapse collapse" aria-labelledby="headingTwo" data-bs-parent="#footerAccordion">
+            
+            <div id="collapseTwo" class="accordion-collapse collapse" aria-labelledby="headingTwo" data-bs-parent="#footerAccordion">
                             <ul class="footer-list">
                                 <li><a href="/support/contact">Contact Us</a></li>
-                                <li><a href="/support/order-status">Order Status</a></li>
+                    
+            <li><a href="/support/order-status">Order Status</a></li>
                                 <li><a href="/support/shipping">Shipping & Delivery</a></li>
                                 <li><a href="/support/returns">Returns</a></li>
-                            </ul>
+                  
+            </ul>
                         </div>
                     </div>
                     <div class="footer-column">
@@ -274,48 +315,81 @@
                             <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseThree" aria-expanded="false" aria-controls="collapseThree">
                                 Company
                             </button>
-                        </h2>
+    
+                    </h2>
                         <div id="collapseThree" class="accordion-collapse collapse" aria-labelledby="headingThree" data-bs-parent="#footerAccordion">
                             <ul class="footer-list">
-                                <li><a href="/about">About Sneakslab</a></li>
+                      
+            <li><a href="/about">About Sneakslab</a></li>
                             </ul>
                         </div>
                     </div>
-                </div>
+                
+</div>
             </div>
             <div class="footer-bottom">
-                <p class="footer-copyright">&copy; <%= new Date().getFullYear() %> Sneakslab Inc. All rights reserved.</p>
+                <p class="footer-copyright">&copy;
+<%= new Date().getFullYear() %> Sneakslab Inc. All rights reserved.</p>
                 <div class="footer-legal">
                     <a href="/legal#privacy">Privacy Policy</a>
                     <a href="/legal#terms">Terms of Use</a>
                     <div class="footer-country">
-                        <i class="bi bi-globe"></i>
+         
+                <i class="bi bi-globe"></i>
                         <form action="/currency/change" method="POST" id="currency-form">
                             <select name="country" onchange="this.form.submit()" class="form-select-sm" aria-label="Country selector">
-                                <% for (const countryCode in countryData) { %>
+                       
+            <% for (const countryCode in countryData) { %>
                                     <option value="<%= countryCode %>" <%= currentCountryCode === countryCode ? 'selected' : '' %>>
                                         <%= countryData[countryCode].name %>
                                     </option>
-                                <% } %>
+                   
+            <% } %>
                             </select>
                         </form>
                     </div>
-                </div>
+             
+    </div>
             </div>
         </div>
     </footer>
 
-    <% if (typeof isDashboard !== 'undefined' && isDashboard && currentUser) { %>
+    <%# UPDATED: Now includes Wishlist page, excludes Cart page AND Chat page %>
+    <% if (typeof isDashboard !== 'undefined' && (!isDashboard || view === 'wishlist') && path !== '/cart' && !path.startsWith('/support/tickets/')) { %>
+    <div class="mobile-bottom-nav d-lg-none">
+        <a href="/" class="nav-item <%= path === '/' ? 'active' : '' %>">
+            <i class="bi bi-house-door-fill"></i>
+            <span>Home</span>
+        </a>
+        <a href="#" class="nav-item" id="bottom-search-btn">
+            <i class="bi bi-search"></i>
+            <span>Search</span>
+        </a>
+        <a href="/account/wishlist" class="nav-item <%= path === '/account/wishlist' ? 'active' : '' %>">
+            <i class="bi bi-heart-fill"></i>
+            <span>Wishlist</span>
+        </a>
+        <a href="<%= currentUser ? '/account' : '/users/login' %>" class="nav-item <%= path.startsWith('/users') ? 'active' : '' %>">
+            <i class="bi bi-person-fill"></i>
+            <span>Profile</span>
+        </a>
+    </div>
+    <% } %>
+
+    <%# UPDATED: Excludes Wishlist page %>
+    <% if (typeof isDashboard !== 'undefined' && isDashboard && currentUser && view !== 'wishlist') { %>
     <div class="bottom-navbar d-lg-none">
         <% if (currentUser.role === 'admin') { %>
             <a href="/account/admin/dashboard" class="bottom-navbar-link <%= (view === 'admin-dashboard') ? 'active' : '' %>">
+               
                 <i class="bi bi-grid-1x2-fill"></i>
                 <span>Dashboard</span>
             </a>
             <a href="/account/admin/orders" class="bottom-navbar-link <%= (view === 'admin-orders') ? 'active' : '' %>">
                 <i class="bi bi-list-check"></i>
                 <span>Orders</span>
-                <% if (newOrderCount > 0) { %>
+            
+            <% if (newOrderCount > 0) { %>
                     <span class="badge rounded-pill bg-danger ms-auto"><%= newOrderCount %></span>
                 <% } %>
             </a>
@@ -324,6 +398,7 @@
                 <span>Inbox</span>
                 <% if (newTicketCount > 0) { %>
                     <span class="badge rounded-pill bg-danger ms-auto"><%= newTicketCount %></span>
+              
                 <% } %>
             </a>
             <a href="/products/manage" class="bottom-navbar-link <%= (view === 'admin-products') ? 'active' : '' %>">
@@ -354,7 +429,8 @@
     <div class="mini-cart-overlay"></div>
     <div class="mini-cart">
         <div class="mini-cart-header">
-            <h5 class="mb-0"><i class="bi bi-check-circle-fill"></i> Added to Bag</h5>
+            
+    <h5 class="mb-0"><i class="bi bi-check-circle-fill"></i> Added to Bag</h5>
             <button type="button" class="btn-close" aria-label="Close"></button>
         </div>
         <div class="mini-cart-body">
@@ -362,7 +438,8 @@
         <div class="mini-cart-footer">
             <div class="d-grid gap-2">
                 <a href="/cart" class="btn btn-outline-secondary">View Bag (<span class="mini-cart-count">0</span>)</a>
-                <a href="/checkout" class="btn btn-primary">Checkout</a>
+     
+            <a href="/checkout" class="btn btn-primary">Checkout</a>
             </div>
         </div>
     </div>
@@ -375,16 +452,14 @@
 <script>
     function onTurnstileSuccess(token) {
     const widget = document.getElementById('turnstile-widget');
-
-    // Exit if the widget element isn't found
+// Exit if the widget element isn't found
     if (!widget) {
         return;
-    }
+}
 
     // 1. Immediately apply the success style for instant feedback
     widget.classList.add('turnstile-success');
-
-    // 2. Set a timer to hide the widget after 3 seconds
+// 2. Set a timer to hide the widget after 3 seconds
     setTimeout(() => {
         widget.classList.add('turnstile-hidden');
     }, 3000);

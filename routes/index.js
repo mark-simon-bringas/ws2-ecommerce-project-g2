@@ -166,12 +166,66 @@ router.get('/', async (req, res) => {
 });
 
 // Route for the about page
-router.get('/about', (req, res) => {
+router.get('/about', async (req, res) => {
+
+    let userWishlist = [];
+    if (req.session.user) {
+        try {
+            const usersCollection = req.app.locals.client.db(req.app.locals.dbName).collection('users');
+            const user = await usersCollection.findOne({ userId: req.session.user.userId });
+            if (user && user.wishlist) {
+                userWishlist = user.wishlist;
+            }
+        } catch (err) {
+            console.error("Error fetching wishlist for /about:", err);
+         
+        }
+    }
+
+    const pageData = {
+        mainHeading: "Sakam adda sapatos mi.",
+        subHeading: "We have shoes for your feet.",
+        story: {
+            heading: "Our Story",
+            p1: "At Sneakslab, we believe that sneakers are a statement. Our platform was created to make shopping for the perfect pair simple, secure, and enjoyable.",
+            p2: "This project began as an academic requirement at the University of Baguio, crafted by two aspiring software engineers. It represents a significant stepping stone in our journey toward becoming professionals in the tech industry.",
+            image: {
+                src: "https://images.unsplash.com/photo-1597045566677-8cf032ed6634?q=80&w=1887&auto=format&fit=crop",
+                alt: "A collection of stylish sneakers."
+            }
+        },
+        team: {
+            heading: "Meet the Team",
+            subHeading: "The developers behind Sneakslab.",
+            members: [
+                {
+                    name: "R J Salcedo",
+                    role: "Full Stack Developer",
+                    bio: "RJ served as the full stack developer, bringing together the technical foundation of the platform and ensuring seamless integration across all layers of development.",
+                    github: "https://github.com/Royal-Horizons-Bank"
+                },
+                {
+                    name: "Mark Simon Bringas",
+                    role: "Backend & QA",
+                    bio: "Mark Simon focused on backend development and quality assurance, ensuring that the platform is both reliable and efficient.",
+                    github: "https://github.com/msimonb05"
+                }
+            ]
+        }
+    };
+    
+   
     res.render('about', {
-        title: 'About Us'
+        title: 'About Us - Sneakslab',
+        wishlist: userWishlist, // Added for the layout
+        
+        // Pass pageData properties directly
+        mainHeading: pageData.mainHeading,
+        subHeading: pageData.subHeading,
+        story: pageData.story,
+        team: pageData.team
     });
 });
-
 // Route for the legal page
 router.get('/legal', (req, res) => {
     res.render('legal', {

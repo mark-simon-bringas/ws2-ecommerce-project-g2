@@ -17,7 +17,7 @@
     
     <div class="content-to-load">
         <% if (products && products.length > 0) { %>
-            <div class="row row-cols-1 row-cols-sm-2 row-cols-lg-4 g-4">
+            <div class="row row-cols-2 row-cols-sm-2 row-cols-lg-4 g-3 g-md-4">
                 <% products.forEach(product => { %>
                     <div class="col">
                         <div class="product-card" data-sku="<%= product.sku %>">

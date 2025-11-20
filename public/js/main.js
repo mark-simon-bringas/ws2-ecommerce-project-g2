@@ -80,11 +80,13 @@ document.addEventListener('DOMContentLoaded', function() {
     // --- Mobile Overlay Logic ---
     const mobileMenuBtn = document.getElementById('mobile-menu-btn');
     const mobileSearchBtn = document.getElementById('mobile-search-btn');
+    const bottomSearchBtn = document.getElementById('bottom-search-btn'); // ADDED: Selector for bottom nav search
     const mobileMenuOverlay = document.getElementById('mobile-menu-overlay');
     const searchOverlay = document.querySelector('.overlay#search-overlay');
     const mobileMenuCloseBtn = document.getElementById('mobile-menu-close-btn');
     const searchOverlayCloseBtn = document.getElementById('search-overlay-close-btn');
     const body = document.body;
+    
     const openOverlay = (overlay) => {
         if (overlay) {
             overlay.classList.add('is-active');
@@ -97,8 +99,13 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         body.style.overflow = '';
     };
+    
     if (mobileMenuBtn) { mobileMenuBtn.addEventListener('click', (e) => { e.preventDefault(); openOverlay(mobileMenuOverlay); }); }
     if (mobileSearchBtn) { mobileSearchBtn.addEventListener('click', (e) => { e.preventDefault(); openOverlay(searchOverlay); }); }
+    
+    // ADDED: Event listener for bottom nav search button
+    if (bottomSearchBtn) { bottomSearchBtn.addEventListener('click', (e) => { e.preventDefault(); openOverlay(searchOverlay); }); }
+    
     if (mobileMenuCloseBtn) { mobileMenuCloseBtn.addEventListener('click', (e) => { e.preventDefault(); closeAllOverlays(); }); }
     if (searchOverlayCloseBtn) { searchOverlayCloseBtn.addEventListener('click', (e) => { e.preventDefault(); closeAllOverlays(); }); }
 

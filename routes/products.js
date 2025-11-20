@@ -281,42 +281,23 @@ router.get('/manage', isAdmin, async (req, res) => {
             }
         }
 
-        const localProductsPromise = productsCollection.find(query).sort(sortQuery).toArray();
+        // Fetch only local products, no API call here
+        const localProducts = await productsCollection.find(query).sort(sortQuery).toArray();
 
-        const apiOptions = {
-            method: 'GET',
-            url: 'https://the-sneaker-database.p.rapidapi.com/search',
-            params: { limit: '20', query: 'Popular' },
-            headers: {
-                'X-RapidAPI-Key': process.env.SNEAKER_DB_API_KEY,
-                'X-RapidAPI-Host': 'the-sneaker-database.p.rapidapi.com'
-            }
-        };
-        const apiProductsPromise = axios.request(apiOptions);
-
-        const [localProducts, apiResponse] = await Promise.all([localProductsPromise, apiProductsPromise]);
-
+        // Pass empty apiProducts initially
         res.render('admin-products', {
             title: "Manage Products",
             view: 'admin-products',
             user: req.session.user,
             currentUser: req.session.user,
             localProducts: localProducts, 
-            apiProducts: apiResponse.data.results,
+            apiProducts: [], 
             filters: req.query
         });
 
     } catch (error) {
-        console.error("Data fetching for manage page failed:", error.response ? error.response.data : error.message);
-        res.render('admin-products', {
-            title: "Manage Products",
-            view: 'admin-products',
-            user: req.session.user,
-            currentUser: req.session.user,
-            localProducts: [],
-            apiProducts: [],
-            filters: {}
-        });
+        console.error("Data fetching for manage page failed:", error);
+        res.status(500).send("Error loading product management.");
     }
 });
 

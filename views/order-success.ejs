@@ -10,6 +10,7 @@
             <div class="confirmation-card">
                 <div class="card-section">
                     <h5 class="fw-semibold">Your order is confirmed</h5>
+                    <p class="text-dark mb-1">Order ID: <strong>#<%= order._id.toString().slice(-7).toUpperCase() %></strong></p>
                     <p class="text-body-secondary">You'll receive a confirmation email with your order details soon.</p>
                 </div>
                 <div class="card-section">
@@ -60,7 +61,7 @@
             
             <% if (!currentUser) { %>
                 <div class="dashboard-card text-center">
-                     <div class="card-body">
+                    <div class="card-body">
                         <h5 class="fw-semibold">Track your order</h5>
                         <p class="text-body-secondary">Create an account to easily track your order status and manage your purchase history.</p>
                         <a href="/users/register?email=<%= order.customer.email %>" class="btn btn-secondary">Create an Account</a>
@@ -71,7 +72,7 @@
 
             <div class="d-flex justify-content-between align-items-center">
                  <a href="/products" class="btn btn-primary">Continue Shopping</a>
-                 <a href="#" class="text-body-secondary small">Need help? Contact Us</a>
+                 <a href="/support/contact" class="text-body-secondary small">Need help? Contact Us</a>
             </div>
 
         </div>
@@ -96,7 +97,7 @@
             </div>
             
             <% order.items.forEach(item => { %>
-               <div class="summary-product-item mt-3">
+                <div class="summary-product-item mt-3">
                    <img src="<%= item.thumbnailUrl %>" alt="<%= item.name %>">
                    <div class="summary-product-details">
                        <p class="summary-product-title"><%= item.name %></p>

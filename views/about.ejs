@@ -1,49 +1,41 @@
-<div class="container my-5">
+<div class="container my-5 overflow-hidden">
     <div class="text-center pt-4 pb-5">
-        <h1 class="display-3 fw-bold">Sakam adda sapatos mi.</h1>
-        <p class="lead text-body-secondary mt-3 fst-italic">"We have shoes for your feet."</p>
+        <%# Updated: Responsive typography to prevent overflow %>
+        <h1 class="display-5 display-lg-3 fw-bold"><%= mainHeading %></h1>
+        <p class="lead text-body-secondary mt-3 fst-italic">"<%= subHeading %>"</p>
     </div>
 
-    <div class="row g-5 align-items-center mb-5 pb-5 border-bottom">
+    <%# Updated: Responsive gutter (g-4 on mobile, g-5 on desktop) %>
+    <div class="row g-4 g-lg-5 align-items-center mb-5 pb-5 border-bottom">
         <div class="col-lg-6">
-            <img src="https://images.unsplash.com/photo-1597045566677-8cf032ed6634?q=80&w=1887&auto=format&fit=crop" class="img-fluid rounded-4 shadow-sm" alt="A collection of stylish sneakers.">
+            <img src="<%= story.image.src %>" class="img-fluid rounded-4 shadow-sm" alt="<%= story.image.alt %>">
         </div>
         <div class="col-lg-6">
-            <h2 class="display-5 fw-bold mb-3">Our Story</h2>
-            <p class="lead text-body-secondary">At Sneakslab, we believe that sneakers are a statement. Our platform was created to make shopping for the perfect pair simple, secure, and enjoyable.</p>
-            <p class="text-body-secondary">This project began as an academic requirement at the University of Baguio, crafted by two aspiring software engineers. It represents a significant stepping stone in our journey toward becoming professionals in the tech industry.</p>
+            <h2 class="display-5 fw-bold mb-3"><%= story.heading %></h2>
+            <p class="lead text-body-secondary"><%= story.p1 %></p>
+            <p class="text-body-secondary"><%= story.p2 %></p>
         </div>
     </div>
 
     <div class="text-center mb-5">
-        <h2 class="display-5 fw-bold">Meet the Team</h2>
-        <p class="lead text-body-secondary mt-3">The developers behind Sneakslab.</p>
+        <h2 class="display-5 fw-bold"><%= team.heading %></h2>
+        <p class="lead text-body-secondary mt-3"><%= team.subHeading %></p>
     </div>
 
     <div class="row g-4 justify-content-center">
+        <% team.members.forEach(member => { %>
         <div class="col-md-6 col-lg-5">
             <div class="card h-100 text-center">
                 <div class="card-body p-4">
-                    <h3 class="fw-bold">R J Salcedo</h3>
-                    <p class="text-primary fw-medium"><i class="bi bi-code-slash me-2"></i>Full Stack Developer</p>
-                    <p class="text-body-secondary mt-3">RJ served as the full stack developer, bringing together the technical foundation of the platform and ensuring seamless integration across all layers of development.</p>
-                    <a href="https://github.com/Royal-Horizons-Bank" target="_blank" class="btn btn-dark mt-2">
+                    <h3 class="fw-bold"><%= member.name %></h3>
+                    <p class="text-primary fw-medium"><i class="bi bi-code-slash me-2"></i><%= member.role %></p>
+                    <p class="text-body-secondary mt-3"><%= member.bio %></p>
+                    <a href="<%= member.github %>" target="_blank" class="btn btn-dark mt-2">
                         <i class="bi bi-github me-2"></i> GitHub Profile
                     </a>
                 </div>
             </div>
         </div>
-        <div class="col-md-6 col-lg-5">
-            <div class="card h-100 text-center">
-                <div class="card-body p-4">
-                    <h3 class="fw-bold">Mark Simon Bringas</h3>
-                    <p class="text-primary fw-medium"><i class="bi bi-check2-circle me-2"></i>Backend & QA</p>
-                    <p class="text-body-secondary mt-3">Mark Simon focused on backend development and quality assurance, ensuring that the platform is both reliable and efficient.</p>
-                    <a href="https://github.com/msimonb05" target="_blank" class="btn btn-dark mt-2">
-                        <i class="bi bi-github me-2"></i> GitHub Profile
-                    </a>
-                </div>
-            </div>
-        </div>
+        <% }); %>
     </div>
 </div>

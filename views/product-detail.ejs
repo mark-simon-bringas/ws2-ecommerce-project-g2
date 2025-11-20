@@ -24,7 +24,7 @@
                             <img id="productImage" src="<%= product.imageUrl %>" alt="<%= product.name %>" class="img-fluid">
                         </div>
                     <% } else { %>
-                        <div class="img-magnifier-container">
+                         <div class="img-magnifier-container">
                             <img id="productImage" src="https://via.placeholder.com/800x800.png?text=No+Image" alt="No Image Available" class="img-fluid">
                         </div>
                     <% } %>
@@ -158,7 +158,7 @@
                                         <li class="mb-2">Standard delivered 5-9 Business Days</li>
                                         <li>Express delivered 2-4 Business Days</li>
                                     </ul>
-                                     <p class="small text-body-secondary mt-3">Orders are processed and delivered Monday-Friday (excluding public holidays).</p>
+                                    <p class="small text-body-secondary mt-3">Orders are processed and delivered Monday-Friday (excluding public holidays).</p>
                                 </div>
                             </div>
                         </div>
@@ -212,44 +212,51 @@
             <div class="container">
                 <div class="section-header">
                     <h2 class="display-5 fw-bold mb-0">You Might Also Like</h2>
+                    <div class="carousel-nav-buttons">
+                        <button class="carousel-nav-btn prev"><i class="bi bi-chevron-left"></i></button>
+                        <button class="carousel-nav-btn next"><i class="bi bi-chevron-right"></i></button>
+                    </div>
                 </div>
             </div>
-            <div class="product-carousel">
-                <% relatedProducts.forEach(relatedProduct => { %>
-                    <div class="product-card">
-                        <div class="product-card-img-container">
-                            <a href="/products/<%= relatedProduct.sku %>" class="product-card-img-link"></a>
-                            <img src="<%= relatedProduct.thumbnailUrl %>" class="product-card-img" alt="<%= relatedProduct.name %>">
-                            <div class="product-card-actions">
-                                <% if (currentUser) { %>
-                                    <button type="button" class="btn-action wishlist-toggle-btn" title="Toggle Wishlist" data-product-id="<%= relatedProduct._id %>">
-                                        <% const isWishlisted = wishlist.some(id => id.equals(relatedProduct._id)); %>
-                                        <i class="bi <%= isWishlisted ? 'bi-heart-fill' : 'bi-heart' %>"></i>
-                                    </button>
-                                <% } else { %>
-                                    <a href="/users/login?redirect=<%= path %>" class="btn-action" title="Login to Add to Wishlist">
-                                        <i class="bi bi-heart"></i>
-                                    </a>
-                                <% } %>
-                                <button type="button" class="btn-action" title="Add to Cart" data-bs-toggle="modal" data-bs-target="#productModal-<%= relatedProduct.sku %>"><i class="bi bi-bag-plus"></i></button>
+            
+            <div class="product-carousel-wrapper">
+                <div class="product-carousel">
+                    <% relatedProducts.forEach(relatedProduct => { %>
+                        <div class="product-card">
+                            <div class="product-card-img-container">
+                                <a href="/products/<%= relatedProduct.sku %>" class="product-card-img-link"></a>
+                                <img src="<%= relatedProduct.thumbnailUrl %>" class="product-card-img" alt="<%= relatedProduct.name %>">
+                                <div class="product-card-actions">
+                                    <% if (currentUser) { %>
+                                        <button type="button" class="btn-action wishlist-toggle-btn" title="Toggle Wishlist" data-product-id="<%= relatedProduct._id %>">
+                                            <% const isWishlisted = wishlist.some(id => id.equals(relatedProduct._id)); %>
+                                            <i class="bi <%= isWishlisted ? 'bi-heart-fill' : 'bi-heart' %>"></i>
+                                        </button>
+                                    <% } else { %>
+                                        <a href="/users/login?redirect=<%= path %>" class="btn-action" title="Login to Add to Wishlist">
+                                            <i class="bi bi-heart"></i>
+                                        </a>
+                                    <% } %>
+                                    <button type="button" class="btn-action" title="Add to Cart" data-bs-toggle="modal" data-bs-target="#productModal-<%= relatedProduct.sku %>"><i class="bi bi-bag-plus"></i></button>
+                                </div>
+                            </div>
+                            <div class="product-card-body">
+                                <a href="/products/<%= relatedProduct.sku %>" class="text-decoration-none">
+                                    <div class="product-title"><%= relatedProduct.name %></div>
+                                    <div class="product-price">
+                                        <% if (relatedProduct.onSale) { %>
+                                            <span class="fw-bold text-dark"><%= locationData.symbol %><%= relatedProduct.convertedSalePrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></span>
+                                            <del class="text-body-secondary ms-2"><%= locationData.symbol %><%= relatedProduct.convertedPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></del>
+                                            <span class="text-success fw-bold ms-2"><%= relatedProduct.discountPercentage %>% OFF</span>
+                                        <% } else { %>
+                                            <span><%= locationData.symbol %><%= relatedProduct.convertedPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></span>
+                                        <% } %>
+                                    </div>
+                                </a>
                             </div>
                         </div>
-                        <div class="product-card-body">
-                            <a href="/products/<%= relatedProduct.sku %>" class="text-decoration-none">
-                                <div class="product-title"><%= relatedProduct.name %></div>
-                                <div class="product-price">
-                                     <% if (relatedProduct.onSale) { %>
-                                        <span class="fw-bold text-dark"><%= locationData.symbol %><%= relatedProduct.convertedSalePrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></span>
-                                        <del class="text-body-secondary ms-2"><%= locationData.symbol %><%= relatedProduct.convertedPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></del>
-                                        <span class="text-success fw-bold ms-2"><%= relatedProduct.discountPercentage %>% OFF</span>
-                                    <% } else { %>
-                                        <span><%= locationData.symbol %><%= relatedProduct.convertedPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></span>
-                                    <% } %>
-                                </div>
-                            </a>
-                        </div>
-                    </div>
-                <% }) %>
+                    <% }) %>
+                </div>
             </div>
         </section>
         <% } %>

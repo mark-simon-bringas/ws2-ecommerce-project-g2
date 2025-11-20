@@ -83,7 +83,17 @@ router.get('/', async (req, res) => {
 
 // POST /checkout/place-order - Handle the order submission
 router.post('/place-order', async (req, res) => {
+    console.log("------------------------------------------------");
+    console.log("[Checkout] POST /checkout/place-order Initiated");
+    
+    // Log the request body for debugging (sanitizing potential sensitive fields purely for display)
+    const logBody = { ...req.body };
+    if (logBody['cc-number']) logBody['cc-number'] = '****-****-****-' + logBody['cc-number'].slice(-4);
+    if (logBody['cc-cvv']) logBody['cc-cvv'] = '***';
+    console.log("[Checkout] Request Payload:", JSON.stringify(logBody, null, 2));
+
     if (!req.session.cart || req.session.cart.items.length === 0) {
+        console.log("[Checkout] Error: Cart is empty. Redirecting to cart.");
         return res.redirect('/cart');
     }
 
@@ -187,8 +197,10 @@ router.post('/place-order', async (req, res) => {
             order.userId = req.session.user.userId;
         }
 
+        console.log("[Checkout] Inserting Order into Database...");
         const result = await ordersCollection.insertOne(order);
         order._id = result.insertedId;
+        console.log(`[Checkout] Order Created Successfully! Order ID: ${order._id}`);
 
         const stockUpdates = cart.items.map(item => {
             const safeSizeKey = item.size.replace('.', '_');
@@ -199,6 +211,7 @@ router.post('/place-order', async (req, res) => {
             );
         });
         await Promise.all(stockUpdates);
+        console.log("[Checkout] Inventory Updated.");
 
         const itemsWithConvertedPrice = await Promise.all(order.items.map(async item => {
             const convertedPrice = await convertCurrency(item.price, currency);
@@ -286,19 +299,22 @@ router.post('/place-order', async (req, res) => {
             </html>
         `;
 
+        console.log("[Checkout] Sending Confirmation Email...");
         await resend.emails.send({
             from: process.env.RESEND_FROM_EMAIL,
             to: order.customer.email,
             subject: `Your sneakslab Order Confirmation #${order._id.toString().slice(-7)}`,
             html: confirmationEmailHtml,
         });
+        console.log("[Checkout] Confirmation Email Sent.");
 
         req.session.cart = null;
 
+        console.log(`[Checkout] Process Complete. Redirecting to /checkout/success/${result.insertedId}`);
         res.redirect(`/checkout/success/${result.insertedId}`);
 
     } catch (err) {
-        console.error("Error placing order:", err);
+        console.error("[Checkout] FATAL ERROR placing order:", err);
         res.status(500).send("An error occurred while placing your order.");
     }
 });
@@ -309,6 +325,10 @@ router.get('/success/:orderId', async (req, res) => {
         const db = req.app.locals.client.db(req.app.locals.dbName);
         const ordersCollection = db.collection('orders');
         const orderId = req.params.orderId;
+        const currency = res.locals.locationData.currency || 'USD';
+
+        console.log(`[Success Page] Loading order ${orderId}`);
+        console.log(`[Success Page] Target Currency Code: ${currency}`);
 
         const order = await ordersCollection.findOne({ _id: new ObjectId(orderId) });
 
@@ -316,9 +336,34 @@ router.get('/success/:orderId', async (req, res) => {
             return res.status(404).send("Order not found.");
         }
 
+        console.log(`[Success Page] DB Values (USD) -> Subtotal: ${order.subtotal}, Total: ${order.total}`);
+
+        // Create a shallow copy or new object for view rendering to avoid mutating the DB return object
+        // and to ensure we are working with clean numbers
+        const viewOrder = { ...order };
+        
+        // Ensure these are Numbers before conversion
+        const subtotalNum = Number(viewOrder.subtotal);
+        const shippingNum = Number(viewOrder.shippingCost);
+        const totalNum = Number(viewOrder.total);
+
+        // Convert
+        viewOrder.subtotal = await convertCurrency(subtotalNum, currency);
+        viewOrder.shippingCost = await convertCurrency(shippingNum, currency);
+        viewOrder.total = await convertCurrency(totalNum, currency);
+
+        console.log(`[Success Page] Converted Values (${currency}) -> Subtotal: ${viewOrder.subtotal}, Total: ${viewOrder.total}`);
+
+        // Convert items
+        viewOrder.items = await Promise.all(viewOrder.items.map(async (item) => {
+            const newItem = { ...item }; // Copy item
+            newItem.price = await convertCurrency(Number(item.price), currency);
+            return newItem;
+        }));
+
         res.render('order-success', {
             title: "Order Confirmation",
-            order: order,
+            order: viewOrder,
             pageStyle: 'order-success'
         });
 

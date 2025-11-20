@@ -10,4 +10,5 @@ Disallow: /account/settings/
 Disallow: /account/orders/
 Disallow: /account/wishlist/
 
+# Specify the location of your sitemap
 Sitemap: https://www.sneakslab.shop/sitemap.xml

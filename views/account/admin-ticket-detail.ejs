@@ -1,87 +1,97 @@
-<div class="page-header d-flex justify-content-between align-items-center">
-    <div>
-        <h1>Support Ticket</h1>
-        <p class="text-body-secondary">
-            Conversation with <%= ticket.userEmail %>
-        </p>
+<div class="container mt-0 my-lg-5 pt-0 support-page-wrapper">
+    <div class="page-header d-flex justify-content-between align-items-center mb-4 d-none d-lg-flex">
+        <div>
+            <h1>Support Ticket</h1>
+            <p class="text-body-secondary">
+                Conversation with <%= ticket.userEmail %>
+            </p>
+        </div>
+        <a href="/account/admin/inbox" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Back to Inbox
+        </a>
     </div>
-    <a href="/account/admin/inbox" class="btn btn-outline-secondary">
-        <i class="bi bi-arrow-left"></i> Back to Inbox
-    </a>
-</div>
 
-<div class="chat-container">
-    <div class="chat-header">
-        <div class="d-flex justify-content-between align-items-center">
-            <div>
-                <h1 class="mb-0">Ticket #<%= ticket.ticketId %></h1>
-                <p class="text-body-secondary small mb-0">Subject: <%= ticket.subject %></p>
-            </div>
-            <form action="/account/admin/tickets/<%= ticket.ticketId %>/update-status" method="POST" class="d-flex align-items-center gap-2">
-                <% if (ticket.status === 'Open') { %>
-                    <span class="badge bg-primary-subtle text-primary-emphasis rounded-pill"><%= ticket.status %></span>
-                <% } else if (ticket.status === 'Answered') { %>
-                    <span class="badge bg-success-subtle text-success-emphasis rounded-pill"><%= ticket.status %></span>
+    <div class="row justify-content-center">
+        <div class="col-lg-12">
+            <div class="chat-container">
+                <div class="chat-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div style="min-width: 0;">
+                            <h1 class="mb-0 text-truncate">Ticket #<%= ticket.ticketId %></h1>
+                            <p class="text-body-secondary small mb-0 text-truncate">Subject: <%= ticket.subject %></p>
+                        </div>
+                        <form action="/account/admin/tickets/<%= ticket.ticketId %>/update-status" method="POST" class="d-flex align-items-center gap-2 ms-2 flex-shrink-0">
+                            <select name="status" class="form-select form-select-sm w-auto" onchange="this.form.submit()">
+                                <option value="Open" <%= ticket.status === 'Open' ? 'selected' : '' %>>Open</option>
+                                <option value="Answered" <%= ticket.status === 'Answered' ? 'selected' : '' %>>Answered</option>
+                                <option value="Closed" <%= ticket.status === 'Closed' ? 'selected' : '' %>>Closed</option>
+                            </select>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="chat-messages" id="chat-messages">
+                    <% ticket.messages.forEach(message => { %>
+                        <%# Logic Swap: In Admin View, Admin is 'User' (Right), Customer is 'Support' (Left) for visual consistency %>
+                        <% if (message.sender === 'admin') { %>
+                            <div class="chat-message user-message">
+                                <div class="message-bubble">
+                                    <%- message.message.replace(/\n/g, '<br>') %>
+                                </div>
+                                <div class="message-meta">
+                                    You • <%= new Date(message.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) %>
+                                </div>
+                            </div>
+                        <% } else { %>
+                            <div class="chat-message support-message">
+                                <div class="message-bubble">
+                                    <%- message.message.replace(/\n/g, '<br>') %>
+                                </div>
+                                <div class="message-meta">
+                                    <%= message.name %> • <%= new Date(message.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) %>
+                                </div>
+                            </div>
+                        <% } %>
+                    <% }) %>
+                </div>
+
+                <% if (ticket.status !== 'Closed') { %>
+                    <div class="chat-reply-form">
+                        <form id="reply-form">
+                            <div class="reply-box-wrapper">
+                                <textarea 
+                                    id="message-input" 
+                                    placeholder="Type your reply..." 
+                                    rows="1" 
+                                    required
+                                ></textarea>
+                                <button type="submit" class="btn-send" aria-label="Send Reply">
+                                    <i class="bi bi-send-fill"></i>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
                 <% } else { %>
-                    <span class="badge bg-secondary-subtle text-secondary-emphasis rounded-pill"><%= ticket.status %></span>
+                     <div class="chat-reply-form text-center bg-light">
+                        <p class="text-body-secondary mb-0 small">This ticket is closed. Replying will re-open it.</p>
+                         <form id="reply-form" class="mt-2">
+                            <div class="reply-box-wrapper">
+                                <textarea 
+                                    id="message-input" 
+                                    placeholder="Type to re-open..." 
+                                    rows="1" 
+                                    required
+                                ></textarea>
+                                <button type="submit" class="btn-send" aria-label="Send Reply">
+                                    <i class="bi bi-send-fill"></i>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
                 <% } %>
-                <select name="status" class="form-select form-select-sm w-auto">
-                    <option value="Open" <%= ticket.status === 'Open' ? 'selected' : '' %>>Open</option>
-                    <option value="Answered" <%= ticket.status === 'Answered' ? 'selected' : '' %>>Answered</option>
-                    <option value="Closed" <%= ticket.status === 'Closed' ? 'selected' : '' %>>Closed</option>
-                </select>
-                <button type="submit" class="btn btn-sm btn-secondary">Update</button>
-            </form>
+            </div>
         </div>
     </div>
-    <div class="chat-messages" id="chat-messages">
-        <% ticket.messages.forEach(message => { %>
-            <% if (message.sender === 'user') { %>
-                <div class="chat-message user-message">
-                    <div class="message-bubble">
-                        <%- message.message.replace(/\n/g, '<br>') %>
-                    </div>
-                    <div class="message-meta">
-                        <%= message.name %> • <%= new Date(message.timestamp).toLocaleString() %>
-                    </div>
-                </div>
-            <% } else { %>
-                <div class="chat-message support-message">
-                    <div class="message-bubble">
-                        <%- message.message.replace(/\n/g, '<br>') %>
-                    </div>
-                    <div class="message-meta">
-                        <%= message.adminName || 'Support Team' %> • <%= new Date(message.timestamp).toLocaleString() %>
-                    </div>
-                </div>
-            <% } %>
-        <% }) %>
-    </div>
-
-    <% if (ticket.status !== 'Closed') { %>
-        <div class="chat-reply-form">
-            <form id="reply-form">
-                <div class="input-group">
-                    <textarea class="form-control" id="message-input" placeholder="Type your reply..." rows="1" required></textarea>
-                    <button type="submit" class="btn btn-primary btn-send" aria-label="Send Reply">
-                        <i class="bi bi-send-fill"></i>
-                    </button>
-                </div>
-            </form>
-        </div>
-    <% } else { %>
-         <div class="chat-reply-form text-center">
-            <p class="text-body-secondary mb-0">This ticket has been closed. Replying will re-open it.</p>
-             <form id="reply-form">
-                <div class="input-group">
-                    <textarea class="form-control" id="message-input" placeholder="Type your reply to re-open..." rows="1" required></textarea>
-                    <button type="submit" class="btn btn-primary btn-send" aria-label="Send Reply">
-                        <i class="bi bi-send-fill"></i>
-                    </button>
-                </div>
-            </form>
-        </div>
-    <% } %>
 </div>
 
 <script src="/socket.io/socket.io.js"></script>
@@ -95,26 +105,45 @@
         const ticketId = '<%= ticket.ticketId %>';
         const adminName = '<%= currentUser.firstName %>';
 
+        // Scroll to bottom immediately
+        const scrollToBottom = () => {
+            if (chatMessages) {
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+        };
+        window.requestAnimationFrame(scrollToBottom);
+
         // 1. Join the specific ticket room
         socket.emit('joinTicket', ticketId);
 
-        // 2. Listen for new messages from the server
+        // 2. Listen for new messages
         socket.on('newMessage', (message) => {
             appendMessage(message);
         });
 
-        // 3. Handle form submission to send a message
+        // 3. Auto-resize Textarea Logic
+        if (messageInput) {
+            messageInput.addEventListener('input', function() {
+                this.style.height = 'auto';
+                this.style.height = (this.scrollHeight) + 'px';
+                scrollToBottom();
+            });
+
+            // 4. Handle Shift+Enter vs Enter
+            messageInput.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    if (this.value.trim() !== '') {
+                        sendMessage();
+                    }
+                }
+            });
+        }
+
         if (replyForm) {
             replyForm.addEventListener('submit', (e) => {
                 e.preventDefault();
                 sendMessage();
-            });
-
-            messageInput.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    sendMessage();
-                }
             });
         }
 
@@ -128,16 +157,20 @@
                     adminName: adminName
                 };
                 socket.emit('chatMessage', messageData);
+                
                 messageInput.value = '';
                 messageInput.style.height = 'auto';
+                messageInput.focus();
             }
         }
 
         function appendMessage(message) {
             const messageElement = document.createElement('div');
+            // Logic Swap: Check if sender is admin to decide side
             const isAdminMessage = message.sender === 'admin';
             
-            messageElement.classList.add('chat-message', isAdminMessage ? 'support-message' : 'user-message');
+            // Apply CSS classes based on "My Message" (user-message) vs "Their Message" (support-message)
+            messageElement.classList.add('chat-message', isAdminMessage ? 'user-message' : 'support-message');
             
             const bubble = document.createElement('div');
             bubble.classList.add('message-bubble');
@@ -145,24 +178,18 @@
 
             const meta = document.createElement('div');
             meta.classList.add('message-meta');
-            const senderName = isAdminMessage ? (message.adminName || 'Support Team') : message.name;
-            meta.textContent = `${senderName} • ${new Date(message.timestamp).toLocaleString()}`;
+            
+            const timeString = new Date(message.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            // If I sent it (Admin), say "You", otherwise show Customer Name
+            const senderName = isAdminMessage ? 'You' : message.name;
+            
+            meta.textContent = `${senderName} • ${timeString}`;
 
             messageElement.appendChild(bubble);
             messageElement.appendChild(meta);
             chatMessages.appendChild(messageElement);
-            chatMessages.scrollTop = chatMessages.scrollHeight;
-        }
-
-        // Initial scroll to bottom
-        chatMessages.scrollTop = chatMessages.scrollHeight;
-
-        // Auto-expand textarea
-        if(messageInput) {
-            messageInput.addEventListener('input', function () {
-                this.style.height = 'auto';
-                this.style.height = (this.scrollHeight) + 'px';
-            });
+            
+            scrollToBottom();
         }
     });
 </script>
