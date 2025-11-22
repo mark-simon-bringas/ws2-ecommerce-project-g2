@@ -95,6 +95,7 @@ router.post('/register', async (req, res) => {
             verificationToken: verificationToken,
             tokenExpiry: new Date(Date.now() + 3600000),
             wishlist: [],
+            loginHistory: [], // Initialize empty login history
             createdAt: currentDate,
             updatedAt: currentDate
         };
@@ -199,6 +200,32 @@ router.post('/login', async (req, res) => {
             role: user.role,
             isEmailVerified: user.isEmailVerified
         };
+
+        // --- NEW: Track Login History ---
+        try {
+            const userAgent = req.headers['user-agent'] || 'Unknown Device';
+            const ip = req.headers['x-forwarded-for'] || req.ip || req.connection.remoteAddress;
+            
+            await usersCollection.updateOne(
+                { userId: user.userId },
+                {
+                    $push: {
+                        loginHistory: {
+                            $each: [{ 
+                                userAgent, 
+                                ip, 
+                                timestamp: new Date() 
+                            }],
+                            $sort: { timestamp: -1 },
+                            $slice: 5 // Keep only the last 5 entries
+                        }
+                    }
+                }
+            );
+        } catch (historyErr) {
+            console.error("Failed to save login history:", historyErr);
+        }
+        // -------------------------------
         
         const redirectUrl = req.body.redirect || '/account';
         res.redirect(redirectUrl);

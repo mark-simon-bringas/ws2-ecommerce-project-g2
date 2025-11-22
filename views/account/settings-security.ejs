@@ -30,7 +30,39 @@
             </div>
             <div>
                 <h6 class="fw-bold text-success-emphasis mb-1">Account Protected</h6>
-                <p class="small text-success-emphasis mb-0 opacity-75">Your account security is up to date. No suspicious activity detected.</p>
+                <p class="small text-success-emphasis mb-0 opacity-75">Your account security is up to date.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm rounded-4 mb-4">
+        <div class="card-header bg-white border-bottom p-4">
+            <h5 class="fw-bold mb-0">Recent Devices</h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="list-group list-group-flush">
+                <% if (loginHistory && loginHistory.length > 0) { %>
+                    <% loginHistory.forEach((login, index) => { %>
+                        <div class="list-group-item p-4 d-flex align-items-center justify-content-between border-0 <%= index !== loginHistory.length - 1 ? 'border-bottom' : '' %>">
+                            <div class="d-flex align-items-center gap-3">
+                                <i class="bi <%= login.icon %> fs-3 text-secondary"></i>
+                                <div>
+                                    <h6 class="fw-semibold mb-0"><%= login.displayName %></h6>
+                                    <% if (index === 0) { %>
+                                        <small class="text-success d-flex align-items-center gap-1"><i class="bi bi-circle-fill" style="font-size: 6px;"></i> Current Session</small>
+                                    <% } else { %>
+                                        <small class="text-secondary"><%= login.ip %></small>
+                                    <% } %>
+                                </div>
+                            </div>
+                            <small class="text-secondary"><%= new Date(login.timestamp).toLocaleDateString() %> <br> <%= new Date(login.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) %></small>
+                        </div>
+                    <% }) %>
+                <% } else { %>
+                    <div class="p-4 text-center text-secondary">
+                        <p class="mb-0">No login history available yet.</p>
+                    </div>
+                <% } %>
             </div>
         </div>
     </div>
@@ -73,51 +105,6 @@
                     <button type="submit" class="btn btn-dark rounded-pill px-4 py-2 fw-bold">Update Password</button>
                 </div>
             </form>
-        </div>
-    </div>
-
-    <div class="card border-0 shadow-sm rounded-4 mb-4">
-        <div class="card-body p-4 d-flex align-items-center justify-content-between">
-            <div class="d-flex align-items-center gap-3">
-                <div class="bg-light rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 48px; height: 48px;">
-                    <i class="bi bi-phone-vibrate fs-4 text-dark"></i>
-                </div>
-                <div>
-                    <h6 class="fw-bold mb-1">Two-Factor Authentication</h6>
-                    <p class="text-secondary small mb-0">Add an extra layer of security to your account.</p>
-                </div>
-            </div>
-            <button class="btn btn-outline-secondary rounded-pill btn-sm px-3" disabled>Set Up (Coming Soon)</button>
-        </div>
-    </div>
-
-    <div class="card border-0 shadow-sm rounded-4 mb-5">
-        <div class="card-header bg-white border-bottom p-4">
-            <h5 class="fw-bold mb-0">Recent Devices</h5>
-        </div>
-        <div class="card-body p-0">
-            <div class="list-group list-group-flush">
-                <div class="list-group-item p-4 d-flex align-items-center justify-content-between border-0 border-bottom">
-                    <div class="d-flex align-items-center gap-3">
-                        <i class="bi bi-laptop fs-3 text-secondary"></i>
-                        <div>
-                            <h6 class="fw-semibold mb-0">Chrome on Windows</h6>
-                            <small class="text-success d-flex align-items-center gap-1"><i class="bi bi-circle-fill" style="font-size: 6px;"></i> Active Now</small>
-                        </div>
-                    </div>
-                    <small class="text-secondary"><%= new Date().toLocaleDateString() %></small>
-                </div>
-                <div class="list-group-item p-4 d-flex align-items-center justify-content-between border-0">
-                    <div class="d-flex align-items-center gap-3">
-                        <i class="bi bi-phone fs-3 text-secondary"></i>
-                        <div>
-                            <h6 class="fw-semibold mb-0">Safari on iPhone</h6>
-                            <small class="text-secondary">Bag, Philippines</small>
-                        </div>
-                    </div>
-                    <small class="text-secondary">2 days ago</small>
-                </div>
-            </div>
         </div>
     </div>
 

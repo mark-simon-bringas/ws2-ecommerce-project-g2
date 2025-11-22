@@ -5,11 +5,11 @@ const router = express.Router();
 const { ObjectId } = require('mongodb');
 const { Resend } = require('resend');
 const bcrypt = require('bcrypt');
-const { convertCurrency } = require('./currency'); // Ensure currency converter is imported if needed for the view
+const saltRounds = 12;
+const { convertCurrency } = require('./currency');
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-// ... (Keep helper functions like createStatusEmailHtml, isLoggedIn, isAdmin) ...
 // Helper function for status emails
 const createStatusEmailHtml = (order) => {
     const itemsHtml = order.items.map(item => `
@@ -104,22 +104,27 @@ const isAdmin = (req, res, next) => {
 
 router.use(isLoggedIn);
 
+// UPDATED: Main Account Redirect
 router.get('/', (req, res) => {
     if (req.session.user.role === 'admin') {
         res.redirect('/account/admin/dashboard');
     } else {
+        // Redirect normal users to the new Settings Menu Hub
         res.redirect('/account/settings');
     }
 });
 
-// --- SETTINGS HUB & SUB-PAGES ---
+// --- NEW: SETTINGS HUB & SUB-PAGES ---
+
+// 1. Settings Menu (The Hub)
 router.get('/settings', async (req, res) => {
-    res.render('account/settings-menu', {
+    res.render('account/settings', {
         title: "Settings",
         view: 'settings'
     });
 });
 
+// 2. Identity Page
 router.get('/identity', async (req, res) => {
     const db = req.app.locals.client.db(req.app.locals.dbName);
     const user = await db.collection('users').findOne({ userId: req.session.user.userId });
@@ -132,15 +137,53 @@ router.get('/identity', async (req, res) => {
     });
 });
 
+// 3. Security Page (With Recent Devices)
 router.get('/security', async (req, res) => {
+    const db = req.app.locals.client.db(req.app.locals.dbName);
+    const user = await db.collection('users').findOne({ userId: req.session.user.userId });
+
+    // Helper to parse User Agent string
+    const parseDevice = (uaString) => {
+        if (!uaString) return { name: 'Unknown Device', icon: 'bi-question-circle' };
+        
+        let name = 'Web Browser';
+        let icon = 'bi-laptop';
+
+        // Detect OS
+        if (/windows/i.test(uaString)) name += ' on Windows';
+        else if (/macintosh|mac os x/i.test(uaString)) name += ' on macOS';
+        else if (/linux/i.test(uaString)) name += ' on Linux';
+        else if (/android/i.test(uaString)) { name = 'Android Device'; icon = 'bi-phone'; }
+        else if (/iphone|ipad|ipod/i.test(uaString)) { name = 'iOS Device'; icon = 'bi-phone'; }
+
+        // Detect Browser (Basic)
+        if (/chrome/i.test(uaString) && !/edg/i.test(uaString)) name = name.replace('Web Browser', 'Chrome');
+        else if (/safari/i.test(uaString) && !/chrome/i.test(uaString)) name = name.replace('Web Browser', 'Safari');
+        else if (/firefox/i.test(uaString)) name = name.replace('Web Browser', 'Firefox');
+        else if (/edg/i.test(uaString)) name = name.replace('Web Browser', 'Edge');
+
+        return { name, icon };
+    };
+
+    const loginHistory = (user && user.loginHistory) ? user.loginHistory.map(entry => {
+        const details = parseDevice(entry.userAgent);
+        return {
+            ...entry,
+            displayName: details.name,
+            icon: details.icon
+        };
+    }) : [];
+
     res.render('account/settings-security', {
         title: "Security",
         view: 'settings',
         message: req.query.message,
-        error: req.query.error
+        error: req.query.error,
+        loginHistory: loginHistory
     });
 });
 
+// 4. Addresses Page
 router.get('/addresses', async (req, res) => {
     const db = req.app.locals.client.db(req.app.locals.dbName);
     const user = await db.collection('users').findOne({ userId: req.session.user.userId });
@@ -221,6 +264,7 @@ router.get('/wishlist', async (req, res) => {
     }
 });
 
+// 5. Order History
 router.get('/orders', async (req, res) => {
     try {
         const db = req.app.locals.client.db(req.app.locals.dbName);
@@ -229,7 +273,7 @@ router.get('/orders', async (req, res) => {
             title: "Order History", 
             orders: userOrders, 
             view: 'orders',
-            pageStyle: 'order-success' // Added to load order-success.css for the timeline
+            pageStyle: 'order-success' // Needed for the visual timeline CSS
         });
     } catch (err) {
         console.error("Error fetching order history:", err);
@@ -237,7 +281,7 @@ router.get('/orders', async (req, res) => {
     }
 });
 
-// ADDED: Single Order Details Route (Redirects to Order Status View)
+// 6. Single Order Details (Redirects to Tracker View)
 router.get('/orders/:id', async (req, res) => {
     try {
         const db = req.app.locals.client.db(req.app.locals.dbName);
@@ -247,14 +291,13 @@ router.get('/orders/:id', async (req, res) => {
 
         const order = await ordersCollection.findOne({ 
             _id: new ObjectId(orderId),
-            userId: req.session.user.userId // Ensure user owns the order
+            userId: req.session.user.userId // Ensure ownership
         });
 
         if (!order) {
             return res.status(404).send("Order not found.");
         }
         
-        // Convert currency for display if needed (reusing logic from support.js)
         if (typeof convertCurrency === 'function') {
             order.subtotal = await convertCurrency(order.subtotal, currency);
             order.shippingCost = await convertCurrency(order.shippingCost, currency);
@@ -265,7 +308,6 @@ router.get('/orders/:id', async (req, res) => {
             }));
         }
 
-        // Render the 'support/order-status' view which has the tracker UI
         res.render('support/order-status', {
             title: `Order #${order._id.toString().slice(-7).toUpperCase()}`,
             order: order,
@@ -279,7 +321,6 @@ router.get('/orders/:id', async (req, res) => {
     }
 });
 
-// ... (Keep existing form action routes: update-profile, update-password, add-address, etc.) ...
 // --- FORM ACTIONS ---
 router.post('/settings/update-profile', async (req, res) => {
     try {
@@ -372,7 +413,6 @@ router.post('/settings/delete-address/:addressId', async (req, res) => {
     }
 });
 
-// ... (Keep Admin routes as is) ...
 // --- ADMIN ROUTES ---
 router.get('/admin/dashboard', isAdmin, async (req, res) => {
     try {
