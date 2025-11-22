@@ -5,11 +5,12 @@ const router = express.Router();
 const { ObjectId } = require('mongodb');
 const { Resend } = require('resend');
 const bcrypt = require('bcrypt');
-const saltRounds = 12;
+const { convertCurrency } = require('./currency'); // Ensure currency converter is imported if needed for the view
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-// Helper function for status emails (Keep existing logic)
+// ... (Keep helper functions like createStatusEmailHtml, isLoggedIn, isAdmin) ...
+// Helper function for status emails
 const createStatusEmailHtml = (order) => {
     const itemsHtml = order.items.map(item => `
         <tr>
@@ -103,28 +104,22 @@ const isAdmin = (req, res, next) => {
 
 router.use(isLoggedIn);
 
-// UPDATED: Main Account Redirect
 router.get('/', (req, res) => {
     if (req.session.user.role === 'admin') {
         res.redirect('/account/admin/dashboard');
     } else {
-        // Redirect normal users to the new Settings Menu Hub
         res.redirect('/account/settings');
     }
 });
 
-// --- NEW: SETTINGS HUB & SUB-PAGES ---
-
-// 1. Settings Menu (The Hub)
+// --- SETTINGS HUB & SUB-PAGES ---
 router.get('/settings', async (req, res) => {
-    // No DB call needed, just render the menu with session data
     res.render('account/settings-menu', {
         title: "Settings",
         view: 'settings'
     });
 });
 
-// 2. Identity Page
 router.get('/identity', async (req, res) => {
     const db = req.app.locals.client.db(req.app.locals.dbName);
     const user = await db.collection('users').findOne({ userId: req.session.user.userId });
@@ -137,7 +132,6 @@ router.get('/identity', async (req, res) => {
     });
 });
 
-// 3. Security Page
 router.get('/security', async (req, res) => {
     res.render('account/settings-security', {
         title: "Security",
@@ -147,7 +141,6 @@ router.get('/security', async (req, res) => {
     });
 });
 
-// 4. Addresses Page
 router.get('/addresses', async (req, res) => {
     const db = req.app.locals.client.db(req.app.locals.dbName);
     const user = await db.collection('users').findOne({ userId: req.session.user.userId });
@@ -160,9 +153,7 @@ router.get('/addresses', async (req, res) => {
     });
 });
 
-
-// --- EXISTING LOGIC (Refactored paths where needed) ---
-
+// Wishlist Toggle
 router.post('/wishlist/toggle', async (req, res) => {
     try {
         const { productId } = req.body;
@@ -234,15 +225,62 @@ router.get('/orders', async (req, res) => {
     try {
         const db = req.app.locals.client.db(req.app.locals.dbName);
         const userOrders = await db.collection('orders').find({ userId: req.session.user.userId }).sort({ orderDate: -1 }).toArray();
-        res.render('account/order-history', { title: "Order History", orders: userOrders, view: 'orders' });
+        res.render('account/order-history', { 
+            title: "Order History", 
+            orders: userOrders, 
+            view: 'orders',
+            pageStyle: 'order-success' // Added to load order-success.css for the timeline
+        });
     } catch (err) {
         console.error("Error fetching order history:", err);
         res.status(500).send("Could not load your order history.");
     }
 });
 
-// --- FORM ACTIONS (Redirects updated to new paths) ---
+// ADDED: Single Order Details Route (Redirects to Order Status View)
+router.get('/orders/:id', async (req, res) => {
+    try {
+        const db = req.app.locals.client.db(req.app.locals.dbName);
+        const ordersCollection = db.collection('orders');
+        const orderId = req.params.id;
+        const currency = res.locals.locationData.currency;
 
+        const order = await ordersCollection.findOne({ 
+            _id: new ObjectId(orderId),
+            userId: req.session.user.userId // Ensure user owns the order
+        });
+
+        if (!order) {
+            return res.status(404).send("Order not found.");
+        }
+        
+        // Convert currency for display if needed (reusing logic from support.js)
+        if (typeof convertCurrency === 'function') {
+            order.subtotal = await convertCurrency(order.subtotal, currency);
+            order.shippingCost = await convertCurrency(order.shippingCost, currency);
+            order.total = await convertCurrency(order.total, currency);
+            order.items = await Promise.all(order.items.map(async (item) => {
+                item.price = await convertCurrency(item.price, currency);
+                return item;
+            }));
+        }
+
+        // Render the 'support/order-status' view which has the tracker UI
+        res.render('support/order-status', {
+            title: `Order #${order._id.toString().slice(-7).toUpperCase()}`,
+            order: order,
+            error: null,
+            pageStyle: 'order-success'
+        });
+
+    } catch (err) {
+        console.error("Error fetching order details:", err);
+        res.status(500).send("An error occurred.");
+    }
+});
+
+// ... (Keep existing form action routes: update-profile, update-password, add-address, etc.) ...
+// --- FORM ACTIONS ---
 router.post('/settings/update-profile', async (req, res) => {
     try {
         const { firstName, lastName } = req.body;
@@ -334,8 +372,8 @@ router.post('/settings/delete-address/:addressId', async (req, res) => {
     }
 });
 
-// --- ADMIN ROUTES (Kept as is, essentially) ---
-// ... [Admin routes logic remains the same, just ensuring no overlap] ...
+// ... (Keep Admin routes as is) ...
+// --- ADMIN ROUTES ---
 router.get('/admin/dashboard', isAdmin, async (req, res) => {
     try {
         const db = req.app.locals.client.db(req.app.locals.dbName);

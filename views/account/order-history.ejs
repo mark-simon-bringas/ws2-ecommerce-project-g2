@@ -1,4 +1,4 @@
-<div class="settings-page-wrapper">
+<div class="settings-page-wrapper" style="max-width: 800px;">
     <div class="d-flex align-items-center mb-4">
         <a href="/account/settings" class="btn btn-icon btn-light rounded-circle me-3">
             <i class="bi bi-arrow-left"></i>
@@ -10,22 +10,22 @@
     </div>
 
     <% if (orders && orders.length > 0) { %>
-        <div class="d-flex flex-column gap-3">
+        <div class="d-flex flex-column gap-4">
             <% orders.forEach(order => { %>
                 <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
                     <div class="card-body p-4">
                         <div class="d-flex justify-content-between align-items-start mb-3">
                             <div>
                                 <h6 class="fw-bold mb-1">
-                                    ORD-<%= order._id.toString().slice(-4).toUpperCase() %>
+                                    Order #<%= order._id.toString().slice(-7).toUpperCase() %>
                                 </h6>
                                 <p class="text-secondary small mb-0">
                                     <%= new Date(order.orderDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) %>
                                 </p>
                             </div>
                             <div class="text-end">
-                                <h6 class="fw-bold mb-1">$<%= order.total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></h6>
-                                <a href="/checkout/success/<%= order._id %>" class="small text-primary text-decoration-none fw-medium">View Details &gt;</a>
+                                <h6 class="fw-bold mb-1"><%= locationData.symbol %><%= order.total.toLocaleString(undefined, { minimumFractionDigits: 2 }) %></h6>
+                                <a href="/account/orders/<%= order._id %>" class="small text-primary text-decoration-none fw-medium">View Details &gt;</a>
                             </div>
                         </div>
 
@@ -41,32 +41,38 @@
                             </ul>
                         </div>
 
-                        <% 
-                            const steps = ['Processing', 'Shipped', 'Delivered'];
-                            const currentStatusIndex = steps.indexOf(order.status);
-                            const isCancelled = order.status === 'Cancelled';
-                        %>
-
-                        <% if (isCancelled) { %>
-                            <div class="alert alert-secondary py-2 px-3 d-flex align-items-center gap-2 rounded-3 mb-0">
+                        <% if (order.status === 'Cancelled') { %>
+                            <div class="alert alert-secondary py-3 px-3 d-flex align-items-center gap-2 rounded-3 mb-0">
                                 <i class="bi bi-x-circle-fill text-secondary"></i>
-                                <span class="small fw-medium text-secondary">Order Cancelled</span>
+                                <div>
+                                    <span class="fw-bold text-secondary d-block" style="font-size: 0.9rem;">Order Cancelled</span>
+                                    <span class="small text-secondary opacity-75">This order has been cancelled.</span>
+                                </div>
                             </div>
                         <% } else { %>
-                            <div class="position-relative mt-2 mx-2">
-                                <div class="position-absolute top-0 start-0 w-100" style="height: 2px; background-color: #e9ecef; top: 6px;"></div>
-                                
-                                <div class="position-absolute top-0 start-0 bg-success transition-all" style="height: 2px; top: 6px; width: <%= (currentStatusIndex / (steps.length - 1)) * 100 %>%;"></div>
+                            <div class="whats-next-timeline mt-2">
+                                <div class="timeline-step <%= ['Processing', 'Shipped', 'Delivered'].includes(order.status) ? 'active' : '' %>">
+                                    <div class="timeline-icon"><i class="bi bi-check-lg"></i></div>
+                                    <div class="timeline-content">
+                                        <strong>Confirmed</strong>
+                                        <p class="small text-body-secondary">Received</p>
+                                    </div>
+                                </div>
 
-                                <div class="d-flex justify-content-between position-relative">
-                                    <% steps.forEach((step, index) => { %>
-                                        <% const isActive = index <= currentStatusIndex; %>
-                                        <div class="text-center d-flex flex-column align-items-center" style="width: 80px;">
-                                            <div class="rounded-circle d-flex align-items-center justify-content-center mb-2 <%= isActive ? 'bg-success text-white' : 'bg-white border border-2 border-light text-light' %>" style="width: 14px; height: 14px; z-index: 2; transition: all 0.3s ease;">
-                                            </div>
-                                            <span class="small fw-bold text-uppercase <%= isActive ? 'text-success' : 'text-body-tertiary' %>" style="font-size: 0.65rem; letter-spacing: 0.5px;"><%= step %></span>
-                                        </div>
-                                    <% }) %>
+                                <div class="timeline-step <%= ['Shipped', 'Delivered'].includes(order.status) ? 'active' : '' %>">
+                                    <div class="timeline-icon"><i class="bi bi-truck"></i></div>
+                                    <div class="timeline-content">
+                                        <strong>Shipped</strong>
+                                        <p class="small text-body-secondary">On the way</p>
+                                    </div>
+                                </div>
+
+                                <div class="timeline-step <%= ['Delivered'].includes(order.status) ? 'active' : '' %>">
+                                    <div class="timeline-icon"><i class="bi bi-box-seam-fill"></i></div>
+                                    <div class="timeline-content">
+                                        <strong>Delivered</strong>
+                                        <p class="small text-body-secondary">Arrived</p>
+                                    </div>
                                 </div>
                             </div>
                         <% } %>
@@ -88,7 +94,6 @@
 
 <style>
     .settings-page-wrapper {
-        max-width: 600px;
         margin: 0 auto;
         padding: 1rem;
     }
@@ -100,7 +105,11 @@
         justify-content: center;
         border: 1px solid var(--border-color);
     }
-    .transition-all {
-        transition: all 0.5s ease;
+    /* Ensure timeline fits well in the card */
+    .whats-next-timeline {
+        padding: 0; /* Remove default padding for tighter fit */
+    }
+    .timeline-step {
+        padding-bottom: 0; /* Remove bottom padding used in full page view */
     }
 </style>

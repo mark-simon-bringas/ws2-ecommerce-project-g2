@@ -1,69 +1,114 @@
-<div class="support-page-container">
-    <div class="support-hero">
-        <div class="container">
-            <h1 class="display-4 fw-bold">Sneakslab Support</h1>
-            <p class="lead text-body-secondary mt-3">We're here to help. Find the answers you're looking for.</p>
+<div class="settings-page-wrapper" style="max-width: 1000px;">
+    <div class="text-center py-5 mb-4">
+        <h1 class="display-5 fw-bold mb-3">How can we help?</h1>
+        <p class="text-body-secondary lead mb-4">Search for answers or select a topic below.</p>
+        
+        <div class="mx-auto" style="max-width: 600px;">
+            <form action="/support/search" method="GET" class="position-relative">
+                <i class="bi bi-search position-absolute top-50 start-0 translate-middle-y ms-3 text-secondary"></i>
+                <input type="text" name="q" class="form-control form-control-lg ps-5 rounded-pill border border-secondary-subtle shadow-sm bg-white" placeholder="Search for help..." style="padding-top: 1rem; padding-bottom: 1rem;">
+            </form>
         </div>
     </div>
 
-    <div class="container">
-        <div class="support-search-bar">
-            <form action="/support/search" method="GET">
-                <div class="input-group">
-                    <span class="input-group-text"><i class="bi bi-search"></i></span>
-                    <input type="text" name="q" class="form-control" placeholder="Search for help...">
+    <div class="row g-4 mb-5">
+        <div class="col-md-6">
+            <a href="/support/order-status" class="card h-100 border-0 shadow-sm rounded-4 text-decoration-none card-hover-effect">
+                <div class="card-body p-4 d-flex align-items-center gap-4">
+                    <div class="rounded-circle bg-primary-subtle text-primary d-flex align-items-center justify-content-center flex-shrink-0" style="width: 64px; height: 64px; font-size: 1.75rem;">
+                        <i class="bi bi-box-seam-fill"></i>
+                    </div>
+                    <div>
+                        <h4 class="fw-bold text-dark mb-1">Track Order</h4>
+                        <p class="text-body-secondary mb-0 small">Check the status of your recent purchases.</p>
+                    </div>
+                    <i class="bi bi-chevron-right ms-auto text-body-tertiary"></i>
                 </div>
-            </form>
-        </div>
-
-        <div class="support-grid">
-            <a href="/support/contact" class="support-card">
-                <div class="support-card-icon">
-                    <i class="bi bi-chat-dots-fill"></i>
-                </div>
-                <div class="support-card-body">
-                    <h4 class="support-card-title">Contact Us</h4>
-                    <p class="support-card-text">Get in touch with our team for any questions or concerns.</p>
-                </div>
-                <i class="bi bi-chevron-right support-card-arrow"></i>
-            </a>
-            <a href="/support/order-status" class="support-card">
-                <div class="support-card-icon">
-                    <i class="bi bi-box-seam-fill"></i>
-                </div>
-                <div class="support-card-body">
-                    <h4 class="support-card-title">Order Status</h4>
-                    <p class="support-card-text">Track your shipment and view your order details.</p>
-                </div>
-                <i class="bi bi-chevron-right support-card-arrow"></i>
-            </a>
-            <a href="/support/shipping" class="support-card">
-                <div class="support-card-icon">
-                    <i class="bi bi-truck"></i>
-                </div>
-                <div class="support-card-body">
-                    <h4 class="support-card-title">Shipping & Delivery</h4>
-                    <p class="support-card-text">Learn about our shipping policies and delivery times.</p>
-                </div>
-                <i class="bi bi-chevron-right support-card-arrow"></i>
-            </a>
-            <a href="/support/returns" class="support-card">
-                <div class="support-card-icon">
-                    <i class="bi bi-arrow-counterclockwise"></i>
-                </div>
-                <div class="support-card-body">
-                    <h4 class="support-card-title">Returns</h4>
-                    <p class="support-card-text">Find out how to return an item with our easy process.</p>
-                </div>
-                <i class="bi bi-chevron-right support-card-arrow"></i>
             </a>
         </div>
 
-        <div class="popular-topics">
-            <h3 class="fw-bold mb-3">Popular Topics</h3>
-            <a href="/support/contact">How do I create a support ticket?</a>
-            <a href="/legal#privacy">What is your privacy policy?</a>
-            <a href="/about">Who are the developers?</a>
+        <div class="col-md-6">
+            <a href="/support/returns" class="card h-100 border-0 shadow-sm rounded-4 text-decoration-none card-hover-effect">
+                <div class="card-body p-4 d-flex align-items-center gap-4">
+                    <div class="rounded-circle bg-warning-subtle text-warning-emphasis d-flex align-items-center justify-content-center flex-shrink-0" style="width: 64px; height: 64px; font-size: 1.75rem;">
+                        <i class="bi bi-arrow-counterclockwise"></i>
+                    </div>
+                    <div>
+                        <h4 class="fw-bold text-dark mb-1">Returns & Refunds</h4>
+                        <p class="text-body-secondary mb-0 small">Start a return or view our policies.</p>
+                    </div>
+                    <i class="bi bi-chevron-right ms-auto text-body-tertiary"></i>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-md-6">
+            <a href="/support/shipping" class="card h-100 border-0 shadow-sm rounded-4 text-decoration-none card-hover-effect">
+                <div class="card-body p-4 d-flex align-items-center gap-4">
+                    <div class="rounded-circle bg-info-subtle text-info-emphasis d-flex align-items-center justify-content-center flex-shrink-0" style="width: 64px; height: 64px; font-size: 1.75rem;">
+                        <i class="bi bi-truck"></i>
+                    </div>
+                    <div>
+                        <h4 class="fw-bold text-dark mb-1">Shipping Info</h4>
+                        <p class="text-body-secondary mb-0 small">Delivery times, rates, and restrictions.</p>
+                    </div>
+                    <i class="bi bi-chevron-right ms-auto text-body-tertiary"></i>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-md-6">
+            <a href="/support/contact" class="card h-100 border-0 shadow-sm rounded-4 text-decoration-none card-hover-effect">
+                <div class="card-body p-4 d-flex align-items-center gap-4">
+                    <div class="rounded-circle bg-success-subtle text-success d-flex align-items-center justify-content-center flex-shrink-0" style="width: 64px; height: 64px; font-size: 1.75rem;">
+                        <i class="bi bi-chat-dots-fill"></i>
+                    </div>
+                    <div>
+                        <h4 class="fw-bold text-dark mb-1">Contact Us</h4>
+                        <p class="text-body-secondary mb-0 small">Open a ticket or find an existing one.</p>
+                    </div>
+                    <i class="bi bi-chevron-right ms-auto text-body-tertiary"></i>
+                </div>
+            </a>
+        </div>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <h5 class="fw-bold mb-3">Popular Topics</h5>
+            <div class="list-group rounded-4 shadow-sm overflow-hidden">
+                <a href="/support/contact" class="list-group-item list-group-item-action p-3 d-flex justify-content-between align-items-center border-0 border-bottom">
+                    <span class="fw-medium">How do I cancel my order?</span>
+                    <i class="bi bi-arrow-right-short fs-4 text-body-tertiary"></i>
+                </a>
+                <a href="/support/shipping" class="list-group-item list-group-item-action p-3 d-flex justify-content-between align-items-center border-0 border-bottom">
+                    <span class="fw-medium">Where is my order?</span>
+                    <i class="bi bi-arrow-right-short fs-4 text-body-tertiary"></i>
+                </a>
+                <a href="/support/returns" class="list-group-item list-group-item-action p-3 d-flex justify-content-between align-items-center border-0">
+                    <span class="fw-medium">What is the return policy?</span>
+                    <i class="bi bi-arrow-right-short fs-4 text-body-tertiary"></i>
+                </a>
+            </div>
         </div>
     </div>
 </div>
+
+<style>
+    .settings-page-wrapper {
+        margin: 0 auto;
+        padding: 1rem;
+    }
+    .card-hover-effect {
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .card-hover-effect:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 1rem 3rem rgba(0,0,0,.1) !important;
+    }
+    /* Custom Focus for Search */
+    .form-control:focus {
+        box-shadow: 0 0 0 4px rgba(0, 113, 227, 0.1) !important;
+        border-color: #86b7fe !important; /* Make border visible on focus too */
+    }
+</style>

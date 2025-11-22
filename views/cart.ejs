@@ -1,209 +1,227 @@
-<div class="container my-5 cart-page-container">
+<div class="container my-5 cart-page-container" style="max-width: 1200px;">
     <div class="row gx-lg-5">
         <div class="col-lg-8">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h1 class="h2 mb-0">Bag</h1>
-                <% if (cart && cart.items.length > 0) { %>
-                    <span class="text-body-secondary"><%= cart.totalQty %> items | <%= locationData.symbol %><%= cart.convertedTotalPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></span>
-                <% } %>
+            <div class="d-flex justify-content-between align-items-end mb-4">
+                <div>
+                    <h1 class="h2 fw-bold mb-1">Shopping Bag</h1>
+                    <p class="text-body-secondary small mb-0">
+                        <% if (cart && cart.totalQty > 0) { %>
+                            <%= cart.totalQty %> items in your bag.
+                        <% } else { %>
+                            Your bag is empty.
+                        <% } %>
+                    </p>
+                </div>
+                <a href="/products" class="text-decoration-underline text-dark fw-medium small d-none d-md-block">Continue Shopping</a>
             </div>
 
             <% if (cart && cart.items.length > 0) { %>
-                <div class="cart-items-container">
+                <div class="d-flex flex-column gap-3 mb-5 cart-items-scroll-container">
                     <% cart.items.forEach(item => { %>
-                        <div class="cart-item">
-                            <img src="<%= item.thumbnailUrl %>" alt="<%= item.name %>" class="cart-item-image">
-                            <div class="cart-item-details">
-                                <div>
-                                    <div class="d-flex justify-content-between">
-                                        <h6 class="mb-0"><%= item.name %></h6>
-                                        <span class="cart-item-price fw-semibold"><%= locationData.symbol %><%= item.convertedPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></span>
+                        <div class="card border-0 shadow-sm rounded-4 overflow-hidden cart-item-card flex-shrink-0">
+                            <div class="card-body p-3 p-md-4 d-flex gap-3 gap-md-4 align-items-center">
+                                <a href="/products/<%= item.sku %>" class="flex-shrink-0">
+                                    <img src="<%= item.thumbnailUrl %>" alt="<%= item.name %>" class="rounded-3 bg-body-secondary object-fit-contain border" style="width: 80px; height: 80px;">
+                                </a>
+
+                                <div class="flex-grow-1 min-w-0">
+                                    <div class="d-flex justify-content-between align-items-start mb-1">
+                                        <h6 class="fw-normal mb-0 text-truncate pe-2" style="max-width: 180px;">
+                                            <a href="/products/<%= item.sku %>" class="text-dark text-decoration-none"><%= item.name %></a>
+                                        </h6>
+                                        <span class="fw-bold text-dark flex-shrink-0" style="font-size: 0.9rem;"><%= locationData.symbol %><%= item.convertedPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></span>
                                     </div>
-                                    <p class="text-body-secondary small mb-1"><%= item.brand %></p>
-                                    <p class="text-body-secondary small">Size: <%= item.size %></p>
-                                </div>
-                                <div class="cart-item-actions">
-                                    <div class="quantity-selector">
-                                        <% if (item.qty > 1) { %>
+                                    <p class="text-secondary small mb-2" style="font-size: 0.8rem;"><%= item.brand %> • Size: <%= item.size %></p>
+                                    
+                                    <div class="d-flex justify-content-between align-items-end mt-2">
+                                        <div class="quantity-selector-pill d-inline-flex align-items-center border rounded-pill p-1" style="height: 32px;">
+                                            <% if (item.qty > 1) { %>
+                                                <form action="/cart/update-quantity" method="POST" class="d-inline">
+                                                    <input type="hidden" name="itemId" value="<%= item.itemId %>">
+                                                    <input type="hidden" name="change" value="-1">
+                                                    <button type="submit" class="btn btn-icon-xs btn-light rounded-circle border-0 text-secondary" style="width: 24px; height: 24px;">
+                                                        <i class="bi bi-dash"></i>
+                                                    </button>
+                                                </form>
+                                            <% } else { %>
+                                                <form action="/cart/remove" method="POST" class="d-inline">
+                                                    <input type="hidden" name="itemId" value="<%= item.itemId %>">
+                                                    <button type="submit" class="btn btn-icon-xs btn-light rounded-circle border-0 text-danger" style="width: 24px; height: 24px;">
+                                                        <i class="bi bi-trash"></i>
+                                                    </button>
+                                                </form>
+                                            <% } %>
+                                            
+                                            <span class="mx-2 small fw-bold" style="min-width: 1.5ch; text-align: center; font-size: 0.85rem;"><%= item.qty %></span>
+                                            
                                             <form action="/cart/update-quantity" method="POST" class="d-inline">
                                                 <input type="hidden" name="itemId" value="<%= item.itemId %>">
-                                                <input type="hidden" name="change" value="-1">
-                                                <button type="submit" class="btn btn-sm btn-light rounded-circle">-</button>
+                                                <input type="hidden" name="change" value="1">
+                                                <button type="submit" class="btn btn-icon-xs btn-light rounded-circle border-0 text-secondary" style="width: 24px; height: 24px;">
+                                                    <i class="bi bi-plus"></i>
+                                                </button>
                                             </form>
-                                        <% } else { %>
+                                        </div>
+
+                                        <div class="d-flex gap-3">
+                                            <% if (currentUser) { %>
+                                                <form action="/cart/add-to-wishlist-from-cart" method="POST" class="wishlist-form-cart">
+                                                    <input type="hidden" name="itemId" value="<%= item.itemId %>">
+                                                    <input type="hidden" name="productId" value="<%= item.productId %>">
+                                                    <% const isItemWishlisted = wishlist.some(id => id.equals(item.productId)); %>
+                                                    <button type="submit" class="btn btn-link text-decoration-none p-0 text-secondary d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+                                                        <i class="bi <%= isItemWishlisted ? 'bi-heart-fill text-danger' : 'bi-heart' %> fs-5"></i> 
+                                                    </button>
+                                                </form>
+                                            <% } %>
                                             <form action="/cart/remove" method="POST" class="d-inline">
                                                 <input type="hidden" name="itemId" value="<%= item.itemId %>">
-                                                <button type="submit" class="btn btn-sm btn-light rounded-circle" title="Remove item"><i class="bi bi-trash3"></i></button>
+                                                <button type="submit" class="btn btn-link text-decoration-none p-0 text-secondary d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+                                                    <i class="bi bi-trash fs-5"></i>
+                                                </button>
                                             </form>
-                                        <% } %>
-                                        <span class="mx-2"><%= item.qty %></span>
-                                        <form action="/cart/update-quantity" method="POST" class="d-inline">
-                                            <input type="hidden" name="itemId" value="<%= item.itemId %>">
-                                            <input type="hidden" name="change" value="1">
-                                            <button type="submit" class="btn btn-sm btn-light rounded-circle">+</button>
-                                        </form>
+                                        </div>
                                     </div>
-                                    <% if (currentUser) { %>
-                                        <form action="/cart/add-to-wishlist-from-cart" method="POST" class="wishlist-form-cart">
-                                            <input type="hidden" name="itemId" value="<%= item.itemId %>">
-                                            <input type="hidden" name="productId" value="<%= item.productId %>">
-                                            <% const isItemWishlisted = wishlist.some(id => id.equals(item.productId)); %>
-                                            <button type="submit" class="btn btn-sm btn-light rounded-circle ms-2" title="Add to Wishlist">
-                                                <i class="bi <%= isItemWishlisted ? 'bi-heart-fill' : 'bi-heart' %>"></i>
-                                            </button>
-                                        </form>
-                                    <% } %>
                                 </div>
                             </div>
                         </div>
                     <% }) %>
                 </div>
             <% } else { %>
-                <div class="text-center p-5 bg-light rounded-4">
-                    <h3 class="text-body-secondary">Your bag is empty.</h3>
-                    <p class="lead text-body-secondary">Looks like you haven't added anything yet.</p>
-                    <a href="/" class="btn btn-dark mt-3">Continue Shopping</a>
+                <div class="card border-0 shadow-sm rounded-4 mb-5">
+                    <div class="card-body p-5 text-center">
+                        <div class="bg-light rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 80px; height: 80px;">
+                            <i class="bi bi-bag text-secondary fs-1"></i>
+                        </div>
+                        <h3 class="fw-bold mb-2">Your bag is empty</h3>
+                        <p class="text-secondary mb-4">Looks like you haven't added anything yet.</p>
+                        <a href="/products" class="btn btn-dark rounded-pill px-5 py-3 fw-bold">Start Shopping</a>
+                    </div>
                 </div>
             <% } %>
+            
+            <div class="d-none d-lg-block mt-5 pt-4 border-top">
+                 <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h4 class="fw-bold mb-0">Favorites</h4>
+                    <a href="/account/wishlist" class="text-decoration-none small fw-bold text-dark">View All</a>
+                 </div>
+                 <% if (currentUser && wishlistProducts && wishlistProducts.length > 0) { %>
+                    <div class="product-carousel-wrapper">
+                        <div class="product-carousel">
+                            <% wishlistProducts.forEach(product => { %>
+                                <div class="product-card" style="min-width: 200px;">
+                                    <div class="product-card-img-container rounded-4 bg-light mb-2 position-relative">
+                                        <a href="/products/<%= product.sku %>" class="stretched-link"></a>
+                                        <img src="<%= product.thumbnailUrl %>" class="w-100 object-fit-contain p-3" style="height: 160px;" alt="<%= product.name %>">
+                                    </div>
+                                    <div class="product-card-body">
+                                        <h6 class="fw-bold text-truncate mb-0"><%= product.name %></h6>
+                                        <small class="text-secondary"><%= locationData.symbol %><%= product.convertedPrice.toLocaleString(undefined, { minimumFractionDigits: 2 }) %></small>
+                                    </div>
+                                </div>
+                            <% }) %>
+                        </div>
+                    </div>
+                 <% } else { %>
+                    <p class="text-secondary small">Items you save will appear here.</p>
+                 <% } %>
+            </div>
         </div>
 
         <div class="col-lg-4">
-            <div class="summary-card-desktop">
-                <h4 class="mb-3">Summary</h4>
-                <div class="summary-item">
-                    <span>Subtotal</span>
-                    <span><%= locationData.symbol %><%= (cart.convertedTotalPrice || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></span>
-                </div>
-                <% if (cart && cart.items.length > 0) { %>
-                    <div class="summary-item">
-                        <span>Estimated Delivery & Handling</span>
-                        <span><%= shippingCost > 0 ? locationData.symbol + shippingCost.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : 'Free' %></span>
+            <div class="card border-0 shadow-sm rounded-4 summary-card-sticky" style="position: sticky; top: 100px;">
+                <div class="card-body p-4">
+                    <h4 class="fw-bold mb-4">Summary</h4>
+                    
+                    <div class="d-flex justify-content-between mb-3">
+                        <span class="text-secondary">Subtotal</span>
+                        <span class="fw-medium"><%= locationData.symbol %><%= (cart.convertedTotalPrice || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></span>
                     </div>
-                <% } %>
-                <hr>
-                <div class="summary-total">
-                    <span>Total</span>
-                    <span><%= locationData.symbol %><%= (cart && cart.items.length > 0 ? totalWithShipping : 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></span>
-                </div>
-                <hr>
-                <div class="d-none d-lg-grid gap-3" id="desktop-checkout-buttons">
-                    <% if (currentUser) { %>
-                        <a href="/checkout" class="btn btn-primary btn-lg <%= (cart && cart.items.length > 0) ? '' : 'disabled' %>">
-                            Member Checkout
-                        </a>
-                    <% } else { %>
-                        <a href="/checkout" class="btn btn-primary btn-lg <%= (cart && cart.items.length > 0) ? '' : 'disabled' %>">
-                            Guest Checkout
-                        </a>
-                        <a href="/users/login" class="btn btn-outline-secondary btn-lg <%= (cart && cart.items.length > 0) ? '' : 'disabled' %>">
-                            Member Login
-                        </a>
+                    
+                    <% if (cart && cart.items.length > 0) { %>
+                        <div class="d-flex justify-content-between mb-3">
+                            <span class="text-secondary">Estimated Shipping</span>
+                            <span class="fw-medium"><%= shippingCost > 0 ? locationData.symbol + shippingCost.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : 'Free' %></span>
+                        </div>
                     <% } %>
+
+                    <hr class="my-4 border-secondary-subtle">
+
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <span class="fw-bold fs-5">Total</span>
+                        <span class="fw-bold fs-5"><%= locationData.symbol %><%= (cart && cart.items.length > 0 ? totalWithShipping : 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></span>
+                    </div>
+
+                    <div class="d-grid gap-3">
+                        <% if (currentUser) { %>
+                            <a href="/checkout" class="btn btn-dark btn-lg rounded-pill py-3 fw-bold <%= (cart && cart.items.length > 0) ? '' : 'disabled' %>">
+                                Checkout
+                            </a>
+                        <% } else { %>
+                            <a href="/checkout" class="btn btn-dark btn-lg rounded-pill py-3 fw-bold <%= (cart && cart.items.length > 0) ? '' : 'disabled' %>">
+                                Guest Checkout
+                            </a>
+                            <a href="/users/login?redirect=/checkout" class="btn btn-outline-dark btn-lg rounded-pill py-3 fw-bold <%= (cart && cart.items.length > 0) ? '' : 'disabled' %>">
+                                Member Checkout
+                            </a>
+                        <% } %>
+                    </div>
+                    
+                    <div class="mt-4 text-center">
+                         <p class="small text-secondary mb-0"><i class="bi bi-shield-lock-fill me-1"></i> Secure Checkout</p>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
 
-<section class="product-carousel-section container-fluid mt-5 py-5 border-top">
-    <div class="container">
-        <div class="section-header">
-            <h2 class="h3 fw-bold mb-0">Favourites</h2>
-        </div>
-        <% if (currentUser && wishlistProducts && wishlistProducts.length > 0) { %>
-            <div class="product-carousel">
-                <% wishlistProducts.forEach(product => { %>
-                    <div class="product-card" data-sku="<%= product.sku %>">
-                        <div class="product-card-img-container">
-                            <a href="/products/<%= product.sku %>" class="product-card-img-link"></a>
-                            <img src="<%= product.thumbnailUrl %>" class="product-card-img" alt="<%= product.name %>">
-                        </div>
-                        <div class="product-card-body">
-                            <a href="/products/<%= product.sku %>" class="text-decoration-none">
-                                <div class="product-title"><%= product.name %></div>
-                                <div class="product-price"><%= locationData.symbol %><%= product.convertedPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></div>
-                            </a>
-                        </div>
-                    </div>
-                <% }) %>
-            </div>
-        <% } else if (currentUser) { %>
-            <p class="text-body-secondary">Your favorite items will appear here. <a href="/products" class="text-dark fw-semibold">Start exploring!</a></p>
-        <% } else { %>
-            <p class="text-body-secondary">Want to view your favourites? <a href="/users/login" class="text-dark fw-semibold">Sign in</a> or <a href="/users/register" class="text-dark fw-semibold">Join us</a>.</p>
-        <% } %>
-    </div>
-</section>
+<style>
+    /* Custom styles specifically for the Cart Page */
+    .btn-icon-xs {
+        width: 24px;
+        height: 24px;
+        padding: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1rem;
+    }
+    .cart-item-card:hover {
+        transform: translateY(-2px);
+        transition: transform 0.2s ease;
+    }
 
-<div class="mobile-checkout-sticky d-lg-none">
-    <div class="checkout-options" id="checkout-options">
-        <div class="d-grid gap-3 p-3">
-             <% if (currentUser) { %>
-                 <a href="/checkout" class="btn btn-primary btn-lg <%= (cart && cart.items.length > 0) ? '' : 'disabled' %>">
-                     Member Checkout
-                 </a>
-             <% } else { %>
-                 <a href="/checkout" class="btn btn-primary btn-lg <%= (cart && cart.items.length > 0) ? '' : 'disabled' %>">
-                     Guest Checkout
-                 </a>
-                 <a href="/users/login" class="btn btn-outline-secondary btn-lg <%= (cart && cart.items.length > 0) ? '' : 'disabled' %>">
-                     Member Login
-                 </a>
-            <% } %>
-        </div>
-    </div>
-    <button id="mobile-checkout-btn" class="btn btn-dark btn-lg w-100 <%= (cart && cart.items.length > 0) ? '' : 'disabled' %>">
-        Go to Checkout
-    </button>
-</div>
-
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const wishlistForms = document.querySelectorAll('.wishlist-form-cart');
+    /* Mobile Scrollable List */
+    @media (max-width: 991.98px) {
+        .cart-items-scroll-container {
+            /* 50vh ensures it takes up half the screen, prompting scroll if items exceed that */
+            max-height: 50vh; 
+            min-height: 300px; 
+            overflow-y: auto;
+            padding-right: 2px;
+            
+            /* Removed contain to allow bubbling up to body scroll */
+            /* overscroll-behavior: contain; */
+            
+            -webkit-overflow-scrolling: touch;
+            
+            background-color: #fff;
+            border-top: 1px solid #f0f0f0;
+            border-bottom: 1px solid #f0f0f0;
+            padding-top: 1rem;
+            padding-bottom: 1rem;
+        }
         
-        wishlistForms.forEach(form => {
-            form.addEventListener('submit', function(event) {
-                event.preventDefault();
-                const productId = this.querySelector('input[name="productId"]').value;
-                const button = this.querySelector('button');
-                const icon = button.querySelector('i');
-                
-                button.disabled = true;
-
-                const isCurrentlyWishlisted = icon.classList.contains('bi-heart-fill');
-                const actionUrl = isCurrentlyWishlisted ? '/cart/remove-from-wishlist' : '/cart/add-to-wishlist-from-cart';
-                
-                fetch(actionUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                    body: `productId=${productId}&itemId=${this.querySelector('input[name="itemId"]').value}`
-                })
-                .then(response => {
-                    if (response.redirected) {
-                        window.location.href = response.url;
-                        return;
-                    }
-                    if (response.ok) {
-                        if (isCurrentlyWishlisted) {
-                            icon.classList.remove('bi-heart-fill');
-                            icon.classList.add('bi-heart');
-                            button.title = 'Add to Wishlist';
-                        } else {
-                            icon.classList.remove('bi-heart');
-                            icon.classList.add('bi-heart-fill');
-                            button.title = 'Remove from Wishlist';
-                        }
-                    } else {
-                        console.error('Server error:', response.status);
-                        button.disabled = false;
-                    }
-                    return response.text(); 
-                })
-                .catch(error => {
-                    console.error('Error handling wishlist action:', error);
-                    button.disabled = false;
-                });
-            });
-        });
-    });
-</script>
+        /* Hide scrollbar visual but keep functionality */
+        .cart-items-scroll-container::-webkit-scrollbar {
+            display: none;
+        }
+        
+        /* Adjust image size for mobile */
+        .cart-item-card img {
+            width: 80px !important;
+            height: 80px !important;
+        }
+    }
+</style>

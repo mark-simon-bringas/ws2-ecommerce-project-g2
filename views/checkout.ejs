@@ -1,71 +1,76 @@
-<div class="checkout-container container-fluid">
-    <div class="row">
-        <%# Mobile Order Summary (Hidden on Desktop) %>
-        <div class="col-12 d-lg-none">
-            <div class="mobile-summary">
+<div class="container my-5 checkout-page-wrapper" style="max-width: 1200px;">
+    <div class="row gx-lg-5">
+        
+        <div class="col-12 d-lg-none mb-4">
+            <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
                 <div class="accordion" id="orderSummaryAccordion">
-                    <div class="accordion-item">
+                    <div class="accordion-item border-0">
                         <h2 class="accordion-header" id="headingOne">
-                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="false" aria-controls="collapseOne">
-                                <span class="d-flex justify-content-between w-100 pe-3">
-                                    <span>Show order summary</span>
-                                    <strong class="fw-semibold"><%= locationData.symbol %><%= totalWithShipping.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></strong>
-                                </span>
+                            <button class="accordion-button collapsed bg-white shadow-none py-3" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="false" aria-controls="collapseOne">
+                                <div class="d-flex justify-content-between w-100 pe-3 align-items-center">
+                                    <span class="fw-semibold text-dark d-flex align-items-center gap-2">
+                                        <i class="bi bi-bag-check"></i> Show Order Summary
+                                    </span>
+                                    <strong class="fw-bold text-dark"><%= locationData.symbol %><%= totalWithShipping.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></strong>
+                                </div>
                             </button>
                         </h2>
                         <div id="collapseOne" class="accordion-collapse collapse" aria-labelledby="headingOne" data-bs-parent="#orderSummaryAccordion">
-                            <div class="accordion-body">
-                                <%# --- Start Inlined Order Summary --- %>
-                                <h4 class="mb-3">Order Summary</h4>
-                                <ul class="list-group list-group-flush mb-3">
-                                    <li class="list-group-item d-flex justify-content-between px-0">
-                                        <span>Subtotal <i class="bi bi-question-circle-fill"></i></span>
-                                        <strong><%= locationData.symbol %><%= cart.convertedTotalPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></strong>
-                                    </li>
-                                    <li class="list-group-item d-flex justify-content-between px-0">
-                                        <span>Delivery/Shipping</span>
-                                        <strong><%= shipping.cost > 0 ? locationData.symbol + shipping.cost.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : 'Free' %></strong>
-                                    </li>
-
+                            <div class="accordion-body bg-light pt-0">
+                                <div class="pt-3">
                                     <% if (shipping.amountNeeded > 0) { %>
-                                        <li class="list-group-item px-0">
-                                            <div class="free-shipping-progress">
-                                                <p class="small text-success mb-1">Add <strong><%= locationData.symbol %><%= shipping.amountNeeded.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></strong> more to earn Free Shipping!</p>
-                                                <div class="progress" style="height: 6px;">
-                                                    <div class="progress-bar bg-success" role="progressbar" style="width: <%= shipping.progress %>%;" aria-valuenow="<%= shipping.progress %>" aria-valuemin="0" aria-valuemax="100"></div>
-                                                </div>
+                                        <div class="mb-3 p-3 bg-white rounded-3 border">
+                                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                                <small class="text-body-secondary">Add <strong><%= locationData.symbol %><%= shipping.amountNeeded.toLocaleString(undefined, { minimumFractionDigits: 2 }) %></strong> for free shipping</small>
+                                                <small class="fw-bold"><%= parseInt(shipping.progress) %>%</small>
                                             </div>
-                                        </li>
-                                    <% } else { %>
-                                        <li class="list-group-item px-0">
-                                            <p class="small text-success mb-1">You qualify for free shipping!</p>
                                             <div class="progress" style="height: 6px;">
-                                                <div class="progress-bar bg-success" role="progressbar" style="width: 100%;" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div>
+                                                <div class="progress-bar bg-dark" role="progressbar" style="width: <%= shipping.progress %>%;"></div>
                                             </div>
-                                        </li>
+                                        </div>
+                                    <% } else { %>
+                                        <div class="mb-3 p-2 bg-success-subtle text-success rounded-3 text-center small fw-bold">
+                                            <i class="bi bi-check-circle-fill me-1"></i> You have qualified for Free Shipping!
+                                        </div>
                                     <% } %>
 
-                                    <li class="list-group-item d-flex justify-content-between px-0 fs-5 border-top pt-3">
-                                        <strong class="fw-bold">Total</strong>
-                                        <strong class="fw-bold"><%= locationData.symbol %><%= totalWithShipping.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></strong>
-                                    </li>
-                                </ul>
-                                 <div class="summary-arrival-date">
-                                    <i class="bi bi-truck"></i>
-                                    <span><%= arrivalDate %></span>
-                                </div>
-                                <% cart.items.forEach(item => { %>
-                                    <div class="summary-product-item">
-                                        <img src="<%= item.thumbnailUrl %>" alt="<%= item.name %>">
-                                        <div class="summary-product-details">
-                                            <p class="summary-product-title"><%= item.name %></p>
-                                            <p class="summary-product-meta">Qty: <%= item.qty %></p>
-                                            <p class="summary-product-meta">Size: <%= item.size %></p>
+                                    <% cart.items.forEach(item => { %>
+                                        <div class="d-flex gap-3 mb-3 align-items-center">
+                                            <div class="position-relative me-2">
+                                                <img src="<%= item.thumbnailUrl %>" alt="<%= item.name %>" class="rounded-3 border bg-white" style="width: 64px; height: 64px; object-fit: contain;">
+                                                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-secondary border border-light" style="font-size: 0.7rem; z-index: 2;"><%= item.qty %></span>
+                                            </div>
+                                            <div class="flex-grow-1">
+                                                <h6 class="fw-medium mb-0 text-dark small"><%= item.name %></h6>
+                                                <small class="text-secondary"><%= item.brand %></small>
+                                            </div>
+                                            <span class="fw-semibold small"><%= locationData.symbol %><%= item.convertedPrice.toLocaleString(undefined, { minimumFractionDigits: 2 }) %></span>
                                         </div>
-                                        <p class="summary-product-price"><%= locationData.symbol %><%= item.convertedPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></p>
+                                    <% }) %>
+                                    
+                                    <hr class="border-secondary-subtle">
+                                    
+                                    <div class="d-flex align-items-center gap-3 mb-3 text-body-secondary small">
+                                        <i class="bi bi-box-seam fs-5"></i>
+                                        <span><%= arrivalDate %></span>
                                     </div>
-                                <% }) %>
-                                <%# --- End Inlined Order Summary --- %>
+
+                                    <div class="d-flex justify-content-between mb-2 small">
+                                        <span class="text-secondary">Subtotal</span>
+                                        <span class="fw-medium"><%= locationData.symbol %><%= cart.convertedTotalPrice.toLocaleString(undefined, { minimumFractionDigits: 2 }) %></span>
+                                    </div>
+                                    <div class="d-flex justify-content-between mb-2 small">
+                                        <span class="text-secondary">Shipping</span>
+                                        <span class="fw-medium"><%= shipping.cost > 0 ? locationData.symbol + shipping.cost.toLocaleString(undefined, { minimumFractionDigits: 2 }) : 'Free' %></span>
+                                    </div>
+                                    <% if (locationData.currency !== 'USD') { %>
+                                        <div class="text-end mt-2 border-top pt-2">
+                                            <small class="text-secondary" style="font-size: 0.75rem;">
+                                                Total in USD: $<%= (cart.totalPrice + (shipping.cost > 0 ? 5 : 0)).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %>
+                                            </small>
+                                        </div>
+                                    <% } %>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -73,301 +78,438 @@
             </div>
         </div>
 
-        <%# Main Content: Shipping and Payment Forms %>
-        <div class="col-lg-6 offset-lg-1 checkout-main">
-            <div class="checkout-form-container">
-                <div class="text-center py-3 d-lg-none">
-                    <a href="/" class="h3 text-dark text-decoration-none fw-bold">Sneakslab</a>
+        <div class="col-lg-7">
+            <div class="d-flex align-items-center mb-4">
+                <a href="/cart" class="btn btn-icon btn-light rounded-circle me-3">
+                    <i class="bi bi-arrow-left"></i>
+                </a>
+                <div>
+                    <h1 class="h3 fw-bold mb-0">Checkout</h1>
+                    <% if (!currentUser) { %>
+                        <p class="text-body-secondary small mb-0">
+                            Already have an account? <a href="/users/login?redirect=/checkout" class="text-dark fw-bold text-decoration-underline">Log in</a> for faster checkout.
+                        </p>
+                    <% } else { %>
+                         <p class="text-body-secondary small mb-0">Logged in as <span class="fw-medium text-dark"><%= currentUser.email %></span></p>
+                    <% } %>
                 </div>
-                <% if (currentUser) { %>
-                    <div class="d-flex justify-content-between align-items-center mb-4 pt-4 border-top">
-                        <h4 class="mb-0 h6">Contact</h4>
-                        <p class="mb-0 small text-body-secondary">Logged in as <%= currentUser.email %></p>
+            </div>
+
+            <form action="/checkout/place-order" method="POST" id="checkout-form">
+                <% if (!currentUser) { %>
+                    <div class="card border-0 shadow-sm rounded-4 mb-4">
+                        <div class="card-body p-4">
+                            <h5 class="fw-bold mb-3">Contact Information</h5>
+                            <div class="form-floating">
+                                <input type="email" class="form-control bg-light border-0" id="email" name="email" placeholder="name@example.com" required>
+                                <label for="email">Email address</label>
+                            </div>
+                        </div>
                     </div>
+                <% } else { %>
+                    <input type="hidden" name="email" value="<%= currentUser.email %>">
                 <% } %>
 
-                <div id="delivery-options" class="mb-4">
-                    <h4 class="mb-3 h6 fw-semibold">How would you like to get your order?</h4>
-                    <div class="checkout-radio-group">
-                        <input type="radio" class="btn-check" name="delivery-method" id="delivery-method-ship" value="ship" checked autocomplete="off">
-                        <label class="btn btn-outline-secondary" for="delivery-method-ship">
-                            <i class="bi bi-truck"></i>
-                            <span>Deliver It</span>
-                        </label>
-                        <input type="radio" class="btn-check" name="delivery-method" id="delivery-method-pickup" value="pickup" autocomplete="off">
-                        <label class="btn btn-outline-secondary" for="delivery-method-pickup">
-                            <i class="bi bi-shop"></i>
-                            <span>Pick It Up</span>
-                        </label>
+                <div class="card border-0 shadow-sm rounded-4 mb-4">
+                    <div class="card-body p-4">
+                        <h5 class="fw-bold mb-3">Delivery Method</h5>
+                        <div class="row g-3">
+                            <div class="col-6">
+                                <label class="selection-card w-100">
+                                    <input type="radio" name="delivery-method" value="ship" class="btn-check" checked>
+                                    <div class="p-3 rounded-3 border text-center selection-content transition-all">
+                                        <i class="bi bi-truck fs-4 mb-2 d-block"></i>
+                                        <span class="fw-bold small">Ship to Address</span>
+                                    </div>
+                                </label>
+                            </div>
+                            <div class="col-6">
+                                <label class="selection-card w-100">
+                                    <input type="radio" name="delivery-method" value="pickup" class="btn-check">
+                                    <div class="p-3 rounded-3 border text-center selection-content transition-all">
+                                        <i class="bi bi-shop fs-4 mb-2 d-block"></i>
+                                        <span class="fw-bold small">Pick Up</span>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                <div id="shipping-form">
-                    <form action="/checkout/place-order" method="POST" id="checkout-form">
-                        <% if (!currentUser) { %>
-                            <div class="mb-3">
-                                <label for="email" class="form-label">Email</label>
-                                <input type="email" class="form-control" name="email" id="email" required>
-                                <small class="form-text text-body-secondary">Become a member for faster checkout. <a href="/users/login?redirect=/checkout">Log in</a> or <a href="/users/register">Sign up now</a>.</small>
-                            </div>
-                        <% } else { %>
-                            <input type="hidden" name="email" value="<%= currentUser.email %>">
-                        <% } %>
+                <div id="shipping-section" class="card border-0 shadow-sm rounded-4 mb-4">
+                    <div class="card-body p-4">
+                        <h5 class="fw-bold mb-3">Shipping Address</h5>
 
                         <% if (currentUser && addresses && addresses.length > 0) { %>
-                            <div class="mb-4">
-                                <h4 class="mb-3 h6 fw-semibold">Select a Shipping Address</h4>
-                                <div class="list-group address-selector-group">
-                                    <% addresses.forEach((addr, index) => { %>
-                                        <label class="list-group-item list-group-item-action">
-                                            <input type="radio" name="selectedAddressId" value="<%= addr.addressId %>" <%= (addr.isDefault || (!addresses.some(a => a.isDefault) && index === 0)) ? 'checked' : '' %>>
-                                            <strong><%= addr.firstName %> <%= addr.lastName %></strong>, <%= addr.address %>, <%= addr.state %>, <%= addr.zip %>
-                                        </label>
-                                    <% }) %>
-                                    <label class="list-group-item list-group-item-action">
-                                        <input type="radio" name="selectedAddressId" value="new">
-                                        Use a new address
+                            <div class="address-grid mb-4">
+                                <% addresses.forEach((addr, index) => { %>
+                                    <label class="address-card w-100 mb-2">
+                                        <input type="radio" name="selectedAddressId" value="<%= addr.addressId %>" class="btn-check" <%= (addr.isDefault || (!addresses.some(a => a.isDefault) && index === 0)) ? 'checked' : '' %>>
+                                        <div class="p-3 rounded-3 border selection-content d-flex align-items-center justify-content-between transition-all">
+                                            <div>
+                                                <div class="fw-bold"><%= addr.firstName %> <%= addr.lastName %></div>
+                                                <div class="small text-secondary"><%= addr.address %>, <%= addr.state %></div>
+                                            </div>
+                                            <div class="check-icon bg-dark text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 20px; height: 20px; opacity: 0;">
+                                                <i class="bi bi-check small"></i>
+                                            </div>
+                                        </div>
                                     </label>
-                                </div>
+                                <% }) %>
+                                <label class="address-card w-100">
+                                    <input type="radio" name="selectedAddressId" value="new" class="btn-check">
+                                    <div class="p-3 rounded-3 border selection-content d-flex align-items-center gap-3 transition-all">
+                                        <div class="bg-light rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                            <i class="bi bi-plus-lg"></i>
+                                        </div>
+                                        <span class="fw-bold text-secondary">Use a different address</span>
+                                    </div>
+                                </label>
                             </div>
                         <% } %>
 
-                        <fieldset id="shipping-address-fieldset">
-                            <h4 class="mt-4 mb-3 h6 fw-semibold">Shipping Address</h4>
+                        <fieldset id="shipping-address-fieldset" <%= (currentUser && addresses && addresses.length > 0) ? 'disabled' : '' %>>
                             <div class="row g-3">
-                                <div class="col-sm-6">
-                                    <label for="firstName" class="form-label">First name</label>
-                                    <input type="text" class="form-control" name="firstName" id="firstName" value="<%= currentUser ? currentUser.firstName : '' %>" required>
+                                <div class="col-6">
+                                    <div class="form-floating">
+                                        <input type="text" class="form-control bg-light border-0" id="firstName" name="firstName" placeholder="First" required>
+                                        <label for="firstName">First Name</label>
+                                    </div>
                                 </div>
-                                <div class="col-sm-6">
-                                    <label for="lastName" class="form-label">Last name</label>
-                                    <input type="text" class="form-control" name="lastName" id="lastName" value="<%= currentUser ? currentUser.lastName : '' %>" required>
-                                </div>
-                                <div class="col-12">
-                                    <label for="address" class="form-label">Address</label>
-                                    <input type="text" class="form-control" name="address" id="address" placeholder="1234 Main St" required>
-                                </div>
-                                <div class="col-md-5">
-                                    <label for="country" class="form-label">Country</label>
-                                    <select class="form-select" id="country" name="country" required>
-                                        <option>Philippines</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-4">
-                                    <label for="state" class="form-label">State/Region</label>
-                                    <input type="text" class="form-control" name="state" id="state" placeholder="e.g. CAR" required>
-                                </div>
-                                <div class="col-md-3">
-                                    <label for="zip" class="form-label">Zip</label>
-                                    <input type="text" class="form-control" name="zip" id="zip" required>
+                                <div class="col-6">
+                                    <div class="form-floating">
+                                        <input type="text" class="form-control bg-light border-0" id="lastName" name="lastName" placeholder="Last" required>
+                                        <label for="lastName">Last Name</label>
+                                    </div>
                                 </div>
                                 <div class="col-12">
-                                    <label for="phone" class="form-label">Phone Number</label>
-                                    <input type="tel" class="form-control" name="phone" id="phone" required>
-                                    <small class="form-text text-body-secondary">A carrier might contact you to confirm delivery.</small>
+                                    <div class="form-floating">
+                                        <input type="text" class="form-control bg-light border-0" id="address" name="address" placeholder="Address" required>
+                                        <label for="address">Street Address</label>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="form-floating">
+                                        <input type="text" class="form-control bg-light border-0" id="state" name="state" placeholder="State" required>
+                                        <label for="state">State/Province</label>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="form-floating">
+                                        <input type="text" class="form-control bg-light border-0" id="zip" name="zip" placeholder="Zip" required>
+                                        <label for="zip">Zip Code</label>
+                                    </div>
+                                </div>
+                                <div class="col-12">
+                                    <div class="form-floating">
+                                        <select class="form-select bg-light border-0" id="country" name="country" required>
+                                            <option value="Philippines">Philippines</option>
+                                        </select>
+                                        <label for="country">Country</label>
+                                    </div>
+                                </div>
+                                <div class="col-12">
+                                    <div class="form-floating">
+                                        <input type="tel" class="form-control bg-light border-0" id="phone" name="phone" placeholder="Phone" required>
+                                        <label for="phone">Phone Number</label>
+                                    </div>
                                 </div>
                             </div>
                         </fieldset>
                         
                         <% if (currentUser) { %>
-                            <div class="form-check mt-3" id="save-address-container">
+                            <div class="form-check mt-3" id="save-address-container" <%= (addresses && addresses.length > 0) ? 'style="display:none;"' : '' %>>
                                 <input class="form-check-input" type="checkbox" id="saveAddress" name="saveAddress">
-                                <label class="form-check-label" for="saveAddress">
-                                    Save this address for future purchases
-                                </label>
+                                <label class="form-check-label small text-secondary" for="saveAddress">Save this address to my profile</label>
                             </div>
                         <% } %>
-
-                        <hr class="my-4">
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="sameAsShipping" checked>
-                            <label class="form-check-label" for="sameAsShipping">
-                                Billing address is the same as my shipping address
-                            </label>
-                        </div>
-                        <div id="billing-address-form" class="d-none mt-4">
-                            <h4 class="mb-3 h6 fw-semibold">Billing Address</h4>
-                            <div class="row g-3">
-                                <div class="col-12">
-                                    <label for="billing-address" class="form-label">Address</label>
-                                    <input type="text" class="form-control" name="billing-address" id="billing-address" placeholder="1234 Main St">
-                                </div>
-                                <div class="col-md-5">
-                                    <label for="billing-country" class="form-label">Country</label>
-                                    <select class="form-select" id="billing-country" name="billing-country">
-                                        <option>Philippines</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-4">
-                                    <label for="billing-state" class="form-label">State/Region</label>
-                                    <input type="text" class="form-control" name="billing-state" id="billing-state" placeholder="e.g. CAR">
-                                </div>
-                                <div class="col-md-3">
-                                    <label for="billing-zip" class="form-label">Zip</label>
-                                    <input type="text" class="form-control" name="billing-zip" id="billing-zip">
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <hr class="my-4">
-                        
-                        <div id="payment-section">
-                            <h4 class="mb-3 h6 fw-semibold">How would you like to pay?</h4>
-                            <div class="checkout-radio-group payment-methods">
-                                <input type="radio" class="btn-check" name="payment-method" id="payment-cc" value="cc" checked autocomplete="off">
-                                <label class="btn btn-outline-secondary" for="payment-cc">Credit or Debit Card</label>
-                                
-                                <input type="radio" class="btn-check" name="payment-method" id="payment-paypal" value="paypal" autocomplete="off">
-                                <label class="btn btn-outline-secondary" for="payment-paypal">PayPal</label>
-                                
-                                <input type="radio" class="btn-check" name="payment-method" id="payment-gpay" value="gpay" autocomplete="off">
-                                <label class="btn btn-outline-secondary" for="payment-gpay">G Pay</label>
-                                
-                                <input type="radio" class="btn-check" name="payment-method" id="payment-gcash" value="gcash" autocomplete="off">
-                                <label class="btn btn-outline-secondary" for="payment-gcash">GCash</label>
-                                
-                                <input type="radio" class="btn-check" name="payment-method" id="payment-grabpay" value="grabpay" autocomplete="off">
-                                <label class="btn btn-outline-secondary" for="payment-grabpay">GrabPay</label>
-
-                                <input type="radio" class="btn-check" name="payment-method" id="payment-cod" value="cod" autocomplete="off">
-                                <label class="btn btn-outline-secondary" for="payment-cod">Cash on Delivery</label>
-                            </div>
-
-                            <div id="payment-details-cc" class="payment-details-content mt-4">
-                                <div class="row g-3">
-                                    <div class="col-12">
-                                        <label for="cc-name" class="form-label">Name on card</label>
-                                        <input type="text" class="form-control" id="cc-name" name="cc-name" required>
-                                    </div>
-                                    <div class="col-12">
-                                        <label for="cc-number" class="form-label">Card number</label>
-                                        <input type="text" class="form-control" id="cc-number" name="cc-number" required>
-                                    </div>
-                                    <div class="col-sm-6">
-                                        <label for="cc-expiration" class="form-label">Expiration</label>
-                                        <input type="text" class="form-control" id="cc-expiration" name="cc-expiration" placeholder="MM/YY" required>
-                                    </div>
-                                    <div class="col-sm-6">
-                                        <label for="cc-cvv" class="form-label">CVV</label>
-                                        <input type="text" class="form-control" id="cc-cvv" name="cc-cvv" placeholder="123" required>
-                                    </div>
-                                </div>
-                            </div>
-                            <div id="payment-details-paypal" class="payment-details-content mt-4 d-none text-center">
-                                <p class="text-body-secondary">You will be redirected to PayPal to complete your payment.</p>
-                            </div>
-                            <div id="payment-details-gpay" class="payment-details-content mt-4 d-none text-center">
-                                <p class="text-body-secondary">You will be redirected to Google Pay to complete your payment.</p>
-                            </div>
-                            <div id="payment-details-gcash" class="payment-details-content mt-4 d-none text-center">
-                                <p class="text-body-secondary">You will be redirected to GCash to complete your payment.</p>
-                            </div>
-                            <div id="payment-details-grabpay" class="payment-details-content mt-4 d-none text-center">
-                                <p class="text-body-secondary">You will be redirected to GrabPay to complete your payment.</p>
-                            </div>
-                            <div id="payment-details-cod" class="payment-details-content mt-4 d-none text-center">
-                                <p class="text-body-secondary">You will pay the courier upon receiving your order.</p>
-                            </div>
-                        </div>
-                    </form>
-                </div>
-
-                <div id="pickup-form" class="d-none">
-                    <h4 class="mb-3 h6 fw-semibold">Where would you like to pick up your order?</h4>
-                    <p class="text-body-secondary">Pickup locations are currently unavailable. Please select "Deliver It" to proceed.</p>
+                    </div>
                 </div>
                 
-                <div class="d-grid mt-4">
-                    <button type="submit" form="checkout-form" class="btn btn-primary btn-lg">Place Order</button>
+                <div id="pickup-form" class="card border-0 shadow-sm rounded-4 mb-4 d-none">
+                     <div class="card-body p-4 text-center">
+                         <div class="bg-warning-subtle text-warning rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 50px; height: 50px;">
+                             <i class="bi bi-shop fs-4"></i>
+                         </div>
+                         <h6 class="fw-bold">Store Pickup Unavailable</h6>
+                         <p class="text-secondary small mb-0">Please select "Ship to Address" to proceed.</p>
+                     </div>
                 </div>
 
-                <div class="text-center mt-4">
-                    <a href="/cart" class="text-body-secondary small"><i class="bi bi-arrow-left"></i> Return to cart</a>
+                <div class="card border-0 shadow-sm rounded-4 mb-4">
+                    <div class="card-body p-4">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="sameAsShipping" name="sameAsShipping" checked>
+                            <label class="form-check-label fw-medium" for="sameAsShipping">
+                                Billing address is the same as shipping
+                            </label>
+                        </div>
+                        
+                        <div id="billing-address-form" class="d-none mt-4 pt-3 border-top">
+                            <h6 class="fw-bold mb-3">Billing Address</h6>
+                            <div class="form-floating mb-3">
+                                <input type="text" class="form-control bg-light border-0" name="billing-address" id="billing-address" placeholder="Address">
+                                <label for="billing-address">Billing Address</label>
+                            </div>
+                             <div class="row g-3">
+                                 <div class="col-6">
+                                     <div class="form-floating">
+                                        <input type="text" class="form-control bg-light border-0" name="billing-state" placeholder="State">
+                                        <label>State</label>
+                                     </div>
+                                 </div>
+                                 <div class="col-6">
+                                     <div class="form-floating">
+                                        <input type="text" class="form-control bg-light border-0" name="billing-zip" placeholder="Zip">
+                                        <label>Zip</label>
+                                     </div>
+                                 </div>
+                             </div>
+                        </div>
+                    </div>
                 </div>
-            </div>
-        </div>
 
-        <%# Order Summary Sidebar (Hidden on Mobile) %>
-        <div class="col-lg-4 checkout-summary d-none d-lg-block">
-            <div class="summary-card">
-                 <h4 class="mb-3">Order Summary</h4>
-                <ul class="list-group list-group-flush mb-3">
-                   <li class="list-group-item d-flex justify-content-between px-0">
-                       <span>Subtotal <i class="bi bi-question-circle-fill"></i></span>
-                       <strong><%= locationData.symbol %><%= cart.convertedTotalPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></strong>
-                   </li>
-                   <li class="list-group-item d-flex justify-content-between px-0">
-                       <span>Delivery/Shipping</span>
-                       <strong><%= shipping.cost > 0 ? locationData.symbol + shipping.cost.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : 'Free' %></strong>
-                   </li>
-
-                   <% if (shipping.amountNeeded > 0) { %>
-                    <li class="list-group-item px-0">
-                        <div class="free-shipping-progress">
-                            <p class="small text-success mb-1">Add <strong><%= locationData.symbol %><%= shipping.amountNeeded.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></strong> more to earn Free Shipping!</p>
-                            <div class="progress" style="height: 6px;">
-                                <div class="progress-bar bg-success" role="progressbar" style="width: <%= shipping.progress %>%;" aria-valuenow="<%= shipping.progress %>" aria-valuemin="0" aria-valuemax="100"></div>
+                <div class="card border-0 shadow-sm rounded-4 mb-4">
+                    <div class="card-body p-4">
+                        <h5 class="fw-bold mb-3">Payment</h5>
+                        
+                        <div class="row g-3">
+                            <div class="col-6">
+                                <label class="selection-card w-100 h-100">
+                                    <input type="radio" name="payment-method" value="cod" class="btn-check" checked>
+                                    <div class="p-3 rounded-3 border text-center selection-content transition-all h-100 d-flex flex-column align-items-center justify-content-center">
+                                        <i class="bi bi-cash-stack fs-4 mb-2 d-block text-success"></i>
+                                        <span class="fw-bold small">Cash on Delivery</span>
+                                    </div>
+                                </label>
+                            </div>
+                             <div class="col-6">
+                                <label class="selection-card w-100 h-100">
+                                    <input type="radio" name="payment-method" value="cc" class="btn-check">
+                                    <div class="p-3 rounded-3 border text-center selection-content transition-all h-100 d-flex flex-column align-items-center justify-content-center">
+                                        <i class="bi bi-credit-card fs-4 mb-2 d-block text-primary"></i>
+                                        <span class="fw-bold small">Credit/Debit</span>
+                                    </div>
+                                </label>
+                            </div>
+                            <div class="col-4">
+                                <label class="selection-card w-100 h-100">
+                                    <input type="radio" name="payment-method" value="gcash" class="btn-check">
+                                    <div class="p-3 rounded-3 border text-center selection-content transition-all h-100 d-flex flex-column align-items-center justify-content-center">
+                                        <i class="bi bi-wallet2 fs-5 mb-1 d-block text-primary"></i>
+                                        <span class="fw-bold small" style="font-size: 0.75rem;">GCash</span>
+                                    </div>
+                                </label>
+                            </div>
+                            <div class="col-4">
+                                <label class="selection-card w-100 h-100">
+                                    <input type="radio" name="payment-method" value="grabpay" class="btn-check">
+                                    <div class="p-3 rounded-3 border text-center selection-content transition-all h-100 d-flex flex-column align-items-center justify-content-center">
+                                        <i class="bi bi-phone fs-5 mb-1 d-block text-success"></i>
+                                        <span class="fw-bold small" style="font-size: 0.75rem;">GrabPay</span>
+                                    </div>
+                                </label>
+                            </div>
+                            <div class="col-4">
+                                <label class="selection-card w-100 h-100">
+                                    <input type="radio" name="payment-method" value="paypal" class="btn-check">
+                                    <div class="p-3 rounded-3 border text-center selection-content transition-all h-100 d-flex flex-column align-items-center justify-content-center">
+                                        <i class="bi bi-paypal fs-5 mb-1 d-block text-info"></i>
+                                        <span class="fw-bold small" style="font-size: 0.75rem;">PayPal</span>
+                                    </div>
+                                </label>
                             </div>
                         </div>
-                    </li>
-                   <% } else { %>
-                    <li class="list-group-item px-0">
-                        <p class="small text-success mb-1">You qualify for free shipping!</p>
-                        <div class="progress" style="height: 6px;">
-                            <div class="progress-bar bg-success" role="progressbar" style="width: 100%;" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div>
-                        </div>
-                    </li>
-                   <% } %>
 
-                   <li class="list-group-item d-flex justify-content-between px-0 fs-5 border-top pt-3">
-                       <strong class="fw-bolder">Total</strong>
-                       <strong class="fw-bolder"><%= locationData.symbol %><%= totalWithShipping.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></strong>
-                   </li>
-               </ul>
-               <div class="summary-arrival-date">
-                   <i class="bi bi-box-seam"></i>
-                   <span><%= arrivalDate %></span>
-               </div>
-               <% cart.items.forEach(item => { %>
-                   <div class="summary-product-item">
-                       <img src="<%= item.thumbnailUrl %>" alt="<%= item.name %>">
-                       <div class="summary-product-details">
-                           <p class="summary-product-title"><%= item.name %></p>
-                           <p class="summary-product-meta">Qty: <%= item.qty %></p>
-                           <p class="summary-product-meta">Size: <%= item.size %></p>
-                       </div>
-                       <p class="summary-product-price"><%= locationData.symbol %><%= item.convertedPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></p>
-                   </div>
-               <% }) %>
+                        <div id="payment-details-cc" class="mt-4 d-none">
+                            <div class="bg-light p-3 rounded-3">
+                                <div class="form-floating mb-3">
+                                    <input type="text" class="form-control border-0 bg-white" name="cc-number" placeholder="Card Number">
+                                    <label>Card Number</label>
+                                </div>
+                                <div class="row g-3">
+                                    <div class="col-6">
+                                        <div class="form-floating">
+                                            <input type="text" class="form-control border-0 bg-white" name="cc-expiration" placeholder="MM/YY">
+                                            <label>Expiration</label>
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="form-floating">
+                                            <input type="text" class="form-control border-0 bg-white" name="cc-cvv" placeholder="CVC">
+                                            <label>CVC</label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div id="payment-details-cod" class="mt-3 text-center p-3 bg-light rounded-3">
+                            <p class="small text-secondary mb-0"><i class="bi bi-info-circle me-1"></i> You will pay in cash upon delivery.</p>
+                        </div>
+                         <div id="payment-details-gcash" class="mt-3 d-none text-center p-3 bg-light rounded-3">
+                            <p class="small text-secondary mb-0">You will be redirected to GCash to complete your payment.</p>
+                        </div>
+                        <div id="payment-details-grabpay" class="mt-3 d-none text-center p-3 bg-light rounded-3">
+                            <p class="small text-secondary mb-0">You will be redirected to GrabPay to complete your payment.</p>
+                        </div>
+                        <div id="payment-details-paypal" class="mt-3 d-none text-center p-3 bg-light rounded-3">
+                            <p class="small text-secondary mb-0">You will be redirected to PayPal to complete your payment.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-dark btn-lg w-100 rounded-pill py-3 fw-bold shadow-sm">Place Order</button>
+            </form>
+        </div>
+
+        <div class="col-lg-5 d-none d-lg-block">
+            <div class="card border-0 shadow-sm rounded-4 summary-card-sticky" style="position: sticky; top: 100px;">
+                <div class="card-body p-4">
+                    <h4 class="fw-bold mb-4">Order Summary</h4>
+                    
+                    <% if (shipping.amountNeeded > 0) { %>
+                        <div class="mb-4">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <small class="text-body-secondary">Add <strong><%= locationData.symbol %><%= shipping.amountNeeded.toLocaleString(undefined, { minimumFractionDigits: 2 }) %></strong> for free shipping</small>
+                                <small class="fw-bold"><%= parseInt(shipping.progress) %>%</small>
+                            </div>
+                            <div class="progress" style="height: 6px;">
+                                <div class="progress-bar bg-dark" role="progressbar" style="width: <%= shipping.progress %>%;"></div>
+                            </div>
+                        </div>
+                    <% } else { %>
+                        <div class="mb-4 p-2 bg-success-subtle text-success rounded-3 text-center small fw-bold">
+                            <i class="bi bi-check-circle-fill me-1"></i> You have qualified for Free Shipping!
+                        </div>
+                    <% } %>
+
+                    <div class="cart-items-preview mb-4 p-3" style="max-height: 250px; overflow-y: auto;">
+                        <% cart.items.forEach(item => { %>
+                            <div class="d-flex gap-3 mb-3 align-items-center">
+                                <div class="position-relative me-2">
+                                    <img src="<%= item.thumbnailUrl %>" alt="<%= item.name %>" class="rounded-3 border bg-white" style="width: 64px; height: 64px; object-fit: contain;">
+                                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-secondary border border-light" style="font-size: 0.65rem; z-index: 2;"><%= item.qty %></span>
+                                </div>
+                                <div class="flex-grow-1 min-w-0">
+                                    <h6 class="fw-medium mb-0 text-dark small text-truncate" style="max-width: 200px;"><%= item.name %></h6>
+                                    <small class="text-secondary"><%= item.brand %></small>
+                                </div>
+                                <span class="fw-semibold small"><%= locationData.symbol %><%= item.convertedPrice.toLocaleString(undefined, { minimumFractionDigits: 2 }) %></span>
+                            </div>
+                        <% }) %>
+                    </div>
+
+                    <div class="bg-light rounded-3 p-3 mb-4 d-flex align-items-center gap-3">
+                        <i class="bi bi-box-seam fs-4 text-secondary"></i>
+                        <div>
+                            <small class="text-secondary d-block text-uppercase fw-bold" style="font-size: 0.7rem;">Estimated Arrival</small>
+                            <span class="fw-medium text-dark small"><%= arrivalDate %></span>
+                        </div>
+                    </div>
+
+                    <div class="input-group mb-4">
+                        <input type="text" class="form-control bg-light border-0" placeholder="Gift card or discount code">
+                        <button class="btn btn-dark disabled">Apply</button>
+                    </div>
+
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-secondary">Subtotal</span>
+                        <span class="fw-medium"><%= locationData.symbol %><%= cart.convertedTotalPrice.toLocaleString(undefined, { minimumFractionDigits: 2 }) %></span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-3">
+                        <span class="text-secondary">Shipping</span>
+                        <span class="fw-medium"><%= shipping.cost > 0 ? locationData.symbol + shipping.cost.toLocaleString(undefined, { minimumFractionDigits: 2 }) : 'Free' %></span>
+                    </div>
+
+                    <hr class="border-secondary-subtle">
+
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="fw-bold fs-5">Total</span>
+                        <div class="text-end">
+                            <span class="fw-bold fs-4"><%= locationData.symbol %><%= totalWithShipping.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></span>
+                            <% if (locationData.currency !== 'USD') { %>
+                                <br>
+                                <small class="text-body-secondary" style="font-size: 0.75rem;">
+                                    USD <%= (cart.totalPrice + (shipping.cost > 0 ? 5 : 0)).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %>
+                                </small>
+                            <% } %>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
+<style>
+    .checkout-page-wrapper {
+        padding-top: 1rem;
+    }
+    
+    .btn-icon {
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid var(--border-color);
+        transition: all 0.2s ease;
+    }
+    
+    /* Selection Card Logic */
+    .btn-check:checked + .selection-content {
+        background-color: #f8f9fa;
+        border-color: #111 !important;
+        box-shadow: 0 0 0 1px #111;
+    }
+    
+    /* Address Specific Styling */
+    .btn-check:checked + .selection-content .check-icon {
+        opacity: 1 !important;
+    }
+    
+    .transition-all {
+        transition: all 0.2s ease;
+    }
+    
+    .form-floating > .form-control:focus ~ label {
+        color: #111;
+    }
+    .form-floating > .form-control:focus {
+        box-shadow: 0 0 0 2px rgba(0,0,0,0.1);
+    }
+</style>
+
 <% if (currentUser) { %>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // This script now handles both cases: with and without saved addresses.
         const addresses = <%- JSON.stringify(addresses || []) %>;
         const addressRadios = document.querySelectorAll('input[name="selectedAddressId"]');
         const fieldset = document.getElementById('shipping-address-fieldset');
         const saveAddressContainer = document.getElementById('save-address-container');
-
+        
         const formFields = {
             firstName: document.getElementById('firstName'),
             lastName: document.getElementById('lastName'),
             address: document.getElementById('address'),
-            country: document.getElementById('country'),
             state: document.getElementById('state'),
             zip: document.getElementById('zip'),
+            country: document.getElementById('country'),
             phone: document.getElementById('phone')
         };
 
         function populateForm(address) {
             for (const key in formFields) {
                 if (formFields.hasOwnProperty(key) && address.hasOwnProperty(key)) {
-                    formFields[key].value = address[key];
+                    if(formFields[key]) formFields[key].value = address[key];
                 }
+            }
+        }
+
+        function clearForm() {
+            for (const key in formFields) {
+                if (formFields[key]) formFields[key].value = '';
             }
         }
 
@@ -377,7 +519,6 @@
                 if(saveAddressContainer) saveAddressContainer.style.display = 'none';
             } else {
                 fieldset.disabled = false;
-                // We don't clear the form, to preserve the pre-filled first/last name
                 if(saveAddressContainer) saveAddressContainer.style.display = 'block';
             }
         }
@@ -386,7 +527,7 @@
             addressRadios.forEach(radio => {
                 radio.addEventListener('change', function() {
                     if (this.value === 'new') {
-                        // When switching to 'new', re-enable but don't clear
+                        clearForm(); // Clear fields when 'new' is selected
                         toggleForm('enabled');
                     } else {
                         const selectedAddress = addresses.find(addr => addr.addressId === this.value);
@@ -397,20 +538,87 @@
                     }
                 });
             });
-
-            // Initial state check on page load
-            const checkedRadio = document.querySelector('input[name="selectedAddressId"]:checked');
-            if (checkedRadio && checkedRadio.value !== 'new') {
-                const initialAddress = addresses.find(addr => addr.addressId === checkedRadio.value);
-                if (initialAddress) {
-                    populateForm(initialAddress);
-                    toggleForm('disabled');
-                }
+            
+            // Initial check
+            const checked = document.querySelector('input[name="selectedAddressId"]:checked');
+            if(checked && checked.value !== 'new') {
+                 const addr = addresses.find(a => a.addressId === checked.value);
+                 if(addr) { populateForm(addr); toggleForm('disabled'); }
             } else {
-                // This covers both the "new" radio being checked, or no radios existing at all
-                toggleForm('enabled');
+                 toggleForm('enabled'); // Default to enabled if 'new' or nothing checked
             }
         }
     });
 </script>
 <% } %>
+
+<script>
+    // Payment Method Toggle Logic
+    document.addEventListener('DOMContentLoaded', function() {
+        const deliveryRadios = document.querySelectorAll('input[name="delivery-method"]');
+        const shippingSection = document.getElementById('shipping-section');
+        const pickupForm = document.getElementById('pickup-form');
+        
+        deliveryRadios.forEach(radio => {
+            radio.addEventListener('change', function() {
+                if (this.value === 'ship') {
+                    shippingSection.classList.remove('d-none');
+                    pickupForm.classList.add('d-none');
+                } else {
+                    shippingSection.classList.add('d-none');
+                    pickupForm.classList.remove('d-none');
+                }
+            });
+        });
+
+        const paymentRadios = document.querySelectorAll('input[name="payment-method"]');
+        const ccDetails = document.getElementById('payment-details-cc');
+        const codDetails = document.getElementById('payment-details-cod');
+        const gcashDetails = document.getElementById('payment-details-gcash');
+        const grabDetails = document.getElementById('payment-details-grabpay');
+        const paypalDetails = document.getElementById('payment-details-paypal');
+        const ccInputs = ccDetails.querySelectorAll('input');
+
+        paymentRadios.forEach(radio => {
+            radio.addEventListener('change', function() {
+                // Hide all first
+                ccDetails.classList.add('d-none');
+                codDetails.classList.add('d-none');
+                gcashDetails.classList.add('d-none');
+                grabDetails.classList.add('d-none');
+                paypalDetails.classList.add('d-none');
+                ccInputs.forEach(input => input.required = false);
+
+                // Show selected
+                if (this.value === 'cc') {
+                    ccDetails.classList.remove('d-none');
+                    ccInputs.forEach(input => input.required = true);
+                } else if (this.value === 'cod') {
+                    codDetails.classList.remove('d-none');
+                } else if (this.value === 'gcash') {
+                    gcashDetails.classList.remove('d-none');
+                } else if (this.value === 'grabpay') {
+                    grabDetails.classList.remove('d-none');
+                } else if (this.value === 'paypal') {
+                    paypalDetails.classList.remove('d-none');
+                }
+            });
+        });
+        
+        // Billing Toggle
+        const billingCheck = document.getElementById('sameAsShipping');
+        const billingForm = document.getElementById('billing-address-form');
+        const billingInputs = billingForm.querySelectorAll('input');
+        
+        if(billingCheck) {
+            billingCheck.addEventListener('change', function() {
+                if(this.checked) {
+                    billingForm.classList.add('d-none');
+                    billingInputs.forEach(i => i.required = false);
+                } else {
+                    billingForm.classList.remove('d-none');
+                }
+            });
+        }
+    });
+</script>

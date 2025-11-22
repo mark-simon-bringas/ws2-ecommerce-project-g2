@@ -1,137 +1,192 @@
-<div class="support-page-container pt-5">
-    <div class="container">
-        <% if (!order) { %>
-            <div class="row justify-content-center">
-                <div class="col-lg-6">
-                    <div class="auth-container" style="min-height: auto; padding-top: 0;">
-                        <div class="auth-card" style="border: 1px solid var(--border-color);">
-                            <div class="text-center mb-4">
-                                <h1 class="h2 mb-3">Order Status</h1>
-                                <p class="text-body-secondary">Enter your order information below to see its status.</p>
+<div class="settings-page-wrapper" style="max-width: 1000px;">
+    <div class="d-flex align-items-center mb-5">
+        <a href="/support" class="btn btn-icon btn-light rounded-circle me-3">
+            <i class="bi bi-arrow-left"></i>
+        </a>
+        <div>
+            <h1 class="h3 fw-bold mb-0">Track Order</h1>
+            <p class="text-body-secondary small mb-0">Check the status of your purchase</p>
+        </div>
+    </div>
+
+    <% if (!order) { %>
+        <div class="row justify-content-center">
+            <div class="col-md-8 col-lg-6">
+                <div class="card border-0 shadow-sm rounded-4">
+                    <div class="card-body p-4 p-md-5">
+                        <div class="text-center mb-4">
+                            <div class="bg-light rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 64px; height: 64px;">
+                                <i class="bi bi-search fs-3 text-secondary"></i>
                             </div>
-
-                            <form action="/support/order-status" method="POST">
-                                <div class="mb-3">
-                                    <label for="orderId" class="form-label">Order ID</label>
-                                    <input type="text" class="form-control form-control-lg" id="orderId" name="orderId" placeholder="Last 7 digits of your order ID" required>
-                                </div>
-                                <div class="mb-3">
-                                    <label for="email" class="form-label">Email Address</label>
-                                    <input type="email" class="form-control form-control-lg" id="email" name="email" placeholder="Email used for the order" required>
-                                </div>
-                                <div class="d-grid">
-                                    <button type="submit" class="btn btn-primary btn-lg">Track Order</button>
-                                </div>
-                            </form>
-
-                            <% if (error) { %>
-                                <div class="alert alert-danger text-center mt-4" role="alert">
-                                    <%= error %>
-                                </div>
-                            <% } %>
+                            <h4 class="fw-bold">Find Your Order</h4>
+                            <p class="text-secondary small">Enter your order details below to see the current status.</p>
                         </div>
+
+                        <% if (error) { %>
+                            <div class="alert alert-danger rounded-4 border-0 shadow-sm mb-4 text-center small" role="alert">
+                                <i class="bi bi-exclamation-circle-fill me-2"></i> <%= error %>
+                            </div>
+                        <% } %>
+
+                        <form action="/support/order-status" method="POST">
+                            <div class="mb-3">
+                                <label for="orderId" class="form-label small fw-bold text-uppercase text-secondary">Order ID</label>
+                                <input type="text" class="form-control bg-light border-0 p-3" id="orderId" name="orderId" placeholder="Last 7 digits (e.g. A1B2C3D)" required>
+                            </div>
+                            <div class="mb-4">
+                                <label for="email" class="form-label small fw-bold text-uppercase text-secondary">Email Address</label>
+                                <input type="email" class="form-control bg-light border-0 p-3" id="email" name="email" placeholder="Email used during checkout" required>
+                            </div>
+                            <div class="d-grid">
+                                <button type="submit" class="btn btn-dark rounded-pill py-3 fw-bold">Track Order</button>
+                            </div>
+                        </form>
                     </div>
                 </div>
+                
+                <div class="text-center mt-4">
+                    <p class="text-secondary small">
+                        Having trouble? <a href="/support/contact" class="text-dark fw-medium text-decoration-underline">Contact Support</a>
+                    </p>
+                </div>
             </div>
-        <% } else { %>
-            <div class="order-success-page">
-                <div class="row gx-lg-5">
-                    <div class="col-lg-7">
-                        <div class="d-flex align-items-center gap-3 mb-4 success-header">
-                            <i class="bi bi-check-circle-fill"></i>
-                            <h1 class="h2 mb-0 fw-bold">Order Found</h1>
-                        </div>
+        </div>
 
-                        <div class="confirmation-card">
-                            <div class="card-section">
-                                <h5 class="fw-semibold">Your order is confirmed</h5>
-                                <p class="text-body-secondary">Order ID: #<%= order._id.toString().toUpperCase() %></p>
-                            </div>
-                            <div class="card-section">
-                                <h6 class="fw-semibold">Shipping to:</h6>
-                                <p class="text-body-secondary mb-0">
-                                    <%= order.customer.firstName %> <%= order.customer.lastName %><br>
-                                    <%= order.shippingAddress.address %><br>
-                                    <%= order.shippingAddress.state %>, <%= order.shippingAddress.zip %>
-                                </p>
-                            </div>
-                             <div class="card-section">
-                                <h6 class="fw-semibold">Payment</h6>
-                                <p class="text-body-secondary mb-0">
-                                    <% if (order.paymentDetails.last4) { %>
-                                        <i class="bi bi-credit-card-fill"></i> <%= order.paymentDetails.method %> ending in <%= order.paymentDetails.last4 %>
-                                    <% } else { %>
-                                        <i class="bi bi-cash-stack"></i> <%= order.paymentDetails.method %>
+    <% } else { %>
+        <div class="row g-4">
+            <div class="col-lg-8">
+                <div class="card border-0 shadow-sm rounded-4 mb-4">
+                    <div class="card-body p-4">
+                        <div class="d-flex justify-content-between align-items-start mb-4">
+                            <div>
+                                <span class="badge bg-light text-dark border mb-2">Order #<%= order._id.toString().slice(-7).toUpperCase() %></span>
+                                <h4 class="fw-bold mb-1">
+                                    <% if (order.status === 'Processing') { %> We're preparing your order.
+                                    <% } else if (order.status === 'Shipped') { %> Your order is on the way.
+                                    <% } else if (order.status === 'Delivered') { %> Your order has been delivered.
+                                    <% } else if (order.status === 'Cancelled') { %> This order was cancelled.
                                     <% } %>
-                                </p>
+                                </h4>
+                                <p class="text-secondary small mb-0">Placed on <%= new Date(order.orderDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) %></p>
                             </div>
                         </div>
 
-                        <div class="whats-next-timeline my-5">
-                            <div class="timeline-step <%= ['Processing', 'Shipped', 'Delivered'].includes(order.status) ? 'active' : '' %>">
-                                <div class="timeline-icon"><i class="bi bi-check-lg"></i></div>
-                                <div class="timeline-content">
-                                    <strong>Order Confirmed</strong>
-                                    <p>We've received your order.</p>
+                        <% if (order.status === 'Cancelled') { %>
+                            <div class="alert alert-secondary d-flex align-items-center gap-2 rounded-3 mb-0">
+                                <i class="bi bi-x-circle-fill"></i> Order Cancelled
+                            </div>
+                        <% } else { %>
+                            <div class="whats-next-timeline my-4">
+                                <div class="timeline-step <%= ['Processing', 'Shipped', 'Delivered'].includes(order.status) ? 'active' : '' %>">
+                                    <div class="timeline-icon"><i class="bi bi-check-lg"></i></div>
+                                    <div class="timeline-content">
+                                        <strong>Order Confirmed</strong>
+                                        <p class="small text-secondary">We've received your order.</p>
+                                    </div>
+                                </div>
+                                <div class="timeline-step <%= ['Shipped', 'Delivered'].includes(order.status) ? 'active' : '' %>">
+                                    <div class="timeline-icon"><i class="bi bi-truck"></i></div>
+                                    <div class="timeline-content">
+                                        <strong>Order Shipped</strong>
+                                        <p class="small text-secondary">We'll notify you once it's on its way.</p>
+                                    </div>
+                                </div>
+                                <div class="timeline-step <%= ['Delivered'].includes(order.status) ? 'active' : '' %>">
+                                    <div class="timeline-icon"><i class="bi bi-box-seam-fill"></i></div>
+                                    <div class="timeline-content">
+                                        <strong>Delivered</strong>
+                                        <p class="small text-secondary">Your order has arrived.</p>
+                                    </div>
                                 </div>
                             </div>
-                            <div class="timeline-step <%= ['Shipped', 'Delivered'].includes(order.status) ? 'active' : '' %>">
-                                <div class="timeline-icon"><i class="bi bi-truck"></i></div>
-                                <div class="timeline-content">
-                                    <strong>Order Shipped</strong>
-                                    <p>We'll notify you once it's on its way.</p>
-                                </div>
-                            </div>
-                            <div class="timeline-step <%= ['Delivered'].includes(order.status) ? 'active' : '' %>">
-                                <div class="timeline-icon"><i class="bi bi-box-seam-fill"></i></div>
-                                <div class="timeline-content">
-                                    <strong>Delivered</strong>
-                                    <p>Your order has arrived.</p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="d-none d-lg-flex justify-content-between align-items-center">
-                             <a href="/support/order-status" class="btn btn-primary">Track Another Order</a>
-                             <a href="/support/contact" class="text-body-secondary small">Need help? Contact Us</a>
-                        </div>
-
+                        <% } %>
                     </div>
-                    <div class="col-lg-5">
-                        <h4 class="mb-3 fw-bold">Order Summary</h4>
-                        <div class="summary-box">
-                            <ul class="list-group list-group-flush">
-                               <li class="list-group-item d-flex justify-content-between px-0">
-                                   <span>Subtotal</span>
-                                   <strong><%= locationData.symbol %><%= order.subtotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></strong>
-                               </li>
-                               <li class="list-group-item d-flex justify-content-between px-0">
-                                   <span>Delivery/Shipping</span>
-                                   <strong><%= order.shippingCost > 0 ? locationData.symbol + order.shippingCost.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : 'Free' %></strong>
-                               </li>
-                               <li class="list-group-item d-flex justify-content-between px-0 fs-5">
-                                   <strong class="fw-bolder">Total</strong>
-                                   <strong class="fw-bolder"><%= locationData.symbol %><%= order.total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></strong>
-                               </li>
-                            </ul>
-                        </div>
+                </div>
+
+                <div class="card border-0 shadow-sm rounded-4 mb-4 overflow-hidden">
+                    <div class="card-header bg-white border-bottom p-4">
+                        <h6 class="fw-bold mb-0">Items Ordered</h6>
+                    </div>
+                    <div class="list-group list-group-flush">
                         <% order.items.forEach(item => { %>
-                           <div class="summary-product-item mt-3">
-                               <img src="<%= item.thumbnailUrl %>" alt="<%= item.name %>">
-                               <div class="summary-product-details">
-                                   <p class="summary-product-title"><%= item.name %></p>
-                                   <p class="summary-product-meta">Qty: <%= item.qty %></p>
-                                   <p class="summary-product-meta">Size: <%= item.size %></p>
-                               </div>
-                               <p class="summary-product-price"><%= locationData.symbol %><%= item.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></p>
-                           </div>
+                            <div class="list-group-item p-3 border-0 border-bottom d-flex align-items-center gap-3">
+                                <img src="<%= item.thumbnailUrl %>" alt="<%= item.name %>" class="rounded-3 border bg-light" style="width: 64px; height: 64px; object-fit: contain;">
+                                <div class="flex-grow-1">
+                                    <h6 class="fw-bold mb-0 text-truncate" style="max-width: 200px;"><%= item.name %></h6>
+                                    <small class="text-secondary">Size: <%= item.size %> &bull; Qty: <%= item.qty %></small>
+                                </div>
+                                <div class="text-end">
+                                    <span class="fw-medium"><%= locationData.symbol %><%= item.price.toLocaleString(undefined, { minimumFractionDigits: 2 }) %></span>
+                                </div>
+                            </div>
                         <% }) %>
                     </div>
                 </div>
-                <div class="d-grid d-lg-none mt-4">
-                    <a href="/support/order-status" class="btn btn-primary">Track Another Order</a>
+                
+                <div class="text-center d-lg-none mb-4">
+                    <a href="/support/order-status" class="btn btn-outline-dark rounded-pill px-4">Track Another Order</a>
                 </div>
             </div>
-        <% } %>
-    </div>
+
+            <div class="col-lg-4">
+                <div class="card border-0 shadow-sm rounded-4 mb-4">
+                    <div class="card-body p-4">
+                        <h6 class="fw-bold mb-3">Delivery Details</h6>
+                        <div class="mb-4">
+                            <label class="small text-secondary fw-bold text-uppercase mb-1">Shipping Address</label>
+                            <p class="mb-0 text-dark small">
+                                <%= order.customer.firstName %> <%= order.customer.lastName %><br>
+                                <%= order.shippingAddress.address %><br>
+                                <%= order.shippingAddress.state %>, <%= order.shippingAddress.zip %>
+                            </p>
+                        </div>
+                        <div>
+                            <label class="small text-secondary fw-bold text-uppercase mb-1">Payment Method</label>
+                            <div class="d-flex align-items-center gap-2">
+                                <i class="bi bi-credit-card text-secondary"></i>
+                                <span class="small text-dark"><%= order.paymentDetails.method %> <%= order.paymentDetails.last4 ? '•••• ' + order.paymentDetails.last4 : '' %></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card border-0 shadow-sm rounded-4 mb-4">
+                    <div class="card-body p-4">
+                        <h6 class="fw-bold mb-3">Order Summary</h6>
+                        <div class="d-flex justify-content-between mb-2 small">
+                            <span class="text-secondary">Subtotal</span>
+                            <span class="fw-medium"><%= locationData.symbol %><%= order.subtotal.toLocaleString(undefined, { minimumFractionDigits: 2 }) %></span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-3 small">
+                            <span class="text-secondary">Shipping</span>
+                            <span class="fw-medium"><%= order.shippingCost > 0 ? locationData.symbol + order.shippingCost.toFixed(2) : 'Free' %></span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center pt-3 border-top">
+                            <span class="fw-bold">Total</span>
+                            <span class="fw-bold fs-5"><%= locationData.symbol %><%= order.total.toLocaleString(undefined, { minimumFractionDigits: 2 }) %></span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="text-center d-none d-lg-block">
+                    <a href="/support/order-status" class="btn btn-link text-secondary text-decoration-none small">Track Another Order</a>
+                </div>
+            </div>
+        </div>
+    <% } %>
 </div>
+
+<style>
+    .settings-page-wrapper {
+        margin: 0 auto;
+        padding: 1rem;
+    }
+    .btn-icon {
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid var(--border-color);
+    }
+</style>

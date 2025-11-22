@@ -1,96 +1,115 @@
-<div class="container my-5">
-    <div class="text-center mb-5">
-        <h1 class="display-4 fw-bold">Shipping & Delivery</h1>
-        <p class="lead text-body-secondary">Everything you need to know about how we get your sneakers to you.</p>
+<div class="settings-page-wrapper" style="max-width: 1000px;">
+    <div class="d-flex align-items-center mb-5">
+        <a href="/support" class="btn btn-icon btn-light rounded-circle me-3">
+            <i class="bi bi-arrow-left"></i>
+        </a>
+        <div>
+            <h1 class="h3 fw-bold mb-0">Shipping & Delivery</h1>
+            <p class="text-body-secondary small mb-0">Rates, times, and process</p>
+        </div>
     </div>
 
     <div class="row g-4">
         <div class="col-lg-8">
-            <div class="card mb-4">
-                <div class="card-header d-flex align-items-center bg-transparent border-0 pt-3">
-                    <i class="bi bi-truck fs-4 me-2 text-dark"></i>
-                    <h4 class="mb-0 fw-bold">Shipping Rates</h4>
+            
+            <div class="card border-0 shadow-sm rounded-4 mb-4 overflow-hidden">
+                <div class="card-header bg-white border-bottom p-4">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="bi bi-truck text-primary fs-5"></i>
+                        <h5 class="fw-bold mb-0">Shipping Rates</h5>
+                    </div>
                 </div>
-                <div class="card-body">
-                    <ul class="list-group list-group-flush">
-                        <li class="list-group-item d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="mb-0">Standard Shipping</h6>
-                                <small class="text-body-secondary">For orders under <%= locationData.symbol %><%= freeShippingThreshold.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></small>
+                <div class="card-body p-4">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="p-3 rounded-4 border bg-light h-100 d-flex flex-column justify-content-between">
+                                <div class="mb-3">
+                                    <span class="badge bg-white text-dark border mb-2">Standard</span>
+                                    <h4 class="fw-bold mb-1"><%= locationData.symbol %><%= shippingCost.toLocaleString(undefined, { minimumFractionDigits: 2 }) %></h4>
+                                    <p class="text-secondary small mb-0">Flat rate for orders under <%= locationData.symbol %><%= freeShippingThreshold.toLocaleString() %></p>
+                                </div>
+                                <div class="d-flex align-items-center gap-2 text-secondary small">
+                                    <i class="bi bi-clock"></i> 5-9 Business Days
+                                </div>
                             </div>
-                            <span class="fw-semibold"><%= locationData.symbol %><%= shippingCost.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></span>
-                        </li>
-                        <li class="list-group-item d-flex justify-content-between align-items-center">
-                             <div>
-                                <h6 class="mb-0">Free Shipping</h6>
-                                <small class="text-body-secondary">For orders of <%= locationData.symbol %><%= freeShippingThreshold.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %> or more</small>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="p-3 rounded-4 border border-success bg-success-subtle h-100 d-flex flex-column justify-content-between position-relative overflow-hidden">
+                                <div class="mb-3 position-relative z-2">
+                                    <span class="badge bg-success text-white mb-2">Best Value</span>
+                                    <h4 class="fw-bold text-success-emphasis mb-1">Free</h4>
+                                    <p class="text-success-emphasis small mb-0 opacity-75">For orders over <%= locationData.symbol %><%= freeShippingThreshold.toLocaleString() %></p>
+                                </div>
+                                <div class="d-flex align-items-center gap-2 text-success-emphasis small position-relative z-2">
+                                    <i class="bi bi-award"></i> Priority Processing
+                                </div>
                             </div>
-                            <span class="fw-semibold text-success">Free</span>
-                        </li>
-                    </ul>
-                </div>
-            </div>
-
-            <div class="card mb-4">
-                 <div class="card-header d-flex align-items-center bg-transparent border-0 pt-3">
-                    <i class="bi bi-clock-history fs-4 me-2 text-dark"></i>
-                    <h4 class="mb-0 fw-bold">Delivery Process</h4>
-                </div>
-                <div class="card-body">
-                    <ol class="list-unstyled d-flex flex-column gap-4">
-                        <li class="d-flex align-items-start gap-3">
-                            <div class="fs-4 text-dark"><i class="bi bi-1-circle-fill"></i></div>
-                            <div>
-                                <h6 class="fw-semibold">Order Processing (1-2 Business Days)</h6>
-                                <p class="text-body-secondary mb-0">Once your order is placed, we process and prepare it for shipment.</p>
-                            </div>
-                        </li>
-                        <li class="d-flex align-items-start gap-3">
-                            <div class="fs-4 text-dark"><i class="bi bi-2-circle-fill"></i></div>
-                            <div>
-                                <h6 class="fw-semibold">In Transit (5-9 Business Days)</h6>
-                                <p class="text-body-secondary mb-0">You'll receive a shipping confirmation email with a tracking number as soon as your order is on its way.</p>
-                            </div>
-                        </li>
-                        <li class="d-flex align-items-start gap-3">
-                            <div class="fs-4 text-dark"><i class="bi bi-3-circle-fill"></i></div>
-                            <div>
-                                <h6 class="fw-semibold">Delivered</h6>
-                                <p class="text-body-secondary mb-0">Your package arrives at your doorstep. Deliveries occur Monday-Friday, excluding public holidays.</p>
-                            </div>
-                        </li>
-                    </ol>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <div class="card">
-                <div class="card-header d-flex align-items-center bg-transparent border-0 pt-3">
-                    <i class="bi bi-info-circle fs-4 me-2 text-dark"></i>
-                    <h4 class="mb-0 fw-bold">Frequently Asked Questions</h4>
+            <div class="card border-0 shadow-sm rounded-4 mb-4">
+                <div class="card-header bg-white border-bottom p-4">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="bi bi-map text-info-emphasis fs-5"></i>
+                        <h5 class="fw-bold mb-0">The Journey</h5>
+                    </div>
                 </div>
-                <div class="card-body">
-                     <div class="accordion accordion-flush" id="faqAccordion">
+                <div class="card-body p-4">
+                    <div class="process-timeline">
+                        <div class="timeline-item">
+                            <div class="timeline-marker bg-dark text-white"><i class="bi bi-cart-check"></i></div>
+                            <div class="timeline-content pb-4">
+                                <h6 class="fw-bold">Order Processing</h6>
+                                <p class="text-secondary small mb-0">1-2 Business Days. We verify your items and pack them with care.</p>
+                            </div>
+                        </div>
+                        <div class="timeline-item">
+                            <div class="timeline-marker bg-primary text-white"><i class="bi bi-airplane"></i></div>
+                            <div class="timeline-content pb-4">
+                                <h6 class="fw-bold">In Transit</h6>
+                                <p class="text-secondary small mb-0">5-9 Business Days. Your package is handed over to our courier partners.</p>
+                            </div>
+                        </div>
+                        <div class="timeline-item">
+                            <div class="timeline-marker bg-success text-white"><i class="bi bi-house-door"></i></div>
+                            <div class="timeline-content">
+                                <h6 class="fw-bold">Delivered</h6>
+                                <p class="text-secondary small mb-0">Arrives at your doorstep. We deliver Monday-Friday.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-header bg-white border-bottom p-4">
+                    <h5 class="fw-bold mb-0">Common Questions</h5>
+                </div>
+                <div class="card-body p-0">
+                     <div class="accordion accordion-flush" id="shippingFaq">
                         <div class="accordion-item">
                             <h2 class="accordion-header">
-                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="false" aria-controls="collapseOne">
+                                <button class="accordion-button collapsed fw-medium" type="button" data-bs-toggle="collapse" data-bs-target="#faq1">
                                     Do you ship internationally?
                                 </button>
                             </h2>
-                            <div id="collapseOne" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
-                                <div class="accordion-body">
-                                    Currently, we only ship to all locations within the Philippines. We are working on expanding our shipping to more countries in the near future. Stay tuned for updates!
+                            <div id="faq1" class="accordion-collapse collapse" data-bs-parent="#shippingFaq">
+                                <div class="accordion-body text-secondary small">
+                                    Currently, we only ship to all locations within the Philippines. We are working on expanding our shipping to more countries soon!
                                 </div>
                             </div>
                         </div>
                         <div class="accordion-item">
                             <h2 class="accordion-header">
-                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
-                                    Can I change my shipping address after placing an order?
+                                <button class="accordion-button collapsed fw-medium" type="button" data-bs-toggle="collapse" data-bs-target="#faq2">
+                                    Can I change my address?
                                 </button>
                             </h2>
-                            <div id="collapseTwo" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
-                                <div class="accordion-body">
-                                    If you need to change your shipping address, please contact our support team immediately by creating a support ticket. We can only update the address before the order has been processed for shipment.
+                            <div id="faq2" class="accordion-collapse collapse" data-bs-parent="#shippingFaq">
+                                <div class="accordion-body text-secondary small">
+                                    If your order hasn't been processed yet, please contact support immediately. Once an order is in transit, we cannot change the destination.
                                 </div>
                             </div>
                         </div>
@@ -99,30 +118,73 @@
             </div>
         </div>
 
-        <div class="col-lg-4">
-            <div class="support-sidebar-card">
-                <h5 class="fw-bold mb-3">Quick Links</h5>
-                <ul class="list-unstyled d-flex flex-column gap-2">
-                    <li>
-                        <a href="/support/order-status" class="text-dark fw-medium d-flex align-items-center gap-2">
-                            <i class="bi bi-box-seam"></i>
-                            <span>Track Your Order</span>
+        <div class="col-lg-4 d-none d-lg-block">
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-body p-4">
+                    <h6 class="fw-bold mb-3 text-uppercase text-secondary small">Quick Links</h6>
+                    <div class="d-flex flex-column gap-2">
+                        <a href="/support/order-status" class="btn btn-light text-start d-flex align-items-center gap-2">
+                            <i class="bi bi-box-seam"></i> Track Your Order
                         </a>
-                    </li>
-                    <li>
-                        <a href="/support/returns" class="text-dark fw-medium d-flex align-items-center gap-2">
-                            <i class="bi bi-arrow-counterclockwise"></i>
-                            <span>Return Policy</span>
+                        <a href="/support/returns" class="btn btn-light text-start d-flex align-items-center gap-2">
+                            <i class="bi bi-arrow-counterclockwise"></i> Returns Policy
                         </a>
-                    </li>
-                    <li>
-                        <a href="/support/contact" class="text-dark fw-medium d-flex align-items-center gap-2">
-                            <i class="bi bi-headset"></i>
-                            <span>Contact Support</span>
+                        <a href="/support/contact" class="btn btn-light text-start d-flex align-items-center gap-2">
+                            <i class="bi bi-headset"></i> Contact Support
                         </a>
-                    </li>
-                </ul>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 </div>
+
+<style>
+    .settings-page-wrapper {
+        margin: 0 auto;
+        padding: 1rem;
+    }
+    .btn-icon {
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid var(--border-color);
+    }
+    
+    /* Vertical Timeline Styles */
+    .process-timeline {
+        position: relative;
+        padding-left: 1rem;
+    }
+    .process-timeline::before {
+        content: '';
+        position: absolute;
+        left: 23px;
+        top: 10px;
+        bottom: 30px;
+        width: 2px;
+        background-color: #e9ecef;
+        z-index: 0;
+    }
+    .timeline-item {
+        position: relative;
+        padding-left: 3rem;
+        z-index: 1;
+    }
+    .timeline-marker {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2rem;
+        border: 4px solid #fff; /* Creates gap from line */
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+</style>

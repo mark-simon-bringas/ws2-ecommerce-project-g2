@@ -42,6 +42,11 @@
 </head>
 <body class="<%- (path === '/') ? 'homepage' : '' %> <%- (typeof pageStyle !== 'undefined' && pageStyle === 'order-success') ? 'order-success-page' : '' %>" data-location='<%- JSON.stringify(locationData) %>'>
 
+    <% 
+        // We define this to help the mobile bottom bar know if we are in an "account" section
+        const isDashboard = typeof view !== 'undefined' && (view.startsWith('admin-') || ['orders', 'settings', 'wishlist'].includes(view)); 
+    %>
+
     <div class="navbar-desktop">
       <ul>
         <li><a href="/"><img src="/icons/favbutton.png" alt="SneaksLab Logo" style="height:24px; width:auto;"></a></li>
@@ -141,7 +146,6 @@
       <div class="con-1 dropdown-search-panel">
         <form action="/products/search" method="GET">
             <div class="search-content">
-              
                 <div class="search-input-group">
                     <span class="iconify" data-icon="material-symbols:search-rounded" data-width="28" data-height="28"></span>
                     <input type="text" name="q" placeholder="Search sneakslab.com" required>
@@ -172,7 +176,6 @@
         <div class="container">
             <div class="footer-content">
                 <div class="accordion footer-links" id="footerAccordion">
-        
                     <div class="footer-column">
                         <h2 class="accordion-header" id="headingOne">
                             <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="false" aria-controls="collapseOne">
@@ -194,7 +197,6 @@
                                 Support
                             </button>
                         </h2>
-            
                         <div id="collapseTwo" class="accordion-collapse collapse" aria-labelledby="headingTwo" data-bs-parent="#footerAccordion">
                             <ul class="footer-list">
                                 <li><a href="/support/contact">Contact Us</a></li>
@@ -240,8 +242,7 @@
         </div>
     </footer>
 
-    <%# Show on all pages EXCEPT Cart and Support Chat. Highlights Profile for all /account paths %>
-    <% if (path !== '/cart' && !path.startsWith('/support/tickets/')) { %>
+    <% if (typeof isDashboard !== 'undefined' && (!isDashboard || view === 'wishlist' || isDashboard) && !path.startsWith('/support/tickets/')) { %>
     <div class="search-overlay-gradient"></div>
     
     <div class="mobile-bottom-nav d-lg-none">
@@ -258,7 +259,7 @@
                 <i class="bi bi-heart-fill"></i>
                 <span>Wishlist</span>
             </a>
-            <a href="<%= currentUser ? '/account/settings' : '/users/login' %>" class="nav-item <%= (path.startsWith('/users') || path.startsWith('/account')) && path !== '/account/wishlist' ? 'active' : '' %>" id="nav-profile">
+            <a href="<%= currentUser ? '/account/settings' : '/users/login' %>" class="nav-item <%= (isDashboard || path.startsWith('/users')) && path !== '/account/wishlist' ? 'active' : '' %>" id="nav-profile">
                 <i class="bi bi-person-fill"></i>
                 <span>Profile</span>
             </a>

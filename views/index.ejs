@@ -26,34 +26,116 @@
     </div>
 
     <main class="content-to-load">
-        <div id="heroCarousel" class="carousel slide hero-carousel" data-bs-ride="carousel">
-            <div class="carousel-indicators">
-                <button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="0" class="active" aria-current="true" aria-label="Slide 1"></button>
-                <button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="1" aria-label="Slide 2"></button>
-                <button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="2" aria-label="Slide 3"></button>
-            </div>
-            <div class="carousel-inner">
-                <div class="carousel-item active" style="background-image: url('https://images.unsplash.com/photo-1542291026-7eec264c27ff?q=80&w=2070&auto=format&fit=crop')">
-                    <div class="carousel-caption text-center pb-5">
-                        <h1 class="display-3 fw-bold">Fresh Off The Line</h1>
-                        <p class="lead my-3">Discover the latest drops and must-have releases from the world's top brands.</p>
-                        <a href="/products?new=true" class="btn btn-light btn-lg">Explore New Arrivals</a>
+        
+        <div class="position-relative overflow-hidden mb-5">
+            <div id="mainHeroCarousel" class="carousel slide carousel-fade hero-carousel" data-bs-ride="carousel" data-bs-interval="6000">
+                
+                <div class="carousel-indicators pb-3 justify-content-start ps-4 ps-md-5 d-none d-lg-flex">
+                    <% let slideIndex = 0; %>
+                    <% if (activeSale) { %>
+                        <button type="button" data-bs-target="#mainHeroCarousel" data-bs-slide-to="<%= slideIndex %>" class="active"></button>
+                        <% slideIndex++; %>
+                    <% } %>
+                    <button type="button" data-bs-target="#mainHeroCarousel" data-bs-slide-to="<%= slideIndex %>" class="<%= !activeSale ? 'active' : '' %>"></button>
+                    <% slideIndex++; %>
+                    <button type="button" data-bs-target="#mainHeroCarousel" data-bs-slide-to="<%= slideIndex %>"></button>
+                    <% slideIndex++; %>
+                    <button type="button" data-bs-target="#mainHeroCarousel" data-bs-slide-to="<%= slideIndex %>"></button>
+                    <% slideIndex++; %>
+                    <button type="button" data-bs-target="#mainHeroCarousel" data-bs-slide-to="<%= slideIndex %>"></button>
+                    <% slideIndex++; %>
+                    <button type="button" data-bs-target="#mainHeroCarousel" data-bs-slide-to="<%= slideIndex %>"></button>
+                </div>
+
+                <div class="carousel-inner h-100">
+                    
+                    <% if (activeSale) { %>
+                    <div class="carousel-item active h-100">
+                        <img src="https://images.unsplash.com/photo-1556906781-9a412961c28c?q=80&w=2000&auto=format&fit=crop" class="d-block w-100 h-100 object-fit-cover" alt="Flash Sale">
+                        <div class="hero-overlay" style="background: linear-gradient(to right, rgba(220, 20, 60, 0.5), rgba(0,0,0,0.6));"></div>
+                        <div class="carousel-caption d-flex flex-column justify-content-end align-items-start h-100 pb-5 ps-4 ps-md-5 text-start">
+                            <div class="hero-text-content">
+                                <span class="badge bg-warning text-dark mb-3 px-3 py-2 fs-6 shadow-sm">Flash Sale Event</span>
+                                <h1 class="display-1 fw-bold text-white mb-2 text-uppercase"><%= activeSale.name %></h1>
+                                <p class="lead text-white-50 mb-4 d-none d-md-block">Up to <span class="text-warning fw-bold"><%= activeSale.discountPercentage %>% OFF</span>. Limited time only.</p>
+                                <a href="/products/sale/<%= activeSale._id %>" class="btn btn-light rounded-pill px-5 py-3 fw-bold btn-hero">Shop Sale <i class="bi bi-arrow-right ms-2"></i></a>
+                            </div>
+                        </div>
+                    </div>
+                    <% } %>
+
+                    <div class="carousel-item <%= !activeSale ? 'active' : '' %> h-100">
+                        <img src="https://images.unsplash.com/photo-1515555230216-82228b88ea98?q=80&w=2000&auto=format&fit=crop" class="d-block w-100 h-100 object-fit-cover" alt="Fresh Kicks">
+                        <div class="hero-overlay"></div>
+                        <div class="carousel-caption d-flex flex-column justify-content-end align-items-start h-100 pb-5 ps-4 ps-md-5 text-start">
+                            <div class="hero-text-content">
+                                <h5 class="text-uppercase fw-bold text-white-50 tracking-widest mb-2">New Season</h5>
+                                <h1 class="display-1 fw-bold text-white mb-3 text-uppercase">Fresh<br>Kicks.</h1>
+                                <a href="/products?new=true" class="btn btn-light rounded-pill px-5 py-3 fw-bold btn-hero">Shop New Arrivals <i class="bi bi-arrow-right ms-2"></i></a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="carousel-item h-100">
+                        <img src="https://images.unsplash.com/photo-1600185365926-3a2ce3cdb9eb?q=80&w=2025&auto=format&fit=crop" class="d-block w-100 h-100 object-fit-cover" alt="Nike">
+                        <div class="hero-overlay"></div>
+                        <div class="carousel-caption d-flex flex-column justify-content-end align-items-start h-100 pb-5 ps-4 ps-md-5 text-start">
+                            <div class="hero-text-content">
+                                <h5 class="text-uppercase fw-bold text-warning tracking-widest mb-2">Just Dropped</h5>
+                                <h1 class="display-1 fw-bold text-white mb-3 text-uppercase">Walk On<br>Air.</h1>
+                                <a href="/products?brand=Nike" class="btn btn-light rounded-pill px-5 py-3 fw-bold btn-hero">Shop Nike <i class="bi bi-arrow-right ms-2"></i></a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="carousel-item h-100">
+                        <img src="https://images.unsplash.com/photo-1597045566677-8cf032ed6634?q=80&w=1887&auto=format&fit=crop" class="d-block w-100 h-100 object-fit-cover" alt="Jordan">
+                        <div class="hero-overlay"></div>
+                        <div class="carousel-caption d-flex flex-column justify-content-end align-items-start h-100 pb-5 ps-4 ps-md-5 text-start">
+                            <div class="hero-text-content">
+                                <h5 class="text-uppercase fw-bold text-danger tracking-widest mb-2">Icons Only</h5>
+                                <h1 class="display-1 fw-bold text-white mb-3 text-uppercase">Retro<br>Heat.</h1>
+                                <a href="/products?brand=Jordan" class="btn btn-light rounded-pill px-5 py-3 fw-bold btn-hero">Shop Jordan <i class="bi bi-arrow-right ms-2"></i></a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="carousel-item h-100">
+                        <img src="https://images.unsplash.com/photo-1518002171953-a080ee817e1f?q=80&w=2070&auto=format&fit=crop" class="d-block w-100 h-100 object-fit-cover" alt="Adidas">
+                        <div class="hero-overlay"></div>
+                        <div class="carousel-caption d-flex flex-column justify-content-end align-items-start h-100 pb-5 ps-4 ps-md-5 text-start">
+                            <div class="hero-text-content">
+                                <h5 class="text-uppercase fw-bold text-success tracking-widest mb-2">Performance</h5>
+                                <h1 class="display-1 fw-bold text-white mb-3 text-uppercase">Run The<br>Game.</h1>
+                                <a href="/products?brand=Adidas" class="btn btn-light rounded-pill px-5 py-3 fw-bold btn-hero">Shop Adidas <i class="bi bi-arrow-right ms-2"></i></a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="carousel-item h-100">
+                        <img src="https://images.unsplash.com/photo-1460353581641-37baddab0fa2?q=80&w=2071&auto=format&fit=crop" class="d-block w-100 h-100 object-fit-cover" alt="Limited">
+                        <div class="hero-overlay"></div>
+                        <div class="carousel-caption d-flex flex-column justify-content-end align-items-start h-100 pb-5 ps-4 ps-md-5 text-start">
+                            <div class="hero-text-content">
+                                <h5 class="text-uppercase fw-bold text-info tracking-widest mb-2">Limited Edition</h5>
+                                <h1 class="display-1 fw-bold text-white mb-3 text-uppercase">Rare<br>Finds.</h1>
+                                <a href="/products" class="btn btn-light rounded-pill px-5 py-3 fw-bold btn-hero">Browse Exclusive <i class="bi bi-arrow-right ms-2"></i></a>
+                            </div>
+                        </div>
                     </div>
                 </div>
-                <div class="carousel-item" style="background-image: url('https://images.unsplash.com/photo-1552346154-21d32810aba3?q=80&w=2070&auto=format&fit=crop')">
-                    <div class="carousel-caption text-center pb-5">
-                        <h1 class="display-3 fw-bold">The Classics, Reimagined</h1>
-                        <p class="lead my-3">Iconic silhouettes that defined a generation, now back in stock.</p>
-                        <a href="/products" class="btn btn-light btn-lg">Shop the Collection</a>
+
+                <div class="carousel-controls-desktop">
+                     <div class="d-flex align-items-center gap-3">
+                        <button class="carousel-control-btn" type="button" data-bs-target="#mainHeroCarousel" data-bs-slide="prev">
+                            <i class="bi bi-chevron-left"></i>
+                        </button>
+                        <button class="carousel-control-btn" type="button" data-bs-target="#mainHeroCarousel" data-bs-slide="next">
+                            <i class="bi bi-chevron-right"></i>
+                        </button>
                     </div>
                 </div>
-                <div class="carousel-item" style="background-image: url('https://images.unsplash.com/photo-1543508282-6319a3e2621f?q=80&w=2030&auto=format&fit=crop')">
-                    <div class="carousel-caption text-center pb-5">
-                        <h1 class="display-3 fw-bold">Up to 40% Off</h1>
-                        <p class="lead my-3">Limited time only.</p>
-                        <a href="/products?sale=true" class="btn btn-light btn-lg">Shop Clearance</a>
-                    </div>
-                </div>
+
             </div>
         </div>
 
@@ -82,7 +164,10 @@
         <section class="product-carousel-section container-fluid mb-5 py-5 bg-light">
             <div class="container">
                 <div class="section-header">
-                    <h2 class="display-5 fw-bold mb-0"><%= activeSale.name %></h2>
+                    <div class="d-flex align-items-center gap-3">
+                        <h2 class="display-5 fw-bold mb-0 text-danger"><%= activeSale.name %></h2>
+                        <span class="badge bg-warning text-dark d-none d-md-inline-block">Ends <%= new Date(activeSale.endDate).toLocaleDateString() %></span>
+                    </div>
                     <div class="section-header-actions">
                         <a href="/products/sale/<%= activeSale._id %>" class="btn btn-outline-dark d-none d-lg-inline-block">View All</a>
                         <div class="carousel-nav-buttons">
@@ -100,26 +185,18 @@
                                 <a href="/products/<%= product.sku %>" class="product-card-img-link"></a>
                                 <img src="<%= product.thumbnailUrl %>" class="product-card-img" alt="<%= product.name %>" loading="lazy" width="300" height="300">
                                 <div class="product-card-actions">
-                                    <% if (currentUser) { %>
-                                        <button type="button" class="btn-action wishlist-toggle-btn" title="Toggle Wishlist" data-product-id="<%= product._id %>">
-                                            <% const isWishlisted = wishlist.some(id => id.equals(product._id)); %>
-                                            <i class="bi <%= isWishlisted ? 'bi-heart-fill' : 'bi-heart' %>"></i>
-                                        </button>
-                                    <% } else { %>
-                                        <a href="/users/login?redirect=<%= path %>" class="btn-action" title="Login to Add to Wishlist">
-                                            <i class="bi bi-heart"></i>
-                                        </a>
-                                    <% } %>
-                                    <button type="button" class="btn-action" title="Add to Cart" data-bs-toggle="modal" data-bs-target="#productModal-<%= product.sku %>"><i class="bi bi-bag-plus"></i></button>
+                                    <button type="button" class="btn-action title="Add to Cart" data-bs-toggle="modal" data-bs-target="#productModal-<%= product.sku %>"><i class="bi bi-bag-plus"></i></button>
                                 </div>
+                                <span class="position-absolute top-0 start-0 m-2 badge bg-danger">
+                                    -<%= product.discountPercentage %>%
+                                </span>
                             </div>
                             <div class="product-card-body">
                                 <a href="/products/<%= product.sku %>" class="text-decoration-none">
                                     <div class="product-title"><%= product.name %></div>
                                     <div class="product-price">
-                                        <span class="fw-bold text-dark"><%= locationData.symbol %><%= product.convertedSalePrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></span>
-                                        <del class="text-body-secondary ms-2"><%= locationData.symbol %><%= product.convertedPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></del>
-                                        <span class="text-success fw-bold ms-2"><%= product.discountPercentage %>% OFF</span>
+                                        <span class="fw-bold text-danger"><%= locationData.symbol %><%= product.convertedSalePrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></span>
+                                        <del class="text-body-secondary ms-2 small"><%= locationData.symbol %><%= product.convertedPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></del>
                                     </div>
                                 </a>
                             </div>
@@ -171,10 +248,9 @@
                                     <div class="product-price">
                                         <% if (product.onSale) { %>
                                             <span class="fw-bold text-dark"><%= locationData.symbol %><%= product.convertedSalePrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></span>
-                                            <del class="text-body-secondary ms-2"><%= locationData.symbol %><%= product.convertedPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></del>
-                                            <span class="text-success fw-bold ms-2"><%= product.discountPercentage %>% OFF</span>
+                                            <span class="text-success fw-bold ms-2 small"><%= product.discountPercentage %>% OFF</span>
                                         <% } else { %>
-                                            <span><%= locationData.symbol %><%= product.convertedPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></span>
+                                            <span class="fw-bold text-dark"><%= locationData.symbol %><%= product.convertedPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></span>
                                         <% } %>
                                     </div>
                                 </a>
@@ -208,30 +284,14 @@
                                 <a href="/products/<%= product.sku %>" class="product-card-img-link"></a>
                                 <img src="<%= product.thumbnailUrl %>" class="product-card-img" alt="<%= product.name %>" loading="lazy" width="300" height="300">
                                 <div class="product-card-actions">
-                                    <% if (currentUser) { %>
-                                        <button type="button" class="btn-action wishlist-toggle-btn" title="Toggle Wishlist" data-product-id="<%= product._id %>">
-                                            <% const isWishlisted = wishlist.some(id => id.equals(product._id)); %>
-                                            <i class="bi <%= isWishlisted ? 'bi-heart-fill' : 'bi-heart' %>"></i>
-                                        </button>
-                                    <% } else { %>
-                                        <a href="/users/login?redirect=<%= path %>" class="btn-action" title="Login to Add to Wishlist">
-                                            <i class="bi bi-heart"></i>
-                                        </a>
-                                    <% } %>
-                                    <button type="button" class="btn-action" title="Add to Cart" data-bs-toggle="modal" data-bs-target="#productModal-<%= product.sku %>"><i class="bi bi-bag-plus"></i></button>
+                                     <button type="button" class="btn-action" title="Add to Cart" data-bs-toggle="modal" data-bs-target="#productModal-<%= product.sku %>"><i class="bi bi-bag-plus"></i></button>
                                 </div>
                             </div>
                             <div class="product-card-body">
                                 <a href="/products/<%= product.sku %>" class="text-decoration-none">
                                     <div class="product-title"><%= product.name %></div>
                                     <div class="product-price">
-                                        <% if (product.onSale) { %>
-                                            <span class="fw-bold text-dark"><%= locationData.symbol %><%= product.convertedSalePrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></span>
-                                            <del class="text-body-secondary ms-2"><%= locationData.symbol %><%= product.convertedPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></del>
-                                            <span class="text-success fw-bold ms-2"><%= product.discountPercentage %>% OFF</span>
-                                        <% } else { %>
-                                            <span><%= locationData.symbol %><%= product.convertedPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></span>
-                                        <% } %>
+                                        <span class="fw-bold text-dark"><%= locationData.symbol %><%= product.convertedPrice.toLocaleString() %></span>
                                     </div>
                                 </a>
                             </div>
@@ -242,33 +302,16 @@
         </section>
         <% } %>
 
-        <div class="container my-5">
-            <div class="promo-banner-grid">
-                <a href="/products?category=men" class="promo-banner-item" style="background-image: linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), url('https://images.unsplash.com/photo-1600185365926-3a2ce3cdb9eb?q=80&w=2000&auto=format&fit=crop');">
-                    <div>
-                        <h3 class="display-5">For Him</h3>
-                        <p class="lead">Performance gear and lifestyle staples.</p>
-                    </div>
-                </a>
-                <a href="/products?category=women" class="promo-banner-item" style="background-image: linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), url('https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?q=80&w=2000&auto=format&fit=crop');">
-                    <div>
-                        <h3 class="display-5">For Her</h3>
-                        <p class="lead">The best in comfort, style, and design.</p>
-                    </div>
-                </a>
-            </div>
-        </div>
-
         <% if (jordanCollection && jordanCollection.length > 0) { %>
-        <section class="product-carousel-section container-fluid mb-5 py-5">
-            <div class="container">
+        <section class="product-carousel-section container-fluid mb-5">
+             <div class="container">
                 <div class="section-header">
                     <h2 class="display-5 fw-bold mb-0">Jordan Collection</h2>
                     <div class="section-header-actions">
-                        <a href="/products?brand=Jordan" class="btn btn-outline-dark d-none d-lg-inline-block">View All</a>
+                         <a href="/products?brand=Jordan" class="btn btn-outline-dark d-none d-lg-inline-block">View All</a>
                         <div class="carousel-nav-buttons">
-                            <button class="carousel-nav-btn prev" aria-label="Previous slide"><i class="bi bi-chevron-left"></i></button>
-                            <button class="carousel-nav-btn next" aria-label="Next slide"><i class="bi bi-chevron-right"></i></button>
+                            <button class="carousel-nav-btn prev"><i class="bi bi-chevron-left"></i></button>
+                            <button class="carousel-nav-btn next"><i class="bi bi-chevron-right"></i></button>
                         </div>
                     </div>
                 </div>
@@ -281,30 +324,14 @@
                                 <a href="/products/<%= product.sku %>" class="product-card-img-link"></a>
                                 <img src="<%= product.thumbnailUrl %>" class="product-card-img" alt="<%= product.name %>" loading="lazy" width="300" height="300">
                                 <div class="product-card-actions">
-                                    <% if (currentUser) { %>
-                                        <button type="button" class="btn-action wishlist-toggle-btn" title="Toggle Wishlist" data-product-id="<%= product._id %>">
-                                            <% const isWishlisted = wishlist.some(id => id.equals(product._id)); %>
-                                            <i class="bi <%= isWishlisted ? 'bi-heart-fill' : 'bi-heart' %>"></i>
-                                        </button>
-                                    <% } else { %>
-                                        <a href="/users/login?redirect=<%= path %>" class="btn-action" title="Login to Add to Wishlist">
-                                            <i class="bi bi-heart"></i>
-                                        </a>
-                                    <% } %>
-                                    <button type="button" class="btn-action" title="Add to Cart" data-bs-toggle="modal" data-bs-target="#productModal-<%= product.sku %>"><i class="bi bi-bag-plus"></i></button>
+                                    <button type="button" class="btn-action title="Add to Cart" data-bs-toggle="modal" data-bs-target="#productModal-<%= product.sku %>"><i class="bi bi-bag-plus"></i></button>
                                 </div>
                             </div>
                             <div class="product-card-body">
                                 <a href="/products/<%= product.sku %>" class="text-decoration-none">
                                     <div class="product-title"><%= product.name %></div>
                                     <div class="product-price">
-                                         <% if (product.onSale) { %>
-                                            <span class="fw-bold text-dark"><%= locationData.symbol %><%= product.convertedSalePrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></span>
-                                            <del class="text-body-secondary ms-2"><%= locationData.symbol %><%= product.convertedPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></del>
-                                            <span class="text-success fw-bold ms-2"><%= product.discountPercentage %>% OFF</span>
-                                        <% } else { %>
-                                            <span><%= locationData.symbol %><%= product.convertedPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></span>
-                                        <% } %>
+                                        <span class="fw-bold text-dark"><%= locationData.symbol %><%= product.convertedPrice.toLocaleString() %></span>
                                     </div>
                                 </a>
                             </div>
@@ -334,105 +361,179 @@
                 </div>
                 <div class="row text-center g-4 mt-4">
                     <div class="col-md-4">
-                        <div class="feature-icon-container mb-3">
-                            <i class="bi bi-patch-check-fill"></i>
-                        </div>
+                        <div class="feature-icon-container mb-3"><i class="bi bi-shield-check"></i></div>
                         <h4>Authenticity Guaranteed</h4>
                         <p class="text-body-secondary">Every pair is 100% authentic, sourced from trusted partners and verified by our experts.</p>
                     </div>
                     <div class="col-md-4">
-                        <div class="feature-icon-container mb-3">
-                            <i class="bi bi-airplane-fill"></i>
-                        </div>
+                        <div class="feature-icon-container mb-3"><i class="bi bi-truck"></i></div>
                         <h4>Fast, Free Shipping</h4>
                         <p class="text-body-secondary">Get your grails delivered to your door quickly and securely, with free shipping on all orders.</p>
                     </div>
                     <div class="col-md-4">
-                        <div class="feature-icon-container mb-3">
-                            <i class="bi bi-arrow-counterclockwise"></i>
-                        </div>
-                        <h4>Easy Returns</h4>
-                        <p class="text-body-secondary">Not the perfect fit? Our hassle-free return policy has you covered.</p>
+                        <div class="feature-icon-container mb-3"><i class="bi bi-headset"></i></div>
+                        <h4>Expert Support</h4>
+                        <p class="text-body-secondary">Have a question? Our team of sneakerheads is here to help you out.</p>
                     </div>
                 </div>
             </div>
         </div>
+        
+        <% if (!currentUser) { %>
+        <div class="container mb-5">
+            <div class="bg-dark text-white rounded-4 p-4 p-md-5 d-flex flex-column flex-md-row align-items-center justify-content-between position-relative overflow-hidden shadow-sm">
+                <div class="position-relative z-2 mb-4 mb-md-0 text-center text-md-start">
+                    <span class="badge bg-warning text-dark mb-2">New Members</span>
+                    <h2 class="fw-bold mb-2">Join the Club & Get 15% Off</h2>
+                    <p class="text-white-50 mb-0">Sign up for exclusive drops and discounts.</p>
+                </div>
+                <a href="/users/register" class="btn btn-light rounded-pill px-5 py-3 fw-bold z-2 flex-shrink-0 shadow-sm hover-scale">Sign Up Now</a>
+                <div class="position-absolute top-0 start-0 w-100 h-100 opacity-10" style="background: radial-gradient(circle at 100% 0%, #ffffff 0%, transparent 60%); pointer-events: none;"></div>
+            </div>
+        </div>
+        <% } %>
+
     </main>
 </div>
 
 <% if (allProducts && allProducts.length > 0) { %>
     <% allProducts.forEach(product => { %>
         <% const standardSizes = ['8', '8.5', '9', '9.5', '10', '10.5', '11', '12']; %>
-        <div class="modal fade quick-add-modal" id="productModal-<%= product.sku %>" tabindex="-1" aria-labelledby="productModalLabel-<%= product.sku %>" aria-hidden="true">
+        <div class="modal fade quick-add-modal" id="productModal-<%= product.sku %>" tabindex="-1" aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <% if (product.brand.toLowerCase() === 'adidas') { %>
-                            <img src="https://upload.wikimedia.org/wikipedia/commons/2/20/Adidas_Logo.svg" alt="Adidas" class="brand-logo">
-                        <% } else if (product.brand.toLowerCase() === 'jordan') { %>
-                             <img src="https://upload.wikimedia.org/wikipedia/en/thumb/3/37/Jumpman_logo.svg/1200px-Jumpman_logo.svg.png" alt="Jordan" class="brand-logo">
-                        <% } else if (product.brand.toLowerCase() === 'new balance') { %>
-                             <img src="https://logos-world.net/wp-content/uploads/2020/09/New-Balance-Emblem-700x394.png" alt="New Balance" class="brand-logo">
-                        <% } else { %>
-                            <img src="https://upload.wikimedia.org/wikipedia/commons/a/a6/Logo_NIKE.svg" alt="Nike" class="brand-logo">
-                        <% } %>
-                        <i class="bi bi-x-lg action-icon" data-bs-dismiss="modal" aria-label="Close"></i>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="badge bg-light text-dark border"><%= product.brand %></span>
+                        </div>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body">
                         <div class="product-image-wrapper">
-                            <img src="<%= product.thumbnailUrl %>" alt="<%= product.name %>" class="product-image" loading="lazy" width="300" height="300">
+                            <img src="<%= product.thumbnailUrl %>" alt="<%= product.name %>" class="product-image w-100">
                         </div>
                         <div class="product-details-wrapper">
-                            <div class="product-info">
-                                <h2><%= product.name %></h2>
-                                <p class="sku">SKU: <%= product.sku %></p>
-                                <div class="price-and-rating">
-                                    <div class="price mb-0 d-flex flex-wrap align-items-center">
-                                         <% if (product.onSale) { %>
-                                            <span class="fw-bold text-dark me-2"><%= locationData.symbol %><%= product.convertedSalePrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></span>
-                                            <del class="text-body-secondary me-2"><%= locationData.symbol %><%= product.convertedPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></del>
-                                            <span class="text-success fw-bold"><%= product.discountPercentage %>% OFF</span>
-                                        <% } else { %>
-                                            <span class="fw-bold text-dark"><%= locationData.symbol %><%= product.convertedPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></span>
-                                        <% } %>
-                                    </div>
-                                    <div class="rating">
-                                        <% const averageRating = product.averageRating || 0; %>
-                                        <% if (averageRating > 0) { %>
-                                            <% for(let i = 0; i < Math.floor(averageRating); i++) { %><i class="bi bi-star-fill"></i><% } %>
-                                        <% } else { %>
-                                            <small class="text-body-secondary">No reviews</small>
-                                        <% } %>
-                                    </div>
-                                </div>
-                            </div>
-                            <form action="/cart/add" method="POST" id="form-add-<%= product.sku %>" class="mt-3">
+                             <form action="/cart/add" method="POST" class="mt-3">
                                 <input type="hidden" name="productId" value="<%= product._id %>">
                                 <input type="hidden" name="sku" value="<%= product.sku %>">
-                                <div>
-                                    <div class="size-selection-header">
-                                        <i class="bi bi-rulers"></i>
-                                        <span>Select Size</span>
-                                    </div>
-                                    <div class="size-selector">
-                                        <% standardSizes.forEach(size => { %>
-                                            <% 
-                                                const safeSizeKey = size.replace('.', '_');
-                                                const isSizeAvailable = product.stock && product.stock[safeSizeKey] > 0;
-                                            %>
-                                            <input type="radio" class="btn-check" name="size" id="modal-size-<%= product.sku %>-<%= size %>" value="<%= size %>" autocomplete="off" required <%= !isSizeAvailable ? 'disabled' : '' %>>
-                                            <label class="btn btn-outline-secondary <%= !isSizeAvailable ? 'disabled' : '' %>" for="modal-size-<%= product.sku %>-<%= size %>"><%= size %></label>
-                                        <% }) %>
-                                    </div>
+                                <div class="size-selector">
+                                    <% standardSizes.forEach(size => { %>
+                                        <input type="radio" class="btn-check" name="size" id="idx-size-<%= product.sku %>-<%= size %>" value="<%= size %>" required>
+                                        <label class="btn btn-outline-secondary" for="idx-size-<%= product.sku %>-<%= size %>"><%= size %></label>
+                                    <% }) %>
                                 </div>
+                                <button type="submit" class="btn btn-dark w-100 mt-3">Add to Cart</button>
                             </form>
                         </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="submit" form="form-add-<%= product.sku %>" class="btn btn-primary btn-lg w-100 add-to-cart-btn">Add to Cart</button>
                     </div>
                 </div>
             </div>
         </div>
     <% }) %>
 <% } %>
+
+<style>
+    /* Hero Styling */
+    .hero-carousel {
+        height: 75vh; 
+        min-height: 550px;
+        border-radius: 0 0 24px 24px;
+    }
+    
+    .hero-overlay {
+        position: absolute;
+        top: 0; left: 0; width: 100%; height: 100%;
+        background: linear-gradient(to bottom, rgba(0,0,0,0.1), rgba(0,0,0,0.8));
+        z-index: 1;
+    }
+    
+    .carousel-caption {
+        z-index: 2;
+        bottom: 0;
+        padding-bottom: 4rem;
+        left: 0;
+        right: 0;
+        text-align: left;
+        padding-left: 3rem;
+    }
+
+    @media (max-width: 767.98px) {
+        .carousel-caption {
+            padding-left: 1.5rem;
+            padding-right: 1.5rem;
+        }
+        .hero-carousel {
+            height: 600px;
+        }
+        .hero-section-wrapper {
+            margin-top: 48px;
+        }
+        .display-1 {
+            font-size: 3.5rem;
+        }
+    }
+    
+    @media (min-width: 992px) {
+        .hero-section-wrapper {
+            margin-top: 0;
+        }
+    }
+    
+    /* Controls Positioning (Bottom-Right desktop, Bottom-Right mobile) */
+    .carousel-controls-desktop {
+        position: absolute;
+        bottom: 3rem;
+        right: 3rem;
+        z-index: 10;
+        display: flex;
+        align-items: center;
+    }
+    
+    @media (max-width: 991.98px) {
+        /* Visible on mobile now too */
+        .carousel-controls-desktop {
+            display: flex !important;
+            bottom: 2rem;
+            right: 1.5rem;
+        }
+    }
+
+    .carousel-control-btn {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2rem;
+        transition: all 0.2s ease;
+    }
+
+    .carousel-control-btn:hover {
+        background: rgba(255, 255, 255, 0.9);
+        color: #111;
+        transform: scale(1.05);
+    }
+    
+    .tracking-widest { letter-spacing: 3px; }
+    
+    /* Animations */
+    .carousel-item.active .hero-text-content > * {
+        opacity: 0;
+        transform: translateY(30px);
+        animation: fadeUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+    .carousel-item.active .hero-text-content > *:nth-child(1) { animation-delay: 0.1s; }
+    .carousel-item.active .hero-text-content > *:nth-child(2) { animation-delay: 0.2s; }
+    .carousel-item.active .hero-text-content > *:nth-child(3) { animation-delay: 0.3s; }
+    
+    @keyframes fadeUp {
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .hover-scale:hover { transform: scale(1.02); transition: transform 0.2s ease; }
+</style>
