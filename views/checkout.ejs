@@ -18,6 +18,32 @@
                         <div id="collapseOne" class="accordion-collapse collapse" aria-labelledby="headingOne" data-bs-parent="#orderSummaryAccordion">
                             <div class="accordion-body bg-light pt-0">
                                 <div class="pt-3">
+                                    <div class="mb-3">
+                                        <label class="form-label small fw-bold text-secondary text-uppercase">Discount Code</label>
+                                        <div class="input-group mb-2">
+                                            <input type="text" id="voucher-code-mobile" class="form-control bg-white border-0" placeholder="Code">
+                                            <button class="btn btn-dark" type="button" onclick="applyVoucher('mobile')">Apply</button>
+                                        </div>
+                                        
+                                        <button type="button" class="btn btn-outline-secondary w-100 py-3 d-flex justify-content-between align-items-center bg-white" data-bs-toggle="modal" data-bs-target="#voucherWalletModal">
+                                            <span class="fw-medium"><i class="bi bi-ticket-perforated me-2"></i> Select from Wallet</span>
+                                            <% if (availableVouchers && availableVouchers.length > 0) { %>
+                                                <span class="badge bg-dark rounded-pill"><%= availableVouchers.length %></span>
+                                            <% } %>
+                                        </button>
+
+                                        <div id="voucher-message-mobile" class="mt-2 small"></div>
+                                        
+                                        <% if (typeof appliedVoucher !== 'undefined' && appliedVoucher) { %>
+                                            <div class="alert alert-success mt-2 py-2 small d-flex justify-content-between align-items-center rounded-3 border-0 bg-success-subtle text-success-emphasis mb-0">
+                                                <span><i class="bi bi-check-circle-fill me-1"></i> Applied: <strong><%= appliedVoucher.code %></strong></span>
+                                                <span class="fw-bold">-<%= locationData.symbol %><%= discountAmount.toLocaleString(undefined, { minimumFractionDigits: 2 }) %></span>
+                                            </div>
+                                            <div class="text-end mt-1">
+                                                <button onclick="removeVoucher()" class="btn btn-link text-danger p-0 small text-decoration-none">Remove Voucher</button>
+                                            </div>
+                                        <% } %>
+                                    </div>
                                     <% if (shipping.amountNeeded > 0) { %>
                                         <div class="mb-3 p-3 bg-white rounded-3 border">
                                             <div class="d-flex justify-content-between align-items-center mb-2">
@@ -50,15 +76,16 @@
                                     
                                     <hr class="border-secondary-subtle">
                                     
-                                    <div class="d-flex align-items-center gap-3 mb-3 text-body-secondary small">
-                                        <i class="bi bi-box-seam fs-5"></i>
-                                        <span><%= arrivalDate %></span>
-                                    </div>
-
                                     <div class="d-flex justify-content-between mb-2 small">
                                         <span class="text-secondary">Subtotal</span>
                                         <span class="fw-medium"><%= locationData.symbol %><%= cart.convertedTotalPrice.toLocaleString(undefined, { minimumFractionDigits: 2 }) %></span>
                                     </div>
+                                    <% if (typeof discountAmount !== 'undefined' && discountAmount > 0) { %>
+                                        <div class="d-flex justify-content-between mb-2 small text-success">
+                                            <span>Discount</span>
+                                            <span class="fw-medium">-<%= locationData.symbol %><%= discountAmount.toLocaleString(undefined, { minimumFractionDigits: 2 }) %></span>
+                                        </div>
+                                    <% } %>
                                     <div class="d-flex justify-content-between mb-2 small">
                                         <span class="text-secondary">Shipping</span>
                                         <span class="fw-medium"><%= shipping.cost > 0 ? locationData.symbol + shipping.cost.toLocaleString(undefined, { minimumFractionDigits: 2 }) : 'Free' %></span>
@@ -139,7 +166,6 @@
                 <div id="shipping-section" class="card border-0 shadow-sm rounded-4 mb-4">
                     <div class="card-body p-4">
                         <h5 class="fw-bold mb-3">Shipping Address</h5>
-
                         <% if (currentUser && addresses && addresses.length > 0) { %>
                             <div class="address-grid mb-4">
                                 <% addresses.forEach((addr, index) => { %>
@@ -167,56 +193,17 @@
                                 </label>
                             </div>
                         <% } %>
-
                         <fieldset id="shipping-address-fieldset" <%= (currentUser && addresses && addresses.length > 0) ? 'disabled' : '' %>>
                             <div class="row g-3">
-                                <div class="col-6">
-                                    <div class="form-floating">
-                                        <input type="text" class="form-control bg-light border-0" id="firstName" name="firstName" placeholder="First" required>
-                                        <label for="firstName">First Name</label>
-                                    </div>
-                                </div>
-                                <div class="col-6">
-                                    <div class="form-floating">
-                                        <input type="text" class="form-control bg-light border-0" id="lastName" name="lastName" placeholder="Last" required>
-                                        <label for="lastName">Last Name</label>
-                                    </div>
-                                </div>
-                                <div class="col-12">
-                                    <div class="form-floating">
-                                        <input type="text" class="form-control bg-light border-0" id="address" name="address" placeholder="Address" required>
-                                        <label for="address">Street Address</label>
-                                    </div>
-                                </div>
-                                <div class="col-6">
-                                    <div class="form-floating">
-                                        <input type="text" class="form-control bg-light border-0" id="state" name="state" placeholder="State" required>
-                                        <label for="state">State/Province</label>
-                                    </div>
-                                </div>
-                                <div class="col-6">
-                                    <div class="form-floating">
-                                        <input type="text" class="form-control bg-light border-0" id="zip" name="zip" placeholder="Zip" required>
-                                        <label for="zip">Zip Code</label>
-                                    </div>
-                                </div>
-                                <div class="col-12">
-                                    <div class="form-floating">
-                                        <select class="form-select bg-light border-0" id="country" name="country" required>
-                                            <option value="Philippines">Philippines</option>
-                                        </select>
-                                        <label for="country">Country</label>
-                                    </div>
-                                </div>
-                                <div class="col-12">
-                                    <div class="form-floating">
-                                        <input type="tel" class="form-control bg-light border-0" id="phone" name="phone" placeholder="Phone" required>
-                                        <label for="phone">Phone Number</label>
-                                    </div>
-                                </div>
+                                <div class="col-6"><div class="form-floating"><input type="text" class="form-control bg-light border-0" id="firstName" name="firstName" placeholder="First" required><label for="firstName">First Name</label></div></div>
+                                <div class="col-6"><div class="form-floating"><input type="text" class="form-control bg-light border-0" id="lastName" name="lastName" placeholder="Last" required><label for="lastName">Last Name</label></div></div>
+                                <div class="col-12"><div class="form-floating"><input type="text" class="form-control bg-light border-0" id="address" name="address" placeholder="Address" required><label for="address">Street Address</label></div></div>
+                                <div class="col-6"><div class="form-floating"><input type="text" class="form-control bg-light border-0" id="state" name="state" placeholder="State" required><label for="state">State/Province</label></div></div>
+                                <div class="col-6"><div class="form-floating"><input type="text" class="form-control bg-light border-0" id="zip" name="zip" placeholder="Zip" required><label for="zip">Zip Code</label></div></div>
+                                <div class="col-12"><div class="form-floating"><select class="form-select bg-light border-0" id="country" name="country" required><option value="Philippines">Philippines</option></select><label for="country">Country</label></div></div>
+                                <div class="col-12"><div class="form-floating"><input type="tel" class="form-control bg-light border-0" id="phone" name="phone" placeholder="Phone" required><label for="phone">Phone Number</label></div></div>
                             </div>
                         </fieldset>
-                        
                         <% if (currentUser) { %>
                             <div class="form-check mt-3" id="save-address-container" <%= (addresses && addresses.length > 0) ? 'style="display:none;"' : '' %>>
                                 <input class="form-check-input" type="checkbox" id="saveAddress" name="saveAddress">
@@ -272,93 +259,25 @@
                 <div class="card border-0 shadow-sm rounded-4 mb-4">
                     <div class="card-body p-4">
                         <h5 class="fw-bold mb-3">Payment</h5>
-                        
                         <div class="row g-3">
-                            <div class="col-6">
-                                <label class="selection-card w-100 h-100">
-                                    <input type="radio" name="payment-method" value="cod" class="btn-check" checked>
-                                    <div class="p-3 rounded-3 border text-center selection-content transition-all h-100 d-flex flex-column align-items-center justify-content-center">
-                                        <i class="bi bi-cash-stack fs-4 mb-2 d-block text-success"></i>
-                                        <span class="fw-bold small">Cash on Delivery</span>
-                                    </div>
-                                </label>
-                            </div>
-                             <div class="col-6">
-                                <label class="selection-card w-100 h-100">
-                                    <input type="radio" name="payment-method" value="cc" class="btn-check">
-                                    <div class="p-3 rounded-3 border text-center selection-content transition-all h-100 d-flex flex-column align-items-center justify-content-center">
-                                        <i class="bi bi-credit-card fs-4 mb-2 d-block text-primary"></i>
-                                        <span class="fw-bold small">Credit/Debit</span>
-                                    </div>
-                                </label>
-                            </div>
-                            <div class="col-4">
-                                <label class="selection-card w-100 h-100">
-                                    <input type="radio" name="payment-method" value="gcash" class="btn-check">
-                                    <div class="p-3 rounded-3 border text-center selection-content transition-all h-100 d-flex flex-column align-items-center justify-content-center">
-                                        <i class="bi bi-wallet2 fs-5 mb-1 d-block text-primary"></i>
-                                        <span class="fw-bold small" style="font-size: 0.75rem;">GCash</span>
-                                    </div>
-                                </label>
-                            </div>
-                            <div class="col-4">
-                                <label class="selection-card w-100 h-100">
-                                    <input type="radio" name="payment-method" value="grabpay" class="btn-check">
-                                    <div class="p-3 rounded-3 border text-center selection-content transition-all h-100 d-flex flex-column align-items-center justify-content-center">
-                                        <i class="bi bi-phone fs-5 mb-1 d-block text-success"></i>
-                                        <span class="fw-bold small" style="font-size: 0.75rem;">GrabPay</span>
-                                    </div>
-                                </label>
-                            </div>
-                            <div class="col-4">
-                                <label class="selection-card w-100 h-100">
-                                    <input type="radio" name="payment-method" value="paypal" class="btn-check">
-                                    <div class="p-3 rounded-3 border text-center selection-content transition-all h-100 d-flex flex-column align-items-center justify-content-center">
-                                        <i class="bi bi-paypal fs-5 mb-1 d-block text-info"></i>
-                                        <span class="fw-bold small" style="font-size: 0.75rem;">PayPal</span>
-                                    </div>
-                                </label>
-                            </div>
+                            <div class="col-6"><label class="selection-card w-100 h-100"><input type="radio" name="payment-method" value="cod" class="btn-check" checked><div class="p-3 rounded-3 border text-center selection-content transition-all h-100 d-flex flex-column align-items-center justify-content-center"><i class="bi bi-cash-stack fs-4 mb-2 d-block text-success"></i><span class="fw-bold small">Cash on Delivery</span></div></label></div>
+                             <div class="col-6"><label class="selection-card w-100 h-100"><input type="radio" name="payment-method" value="cc" class="btn-check"><div class="p-3 rounded-3 border text-center selection-content transition-all h-100 d-flex flex-column align-items-center justify-content-center"><i class="bi bi-credit-card fs-4 mb-2 d-block text-primary"></i><span class="fw-bold small">Credit/Debit</span></div></label></div>
+                            <div class="col-4"><label class="selection-card w-100 h-100"><input type="radio" name="payment-method" value="gcash" class="btn-check"><div class="p-3 rounded-3 border text-center selection-content transition-all h-100 d-flex flex-column align-items-center justify-content-center"><i class="bi bi-wallet2 fs-5 mb-1 d-block text-primary"></i><span class="fw-bold small" style="font-size: 0.75rem;">GCash</span></div></label></div>
+                            <div class="col-4"><label class="selection-card w-100 h-100"><input type="radio" name="payment-method" value="grabpay" class="btn-check"><div class="p-3 rounded-3 border text-center selection-content transition-all h-100 d-flex flex-column align-items-center justify-content-center"><i class="bi bi-phone fs-5 mb-1 d-block text-success"></i><span class="fw-bold small" style="font-size: 0.75rem;">GrabPay</span></div></label></div>
+                            <div class="col-4"><label class="selection-card w-100 h-100"><input type="radio" name="payment-method" value="paypal" class="btn-check"><div class="p-3 rounded-3 border text-center selection-content transition-all h-100 d-flex flex-column align-items-center justify-content-center"><i class="bi bi-paypal fs-5 mb-1 d-block text-info"></i><span class="fw-bold small" style="font-size: 0.75rem;">PayPal</span></div></label></div>
                         </div>
-
                         <div id="payment-details-cc" class="mt-4 d-none">
                             <div class="bg-light p-3 rounded-3">
-                                <div class="form-floating mb-3">
-                                    <input type="text" class="form-control border-0 bg-white" name="cc-number" placeholder="Card Number">
-                                    <label>Card Number</label>
-                                </div>
-                                <div class="row g-3">
-                                    <div class="col-6">
-                                        <div class="form-floating">
-                                            <input type="text" class="form-control border-0 bg-white" name="cc-expiration" placeholder="MM/YY">
-                                            <label>Expiration</label>
-                                        </div>
-                                    </div>
-                                    <div class="col-6">
-                                        <div class="form-floating">
-                                            <input type="text" class="form-control border-0 bg-white" name="cc-cvv" placeholder="CVC">
-                                            <label>CVC</label>
-                                        </div>
-                                    </div>
-                                </div>
+                                <div class="form-floating mb-3"><input type="text" class="form-control border-0 bg-white" name="cc-number" placeholder="Card Number"><label>Card Number</label></div>
+                                <div class="row g-3"><div class="col-6"><div class="form-floating"><input type="text" class="form-control border-0 bg-white" name="cc-expiration" placeholder="MM/YY"><label>Expiration</label></div></div><div class="col-6"><div class="form-floating"><input type="text" class="form-control border-0 bg-white" name="cc-cvv" placeholder="CVC"><label>CVC</label></div></div></div>
                             </div>
                         </div>
-                        
-                        <div id="payment-details-cod" class="mt-3 text-center p-3 bg-light rounded-3">
-                            <p class="small text-secondary mb-0"><i class="bi bi-info-circle me-1"></i> You will pay in cash upon delivery.</p>
-                        </div>
-                         <div id="payment-details-gcash" class="mt-3 d-none text-center p-3 bg-light rounded-3">
-                            <p class="small text-secondary mb-0">You will be redirected to GCash to complete your payment.</p>
-                        </div>
-                        <div id="payment-details-grabpay" class="mt-3 d-none text-center p-3 bg-light rounded-3">
-                            <p class="small text-secondary mb-0">You will be redirected to GrabPay to complete your payment.</p>
-                        </div>
-                        <div id="payment-details-paypal" class="mt-3 d-none text-center p-3 bg-light rounded-3">
-                            <p class="small text-secondary mb-0">You will be redirected to PayPal to complete your payment.</p>
-                        </div>
+                        <div id="payment-details-cod" class="mt-3 text-center p-3 bg-light rounded-3"><p class="small text-secondary mb-0"><i class="bi bi-info-circle me-1"></i> You will pay in cash upon delivery.</p></div>
+                         <div id="payment-details-gcash" class="mt-3 d-none text-center p-3 bg-light rounded-3"><p class="small text-secondary mb-0">You will be redirected to GCash to complete your payment.</p></div>
+                        <div id="payment-details-grabpay" class="mt-3 d-none text-center p-3 bg-light rounded-3"><p class="small text-secondary mb-0">You will be redirected to GrabPay to complete your payment.</p></div>
+                        <div id="payment-details-paypal" class="mt-3 d-none text-center p-3 bg-light rounded-3"><p class="small text-secondary mb-0">You will be redirected to PayPal to complete your payment.</p></div>
                     </div>
                 </div>
-
                 <button type="submit" class="btn btn-dark btn-lg w-100 rounded-pill py-3 fw-bold shadow-sm">Place Order</button>
             </form>
         </div>
@@ -368,6 +287,33 @@
                 <div class="card-body p-4">
                     <h4 class="fw-bold mb-4">Order Summary</h4>
                     
+                    <div class="mb-4">
+                        <label class="form-label small fw-bold text-secondary text-uppercase">Discount Code</label>
+                        <div class="input-group mb-2">
+                            <input type="text" id="voucher-code-desktop" class="form-control bg-light border-0" placeholder="Code">
+                            <button class="btn btn-dark" type="button" onclick="applyVoucher('desktop')">Apply</button>
+                        </div>
+                        
+                        <button type="button" class="btn btn-outline-secondary w-100 py-3 d-flex justify-content-between align-items-center" data-bs-toggle="modal" data-bs-target="#voucherWalletModal">
+                            <span class="fw-medium"><i class="bi bi-ticket-perforated me-2"></i> Select from Wallet</span>
+                            <% if (availableVouchers && availableVouchers.length > 0) { %>
+                                <span class="badge bg-dark rounded-pill"><%= availableVouchers.length %></span>
+                            <% } %>
+                        </button>
+
+                        <div id="voucher-message-desktop" class="mt-2 small"></div>
+
+                        <% if (typeof appliedVoucher !== 'undefined' && appliedVoucher) { %>
+                            <div class="alert alert-success mt-3 py-2 small d-flex justify-content-between align-items-center rounded-3 border-0 bg-success-subtle text-success-emphasis mb-0">
+                                <span><i class="bi bi-check-circle-fill me-1"></i> Applied: <strong><%= appliedVoucher.code %></strong></span>
+                                <span class="fw-bold">-<%= locationData.symbol %><%= discountAmount.toLocaleString(undefined, { minimumFractionDigits: 2 }) %></span>
+                            </div>
+                            <div class="text-end mt-1">
+                                <button onclick="removeVoucher()" class="btn btn-link text-danger p-0 small text-decoration-none">Remove Voucher</button>
+                            </div>
+                        <% } %>
+                    </div>
+
                     <% if (shipping.amountNeeded > 0) { %>
                         <div class="mb-4">
                             <div class="d-flex justify-content-between align-items-center mb-2">
@@ -408,15 +354,16 @@
                         </div>
                     </div>
 
-                    <div class="input-group mb-4">
-                        <input type="text" class="form-control bg-light border-0" placeholder="Gift card or discount code">
-                        <button class="btn btn-dark disabled">Apply</button>
-                    </div>
-
                     <div class="d-flex justify-content-between mb-2">
                         <span class="text-secondary">Subtotal</span>
                         <span class="fw-medium"><%= locationData.symbol %><%= cart.convertedTotalPrice.toLocaleString(undefined, { minimumFractionDigits: 2 }) %></span>
                     </div>
+                    <% if (typeof discountAmount !== 'undefined' && discountAmount > 0) { %>
+                        <div class="d-flex justify-content-between mb-2 text-success">
+                            <span>Discount</span>
+                            <span class="fw-medium">-<%= locationData.symbol %><%= discountAmount.toLocaleString(undefined, { minimumFractionDigits: 2 }) %></span>
+                        </div>
+                    <% } %>
                     <div class="d-flex justify-content-between mb-3">
                         <span class="text-secondary">Shipping</span>
                         <span class="fw-medium"><%= shipping.cost > 0 ? locationData.symbol + shipping.cost.toLocaleString(undefined, { minimumFractionDigits: 2 }) : 'Free' %></span>
@@ -442,43 +389,67 @@
     </div>
 </div>
 
+<div class="modal fade" id="voucherWalletModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content rounded-4 border-0 shadow-lg">
+            <div class="modal-header border-bottom-0 pb-0">
+                <h5 class="modal-title fw-bold">Your Wallet</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-3">
+                <% if (availableVouchers && availableVouchers.length > 0) { %>
+                    <div class="list-group list-group-flush gap-2">
+                        <% availableVouchers.forEach(v => { 
+                            // Check if this voucher is currently applied
+                            const isApplied = (typeof appliedVoucher !== 'undefined' && appliedVoucher && appliedVoucher.code === v.code);
+                        %>
+                            <div class="list-group-item border rounded-3 p-3 d-flex justify-content-between align-items-center <%= isApplied ? 'bg-success-subtle border-success-subtle' : 'bg-white' %>">
+                                <div>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <span class="badge <%= isApplied ? 'bg-success' : 'bg-dark' %>"><%= v.code %></span>
+                                        <% if (isApplied) { %><span class="badge bg-white text-success border border-success"><i class="bi bi-check"></i> Applied</span><% } %>
+                                    </div>
+                                    <div class="fw-bold mt-2" style="font-size: 1.1rem;">
+                                        <%= v.discountType === 'percentage' ? v.discountValue + '%' : '$' + v.discountValue %> OFF
+                                    </div>
+                                    <small class="text-body-secondary d-block">Min. Spend $<%= v.minOrderAmount %></small>
+                                    <small class="text-body-tertiary" style="font-size: 0.75rem;">Expires: <%= new Date(v.expiryDate).toLocaleDateString() %></small>
+                                </div>
+                                
+                                <% if (isApplied) { %>
+                                    <button class="btn btn-sm btn-outline-danger rounded-pill fw-bold px-3" onclick="removeVoucher()">
+                                        Remove
+                                    </button>
+                                <% } else { %>
+                                    <button class="btn btn-sm btn-dark rounded-pill fw-bold px-3 apply-wallet-voucher" data-code="<%= v.code %>">
+                                        Apply
+                                    </button>
+                                <% } %>
+                            </div>
+                        <% }) %>
+                    </div>
+                <% } else { %>
+                    <div class="text-center py-5">
+                        <div class="bg-light rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 64px; height: 64px;">
+                            <i class="bi bi-ticket-perforated text-secondary fs-3"></i>
+                        </div>
+                        <h6 class="fw-bold">No vouchers found</h6>
+                        <p class="text-secondary small mb-0">You don't have any active coupons at the moment.</p>
+                    </div>
+                <% } %>
+            </div>
+        </div>
+    </div>
+</div>
+
 <style>
-    .checkout-page-wrapper {
-        padding-top: 1rem;
-    }
-    
-    .btn-icon {
-        width: 40px;
-        height: 40px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border: 1px solid var(--border-color);
-        transition: all 0.2s ease;
-    }
-    
-    /* Selection Card Logic */
-    .btn-check:checked + .selection-content {
-        background-color: #f8f9fa;
-        border-color: #111 !important;
-        box-shadow: 0 0 0 1px #111;
-    }
-    
-    /* Address Specific Styling */
-    .btn-check:checked + .selection-content .check-icon {
-        opacity: 1 !important;
-    }
-    
-    .transition-all {
-        transition: all 0.2s ease;
-    }
-    
-    .form-floating > .form-control:focus ~ label {
-        color: #111;
-    }
-    .form-floating > .form-control:focus {
-        box-shadow: 0 0 0 2px rgba(0,0,0,0.1);
-    }
+    .checkout-page-wrapper { padding-top: 1rem; }
+    .btn-icon { width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border: 1px solid var(--border-color); transition: all 0.2s ease; }
+    .btn-check:checked + .selection-content { background-color: #f8f9fa; border-color: #111 !important; box-shadow: 0 0 0 1px #111; }
+    .btn-check:checked + .selection-content .check-icon { opacity: 1 !important; }
+    .transition-all { transition: all 0.2s ease; }
+    .form-floating > .form-control:focus ~ label { color: #111; }
+    .form-floating > .form-control:focus { box-shadow: 0 0 0 2px rgba(0,0,0,0.1); }
 </style>
 
 <% if (currentUser) { %>
@@ -527,7 +498,7 @@
             addressRadios.forEach(radio => {
                 radio.addEventListener('change', function() {
                     if (this.value === 'new') {
-                        clearForm(); // Clear fields when 'new' is selected
+                        clearForm();
                         toggleForm('enabled');
                     } else {
                         const selectedAddress = addresses.find(addr => addr.addressId === this.value);
@@ -539,13 +510,12 @@
                 });
             });
             
-            // Initial check
             const checked = document.querySelector('input[name="selectedAddressId"]:checked');
             if(checked && checked.value !== 'new') {
                  const addr = addresses.find(a => a.addressId === checked.value);
                  if(addr) { populateForm(addr); toggleForm('disabled'); }
             } else {
-                 toggleForm('enabled'); // Default to enabled if 'new' or nothing checked
+                 toggleForm('enabled');
             }
         }
     });
@@ -553,8 +523,8 @@
 <% } %>
 
 <script>
-    // Payment Method Toggle Logic
     document.addEventListener('DOMContentLoaded', function() {
+        // Payment Method Toggle
         const deliveryRadios = document.querySelectorAll('input[name="delivery-method"]');
         const shippingSection = document.getElementById('shipping-section');
         const pickupForm = document.getElementById('pickup-form');
@@ -581,7 +551,6 @@
 
         paymentRadios.forEach(radio => {
             radio.addEventListener('change', function() {
-                // Hide all first
                 ccDetails.classList.add('d-none');
                 codDetails.classList.add('d-none');
                 gcashDetails.classList.add('d-none');
@@ -589,7 +558,6 @@
                 paypalDetails.classList.add('d-none');
                 ccInputs.forEach(input => input.required = false);
 
-                // Show selected
                 if (this.value === 'cc') {
                     ccDetails.classList.remove('d-none');
                     ccInputs.forEach(input => input.required = true);
@@ -620,5 +588,61 @@
                 }
             });
         }
+
+        // --- VOUCHER LOGIC ---
+        window.applyVoucher = function(context) {
+            const inputId = context === 'mobile' ? 'voucher-code-mobile' : 'voucher-code-desktop';
+            const msgId = context === 'mobile' ? 'voucher-message-mobile' : 'voucher-message-desktop';
+            const code = document.getElementById(inputId).value;
+            const msgDiv = document.getElementById(msgId);
+            
+            if(!code) return;
+            performApply(code, msgDiv);
+        }
+
+        window.removeVoucher = function() {
+            fetch('/checkout/remove-voucher', { method: 'POST' })
+                .then(res => res.json())
+                .then(data => {
+                    if(data.success) location.reload();
+                });
+        }
+
+        function performApply(code, msgDivElement) {
+            if(msgDivElement) msgDivElement.innerHTML = '<span class="text-body-secondary"><i class="bi bi-hourglass-split"></i> Applying...</span>';
+
+            fetch('/checkout/apply-voucher', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ code: code })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if(data.success) {
+                    location.reload(); 
+                } else {
+                     if(msgDivElement) msgDivElement.innerHTML = `<span class="text-danger"><i class="bi bi-exclamation-circle me-1"></i> ${data.message}</span>`;
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                 if(msgDivElement) msgDivElement.innerHTML = `<span class="text-danger">Error applying voucher.</span>`;
+            });
+        }
+
+        // Handle "Select from Wallet" clicks for both mobile and desktop via Modal
+        document.querySelectorAll('.apply-wallet-voucher').forEach(btn => {
+            btn.addEventListener('click', function() {
+                // Default to showing error in the desktop area, unless on mobile
+                const isMobile = window.innerWidth < 992;
+                const msgDiv = document.getElementById(isMobile ? 'voucher-message-mobile' : 'voucher-message-desktop');
+                
+                performApply(this.dataset.code, msgDiv);
+                
+                const modalEl = document.getElementById('voucherWalletModal');
+                const modal = bootstrap.Modal.getInstance(modalEl);
+                if(modal) modal.hide();
+            });
+        });
     });
 </script>

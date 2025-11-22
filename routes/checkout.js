@@ -28,6 +28,7 @@ router.get('/', async (req, res) => {
     const cart = req.session.cart;
     let userAddresses = [];
 
+    // Fetch User Addresses
     if (req.session.user) {
         const user = await db.collection('users').findOne({ userId: req.session.user.userId });
         if (user && user.addresses) {
@@ -35,17 +36,54 @@ router.get('/', async (req, res) => {
         }
     }
 
-    // UPDATED: Shipping & Total Logic
+    // --- Fetch User Vouchers for "Wallet" ---
+    let availableVouchers = [];
+    if (req.session.user) {
+        const user = await db.collection('users').findOne({ userId: req.session.user.userId });
+        if (user && user.vouchers) {
+            // Filter for vouchers that are NOT used
+            const voucherIds = user.vouchers.filter(v => !v.isUsed).map(v => v.voucherId);
+            
+            if (voucherIds.length > 0) {
+                // Fetch details for those vouchers, ensuring they are active and not expired
+                availableVouchers = await db.collection('vouchers').find({ 
+                    _id: { $in: voucherIds }, 
+                    isActive: true,
+                    expiryDate: { $gt: new Date() }
+                }).toArray();
+            }
+        }
+    }
+
+    // Calculate Totals & Discount
+    let subtotal = cart.totalPrice;
+    let discountAmount = 0;
+
+    // Apply Voucher if present in session
+    if (cart.voucher) {
+        if (cart.voucher.type === 'percentage') {
+            discountAmount = subtotal * (cart.voucher.value / 100);
+        } else {
+            discountAmount = cart.voucher.value;
+        }
+    }
+    // Prevent negative total
+    if (discountAmount > subtotal) discountAmount = subtotal;
+
     const now = new Date();
     const activeSale = await db.collection('sales').findOne({
         startDate: { $lte: now },
         endDate: { $gte: now }
     });
     
-    let shippingCost = (activeSale || cart.totalPrice >= FREE_SHIPPING_THRESHOLD_BASE) ? 0 : SHIPPING_COST_BASE;
-    const totalWithShipping = cart.totalPrice + shippingCost;
-    const amountNeededForFreeShipping = FREE_SHIPPING_THRESHOLD_BASE - cart.totalPrice;
-    const freeShippingProgress = (cart.totalPrice / FREE_SHIPPING_THRESHOLD_BASE) * 100;
+    // Shipping Logic
+    let shippingCost = (activeSale || subtotal >= FREE_SHIPPING_THRESHOLD_BASE) ? 0 : SHIPPING_COST_BASE;
+    
+    // Final Total Calculation
+    let totalWithShipping = subtotal - discountAmount + shippingCost;
+    
+    const amountNeededForFreeShipping = FREE_SHIPPING_THRESHOLD_BASE - subtotal;
+    const freeShippingProgress = (subtotal / FREE_SHIPPING_THRESHOLD_BASE) * 100;
 
     // --- Arrival Date Logic ---
     const today = new Date();
@@ -55,6 +93,7 @@ router.get('/', async (req, res) => {
     arrivalEnd.setDate(today.getDate() + 7);
     const arrivalDate = `Arrives ${arrivalStart.toLocaleDateString('en-US', { weekday: 'short' })}, ${formatDate(arrivalStart)} - ${arrivalEnd.toLocaleDateString('en-US', { weekday: 'short' })}, ${formatDate(arrivalEnd)}`;
 
+    // Convert Cart Items Prices (for Display)
     if (cart.items.length > 0) {
         cart.items = await Promise.all(cart.items.map(async (item) => {
             item.convertedPrice = await convertCurrency(item.price, currency);
@@ -63,37 +102,86 @@ router.get('/', async (req, res) => {
         cart.convertedTotalPrice = await convertCurrency(cart.totalPrice, currency);
     }
     
+    // Convert Financials (for Display)
     const convertedShipping = {
         cost: await convertCurrency(shippingCost, currency),
         threshold: await convertCurrency(FREE_SHIPPING_THRESHOLD_BASE, currency),
         amountNeeded: await convertCurrency(amountNeededForFreeShipping, currency),
         progress: freeShippingProgress > 100 ? 100 : freeShippingProgress
     };
+    const convertedTotalWithShipping = await convertCurrency(totalWithShipping, currency);
+    const convertedDiscount = await convertCurrency(discountAmount, currency);
 
     res.render('checkout', {
         title: "Checkout",
         cart: cart,
         shipping: convertedShipping,
-        totalWithShipping: await convertCurrency(totalWithShipping, currency),
+        totalWithShipping: convertedTotalWithShipping,
         arrivalDate: arrivalDate,
-        addresses: userAddresses
+        addresses: userAddresses,
+        availableVouchers: availableVouchers,
+        discountAmount: convertedDiscount,
+        appliedVoucher: cart.voucher
     });
 });
 
+// POST /checkout/apply-voucher
+router.post('/apply-voucher', async (req, res) => {
+    const { code } = req.body;
+    const db = req.app.locals.client.db(req.app.locals.dbName);
+    
+    try {
+        const voucher = await db.collection('vouchers').findOne({ code: code.toUpperCase(), isActive: true });
+
+        if (!voucher) {
+            return res.json({ success: false, message: "Invalid voucher code." });
+        }
+        if (new Date(voucher.expiryDate) < new Date()) {
+            return res.json({ success: false, message: "This voucher has expired." });
+        }
+
+        const cart = req.session.cart;
+        // Check minimum spend requirement
+        if (cart.totalPrice < voucher.minOrderAmount) {
+            return res.json({ success: false, message: `Minimum spend of $${voucher.minOrderAmount} required.` });
+        }
+        
+        // If it's a user-specific voucher (Welcome/New User), verify user owns it
+        if (voucher.isNewUser && req.session.user) {
+            const user = await db.collection('users').findOne({ userId: req.session.user.userId });
+            const hasVoucher = user.vouchers.some(v => v.voucherId.equals(voucher._id) && !v.isUsed);
+            if (!hasVoucher) {
+                return res.json({ success: false, message: "This voucher is not valid for your account or has been used." });
+            }
+        }
+
+        // Store voucher in session
+        req.session.cart.voucher = {
+            _id: voucher._id,
+            code: voucher.code,
+            type: voucher.discountType,
+            value: voucher.discountValue
+        };
+        
+        res.json({ success: true });
+
+    } catch (err) {
+        console.error("Voucher application error:", err);
+        res.json({ success: false, message: "Server error applying voucher." });
+    }
+});
+
+// POST /checkout/remove-voucher
+router.post('/remove-voucher', (req, res) => {
+    if (req.session.cart && req.session.cart.voucher) {
+        delete req.session.cart.voucher;
+    }
+    res.json({ success: true });
+});
 
 // POST /checkout/place-order - Handle the order submission
 router.post('/place-order', async (req, res) => {
-    console.log("------------------------------------------------");
-    console.log("[Checkout] POST /checkout/place-order Initiated");
-    
-    // Log the request body for debugging (sanitizing potential sensitive fields purely for display)
-    const logBody = { ...req.body };
-    if (logBody['cc-number']) logBody['cc-number'] = '****-****-****-' + logBody['cc-number'].slice(-4);
-    if (logBody['cc-cvv']) logBody['cc-cvv'] = '***';
-    console.log("[Checkout] Request Payload:", JSON.stringify(logBody, null, 2));
-
     if (!req.session.cart || req.session.cart.items.length === 0) {
-        console.log("[Checkout] Error: Cart is empty. Redirecting to cart.");
         return res.redirect('/cart');
     }
 
@@ -111,6 +199,7 @@ router.post('/place-order', async (req, res) => {
         const { selectedAddressId, saveAddress, sameAsShipping } = req.body;
         const paymentMethod = req.body['payment-method'];
 
+        // Handle Address Selection
         if (req.session.user && selectedAddressId && selectedAddressId !== 'new') {
             const user = await usersCollection.findOne({ userId: req.session.user.userId });
             const savedAddress = user.addresses.find(addr => addr.addressId === selectedAddressId);
@@ -147,6 +236,7 @@ router.post('/place-order', async (req, res) => {
             };
         }
 
+        // Handle Payment Method Details
         let paymentDetails = { method: 'Unknown' };
         if (paymentMethod === 'cc') {
             const ccNumber = req.body['cc-number'] || '';
@@ -158,15 +248,27 @@ router.post('/place-order', async (req, res) => {
             paymentDetails.method = paymentMethod.charAt(0).toUpperCase() + paymentMethod.slice(1);
         }
         
-        // UPDATED: Final shipping cost check
+        // Final Total Calculation with Vouchers & Shipping
+        let subtotal = cart.totalPrice;
+        let discountAmount = 0;
+
+        if (cart.voucher) {
+            if (cart.voucher.type === 'percentage') {
+                discountAmount = subtotal * (cart.voucher.value / 100);
+            } else {
+                discountAmount = cart.voucher.value;
+            }
+        }
+        if (discountAmount > subtotal) discountAmount = subtotal;
+
         const now = new Date();
         const activeSale = await db.collection('sales').findOne({
             startDate: { $lte: now },
             endDate: { $gte: now }
         });
 
-        const finalShippingCost = (activeSale || cart.totalPrice >= FREE_SHIPPING_THRESHOLD_BASE) ? 0 : SHIPPING_COST_BASE;
-        const finalTotal = cart.totalPrice + finalShippingCost;
+        const finalShippingCost = (activeSale || subtotal >= FREE_SHIPPING_THRESHOLD_BASE) ? 0 : SHIPPING_COST_BASE;
+        const finalTotal = subtotal - discountAmount + finalShippingCost;
 
         const order = {
             customer: {
@@ -174,19 +276,17 @@ router.post('/place-order', async (req, res) => {
                 lastName: shippingAddress.lastName,
                 email: req.body.email,
             },
-            shippingAddress: {
-                address: shippingAddress.address,
-                country: shippingAddress.country,
-                state: shippingAddress.state,
-                zip: shippingAddress.zip
-            },
+            shippingAddress: shippingAddress,
             billingAddress: billingAddress,
             paymentDetails: paymentDetails,
             items: cart.items,
-            subtotal: cart.totalPrice,
+            subtotal: subtotal,
+            discount: discountAmount, // Store discount amount
+            voucherCode: cart.voucher ? cart.voucher.code : null, // Store used code
             shippingCost: finalShippingCost,
             total: finalTotal,
             currency: currency,
+            // We store the converted total at time of purchase for history reference
             convertedTotal: await convertCurrency(finalTotal, currency),
             orderDate: new Date(),
             status: 'Processing',
@@ -197,11 +297,18 @@ router.post('/place-order', async (req, res) => {
             order.userId = req.session.user.userId;
         }
 
-        console.log("[Checkout] Inserting Order into Database...");
         const result = await ordersCollection.insertOne(order);
         order._id = result.insertedId;
-        console.log(`[Checkout] Order Created Successfully! Order ID: ${order._id}`);
 
+        // --- Mark Voucher as Used (if applicable) ---
+        if (req.session.user && cart.voucher && cart.voucher._id) {
+            await usersCollection.updateOne(
+                { userId: req.session.user.userId, "vouchers.voucherId": new ObjectId(cart.voucher._id) },
+                { $set: { "vouchers.$.isUsed": true } }
+            );
+        }
+
+        // Stock Updates
         const stockUpdates = cart.items.map(item => {
             const safeSizeKey = item.size.replace('.', '_');
             const updateField = `stock.${safeSizeKey}`;
@@ -211,8 +318,8 @@ router.post('/place-order', async (req, res) => {
             );
         });
         await Promise.all(stockUpdates);
-        console.log("[Checkout] Inventory Updated.");
 
+        // Generate Email HTML
         const itemsWithConvertedPrice = await Promise.all(order.items.map(async item => {
             const convertedPrice = await convertCurrency(item.price, currency);
             return { ...item, convertedPrice };
@@ -268,6 +375,11 @@ router.post('/place-order', async (req, res) => {
                                 <td>Subtotal</td>
                                 <td style="text-align: right;">${order.subtotal.toLocaleString(undefined, { style: 'currency', currency: currency })}</td>
                             </tr>
+                             ${discountAmount > 0 ? `
+                            <tr>
+                                <td>Discount</td>
+                                <td style="text-align: right; color: #28a745;">-${discountAmount.toLocaleString(undefined, { style: 'currency', currency: currency })}</td>
+                            </tr>` : ''}
                             <tr>
                                 <td>Shipping</td>
                                 <td style="text-align: right;">${order.shippingCost > 0 ? order.shippingCost.toLocaleString(undefined, { style: 'currency', currency: currency }) : 'Free'}</td>
@@ -299,36 +411,30 @@ router.post('/place-order', async (req, res) => {
             </html>
         `;
 
-        console.log("[Checkout] Sending Confirmation Email...");
         await resend.emails.send({
             from: process.env.RESEND_FROM_EMAIL,
             to: order.customer.email,
             subject: `Your sneakslab Order Confirmation #${order._id.toString().slice(-7)}`,
             html: confirmationEmailHtml,
         });
-        console.log("[Checkout] Confirmation Email Sent.");
 
         req.session.cart = null;
 
-        console.log(`[Checkout] Process Complete. Redirecting to /checkout/success/${result.insertedId}`);
         res.redirect(`/checkout/success/${result.insertedId}`);
 
     } catch (err) {
-        console.error("[Checkout] FATAL ERROR placing order:", err);
+        console.error("Error placing order:", err);
         res.status(500).send("An error occurred while placing your order.");
     }
 });
 
-// GET /checkout/success/:orderId - Display the order confirmation page
+// GET /checkout/success/:orderId - Display the order confirmation page with Currency Conversion
 router.get('/success/:orderId', async (req, res) => {
     try {
         const db = req.app.locals.client.db(req.app.locals.dbName);
         const ordersCollection = db.collection('orders');
         const orderId = req.params.orderId;
-        const currency = res.locals.locationData.currency || 'USD';
-
-        console.log(`[Success Page] Loading order ${orderId}`);
-        console.log(`[Success Page] Target Currency Code: ${currency}`);
+        const currency = res.locals.locationData.currency;
 
         const order = await ordersCollection.findOne({ _id: new ObjectId(orderId) });
 
@@ -336,34 +442,26 @@ router.get('/success/:orderId', async (req, res) => {
             return res.status(404).send("Order not found.");
         }
 
-        console.log(`[Success Page] DB Values (USD) -> Subtotal: ${order.subtotal}, Total: ${order.total}`);
+        // Convert monetary values for the view
+        if (typeof convertCurrency === 'function') {
+            order.subtotal = await convertCurrency(order.subtotal, currency);
+            order.shippingCost = await convertCurrency(order.shippingCost, currency);
+            order.total = await convertCurrency(order.total, currency);
+            if (order.discount) {
+                 order.discount = await convertCurrency(order.discount, currency);
+            }
 
-        // Create a shallow copy or new object for view rendering to avoid mutating the DB return object
-        // and to ensure we are working with clean numbers
-        const viewOrder = { ...order };
-        
-        // Ensure these are Numbers before conversion
-        const subtotalNum = Number(viewOrder.subtotal);
-        const shippingNum = Number(viewOrder.shippingCost);
-        const totalNum = Number(viewOrder.total);
-
-        // Convert
-        viewOrder.subtotal = await convertCurrency(subtotalNum, currency);
-        viewOrder.shippingCost = await convertCurrency(shippingNum, currency);
-        viewOrder.total = await convertCurrency(totalNum, currency);
-
-        console.log(`[Success Page] Converted Values (${currency}) -> Subtotal: ${viewOrder.subtotal}, Total: ${viewOrder.total}`);
-
-        // Convert items
-        viewOrder.items = await Promise.all(viewOrder.items.map(async (item) => {
-            const newItem = { ...item }; // Copy item
-            newItem.price = await convertCurrency(Number(item.price), currency);
-            return newItem;
-        }));
+            // Convert item prices
+            order.items = await Promise.all(order.items.map(async (item) => {
+                // Note: 'price' usually stores line total (unit * qty) in original currency
+                item.price = await convertCurrency(item.price, currency);
+                return item;
+            }));
+        }
 
         res.render('order-success', {
             title: "Order Confirmation",
-            order: viewOrder,
+            order: order,
             pageStyle: 'order-success'
         });
 

@@ -157,6 +157,14 @@
                             <span class="text-secondary">Subtotal</span>
                             <span class="fw-medium"><%= locationData.symbol %><%= order.subtotal.toLocaleString(undefined, { minimumFractionDigits: 2 }) %></span>
                         </div>
+                        
+                        <% if (order.discount && order.discount > 0) { %>
+                            <div class="d-flex justify-content-between mb-2 small text-success">
+                                <span>Discount (<%= order.voucherCode || 'Applied' %>)</span>
+                                <span class="fw-medium">-<%= locationData.symbol %><%= order.discount.toLocaleString(undefined, { minimumFractionDigits: 2 }) %></span>
+                            </div>
+                        <% } %>
+
                         <div class="d-flex justify-content-between mb-3 small">
                             <span class="text-secondary">Shipping</span>
                             <span class="fw-medium"><%= order.shippingCost > 0 ? locationData.symbol + order.shippingCost.toFixed(2) : 'Free' %></span>

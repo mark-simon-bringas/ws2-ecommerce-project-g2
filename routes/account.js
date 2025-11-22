@@ -118,6 +118,23 @@ const createStatusEmailHtml = (order) => {
     `;
 };
 
+// Device parsing helper
+const parseDevice = (uaString) => {
+    if (!uaString) return { name: 'Unknown Device', icon: 'bi-question-circle' };
+    let name = 'Web Browser';
+    let icon = 'bi-laptop';
+    if (/windows/i.test(uaString)) name += ' on Windows';
+    else if (/macintosh|mac os x/i.test(uaString)) name += ' on macOS';
+    else if (/linux/i.test(uaString)) name += ' on Linux';
+    else if (/android/i.test(uaString)) { name = 'Android Device'; icon = 'bi-phone'; }
+    else if (/iphone|ipad|ipod/i.test(uaString)) { name = 'iOS Device'; icon = 'bi-phone'; }
+    if (/chrome/i.test(uaString) && !/edg/i.test(uaString)) name = name.replace('Web Browser', 'Chrome');
+    else if (/safari/i.test(uaString) && !/chrome/i.test(uaString)) name = name.replace('Web Browser', 'Safari');
+    else if (/firefox/i.test(uaString)) name = name.replace('Web Browser', 'Firefox');
+    else if (/edg/i.test(uaString)) name = name.replace('Web Browser', 'Edge');
+    return { name, icon };
+};
+
 const isLoggedIn = (req, res, next) => {
     if (!req.session.user) {
         return res.redirect('/users/login');
@@ -146,9 +163,12 @@ router.get('/', (req, res) => {
 
 // --- SETTINGS HUB & SUB-PAGES ---
 router.get('/settings', async (req, res) => {
+    const db = req.app.locals.client.db(req.app.locals.dbName);
+    const user = await db.collection('users').findOne({ userId: req.session.user.userId });
     res.render('account/settings', {
         title: "Settings",
-        view: 'settings'
+        view: 'settings',
+        user: user
     });
 });
 
@@ -167,26 +187,6 @@ router.get('/identity', async (req, res) => {
 router.get('/security', async (req, res) => {
     const db = req.app.locals.client.db(req.app.locals.dbName);
     const user = await db.collection('users').findOne({ userId: req.session.user.userId });
-
-    const parseDevice = (uaString) => {
-        if (!uaString) return { name: 'Unknown Device', icon: 'bi-question-circle' };
-        let name = 'Web Browser';
-        let icon = 'bi-laptop';
-
-        if (/windows/i.test(uaString)) name += ' on Windows';
-        else if (/macintosh|mac os x/i.test(uaString)) name += ' on macOS';
-        else if (/linux/i.test(uaString)) name += ' on Linux';
-        else if (/android/i.test(uaString)) { name = 'Android Device'; icon = 'bi-phone'; }
-        else if (/iphone|ipad|ipod/i.test(uaString)) { name = 'iOS Device'; icon = 'bi-phone'; }
-
-        if (/chrome/i.test(uaString) && !/edg/i.test(uaString)) name = name.replace('Web Browser', 'Chrome');
-        else if (/safari/i.test(uaString) && !/chrome/i.test(uaString)) name = name.replace('Web Browser', 'Safari');
-        else if (/firefox/i.test(uaString)) name = name.replace('Web Browser', 'Firefox');
-        else if (/edg/i.test(uaString)) name = name.replace('Web Browser', 'Edge');
-
-        return { name, icon };
-    };
-
     const loginHistory = (user && user.loginHistory) ? user.loginHistory.map(entry => {
         const details = parseDevice(entry.userAgent);
         return { ...entry, displayName: details.name, icon: details.icon };
@@ -213,7 +213,68 @@ router.get('/addresses', async (req, res) => {
     });
 });
 
-// Wishlist Toggle
+// --- NEW: USER VOUCHER WALLET ---
+router.get('/vouchers', async (req, res) => {
+    try {
+        const db = req.app.locals.client.db(req.app.locals.dbName);
+        const user = await db.collection('users').findOne({ userId: req.session.user.userId });
+        
+        let userVouchers = [];
+        if (user.vouchers && user.vouchers.length > 0) {
+            const voucherIds = user.vouchers.map(v => v.voucherId);
+            const voucherDetails = await db.collection('vouchers').find({ _id: { $in: voucherIds } }).toArray();
+            
+            userVouchers = user.vouchers.map(uv => {
+                const detail = voucherDetails.find(d => d._id.equals(uv.voucherId));
+                return detail ? { ...uv, details: detail } : null;
+            }).filter(v => v !== null);
+        }
+
+        res.render('account/settings-vouchers', { 
+            title: "My Vouchers", 
+            view: 'settings', 
+            userVouchers: userVouchers,
+            message: req.query.message, 
+            error: req.query.error 
+        });
+    } catch (err) {
+        console.error("Error fetching vouchers:", err);
+        res.status(500).send("Error loading vouchers.");
+    }
+});
+
+router.post('/vouchers/redeem', async (req, res) => {
+    try {
+        const { code } = req.body;
+        const db = req.app.locals.client.db(req.app.locals.dbName);
+        const voucher = await db.collection('vouchers').findOne({ code: code.toUpperCase(), isActive: true });
+
+        if (!voucher) {
+            return res.redirect('/account/vouchers?error=' + encodeURIComponent('Invalid or expired voucher code.'));
+        }
+        if (new Date(voucher.expiryDate) < new Date()) {
+            return res.redirect('/account/vouchers?error=' + encodeURIComponent('This voucher has expired.'));
+        }
+
+        const user = await db.collection('users').findOne({ userId: req.session.user.userId });
+        if (user.vouchers && user.vouchers.some(v => v.voucherId.equals(voucher._id))) {
+            return res.redirect('/account/vouchers?error=' + encodeURIComponent('You have already redeemed this voucher.'));
+        }
+
+        await db.collection('users').updateOne(
+            { userId: req.session.user.userId },
+            { $push: { vouchers: { voucherId: voucher._id, isUsed: false, redeemedAt: new Date() } } }
+        );
+
+        res.redirect('/account/vouchers?message=' + encodeURIComponent('Voucher redeemed successfully!'));
+
+    } catch (err) {
+        console.error("Error redeeming voucher:", err);
+        res.redirect('/account/vouchers?error=' + encodeURIComponent('An error occurred.'));
+    }
+});
+
+// --- SHOPPING ROUTES ---
 router.post('/wishlist/toggle', async (req, res) => {
     try {
         const { productId } = req.body;
@@ -297,7 +358,6 @@ router.get('/orders', async (req, res) => {
     }
 });
 
-// Single Order Details
 router.get('/orders/:id', async (req, res) => {
     try {
         const db = req.app.locals.client.db(req.app.locals.dbName);
@@ -342,11 +402,7 @@ router.post('/settings/update-profile', upload.single('profilePhoto'), async (re
     try {
         const { firstName, lastName, phone, bio } = req.body;
         const userId = req.session.user.userId;
-        
-        if (!firstName || !lastName) { 
-            return res.redirect('/account/identity?error=' + encodeURIComponent('First and last name cannot be empty.')); 
-        }
-
+        if (!firstName || !lastName) { return res.redirect('/account/identity?error=' + encodeURIComponent('First and last name cannot be empty.')); }
         const db = req.app.locals.client.db(req.app.locals.dbName);
         
         let updateFields = {
@@ -365,13 +421,12 @@ router.post('/settings/update-profile', upload.single('profilePhoto'), async (re
             { userId: userId },
             { $set: updateFields }
         );
-
+        
         req.session.user.firstName = firstName;
         req.session.user.lastName = lastName;
         if (req.file) {
             req.session.user.profilePictureUrl = updateFields.profilePictureUrl;
         }
-
         res.redirect('/account/identity?message=' + encodeURIComponent('Profile updated successfully!'));
     } catch (err) {
         console.error("Error updating profile:", err);
@@ -632,7 +687,6 @@ router.get('/admin/users', isAdmin, async (req, res) => {
     }
 });
 
-// NEW: View Single User Detail
 router.get('/admin/users/:id', isAdmin, async (req, res) => {
     try {
         const db = req.app.locals.client.db(req.app.locals.dbName);
@@ -640,7 +694,6 @@ router.get('/admin/users/:id', isAdmin, async (req, res) => {
         
         if (!user) { return res.redirect('/account/admin/users?error=' + encodeURIComponent('User not found.')); }
 
-        // Fetch user stats
         const orders = await db.collection('orders').find({ userId: user.userId }).sort({ orderDate: -1 }).toArray();
         const tickets = await db.collection('support_tickets').find({ userEmail: user.email }).sort({ createdAt: -1 }).toArray();
 
@@ -657,7 +710,6 @@ router.get('/admin/users/:id', isAdmin, async (req, res) => {
     }
 });
 
-// NEW: Delete Single User
 router.post('/admin/users/delete/:id', isAdmin, async (req, res) => {
     try {
         const db = req.app.locals.client.db(req.app.locals.dbName);
@@ -674,7 +726,6 @@ router.post('/admin/users/delete/:id', isAdmin, async (req, res) => {
     }
 });
 
-// NEW: Delete Multiple Users
 router.post('/admin/users/delete-multiple', isAdmin, async (req, res) => {
     try {
         const db = req.app.locals.client.db(req.app.locals.dbName);
@@ -748,7 +799,7 @@ router.post('/admin/tickets/:ticketId/update-status', isAdmin, async (req, res) 
                 from: process.env.RESEND_FROM_EMAIL,
                 to: ticket.userEmail,
                 subject: `Your Support Ticket [${ticket.ticketId}] has been updated`,
-                html: `<p>An agent has updated the status of your ticket to: <strong>${status}</strong>.</p><p><a href="${ticketUrl}">View Your Ticket</a></p>`
+                html: `<p>An agent has updated the status of your ticket to: <strong>${status}</strong>.</p><p>You can view the full conversation and reply by clicking the link below:</p><a href="${ticketUrl}">View Your Ticket</a>`
             });
         }
         
@@ -805,6 +856,59 @@ router.post('/admin/sales/create', isAdmin, async (req, res) => {
     } catch (err) {
         console.error("Error creating sale:", err);
         res.redirect('/account/admin/sales?error=' + encodeURIComponent('An error occurred.'));
+    }
+});
+
+// --- NEW: ADMIN VOUCHERS ---
+router.get('/admin/vouchers', isAdmin, async (req, res) => {
+    try {
+        const db = req.app.locals.client.db(req.app.locals.dbName);
+        const vouchers = await db.collection('vouchers').find().sort({ createdAt: -1 }).toArray();
+        res.render('account/admin-vouchers', {
+            title: "Manage Vouchers",
+            view: 'admin-vouchers',
+            vouchers: vouchers,
+            message: req.query.message,
+            error: req.query.error
+        });
+    } catch (err) {
+        console.error("Error fetching vouchers:", err);
+        res.status(500).send("Error loading vouchers.");
+    }
+});
+
+router.post('/admin/vouchers/create', isAdmin, async (req, res) => {
+    try {
+        const db = req.app.locals.client.db(req.app.locals.dbName);
+        const { code, discountType, discountValue, expiryDate, minOrderAmount, isNewUser } = req.body;
+
+        const newVoucher = {
+            code: code.toUpperCase(),
+            discountType,
+            discountValue: parseFloat(discountValue),
+            expiryDate: new Date(expiryDate),
+            minOrderAmount: parseFloat(minOrderAmount) || 0,
+            isNewUser: isNewUser === 'on',
+            isActive: true,
+            createdAt: new Date()
+        };
+
+        await db.collection('vouchers').insertOne(newVoucher);
+        res.redirect('/account/admin/vouchers?message=' + encodeURIComponent('Voucher created successfully.'));
+    } catch (err) {
+        console.error("Error creating voucher:", err);
+        res.redirect('/account/admin/vouchers?error=' + encodeURIComponent('Error creating voucher.'));
+    }
+});
+
+router.post('/admin/vouchers/delete/:id', isAdmin, async (req, res) => {
+    try {
+        const db = req.app.locals.client.db(req.app.locals.dbName);
+        await db.collection('vouchers').deleteOne({ _id: new ObjectId(req.params.id) });
+        res.redirect('/account/admin/vouchers?message=' + encodeURIComponent('Voucher deleted.'));
+    } catch (err) {
+        console.error("Error deleting voucher:", err);
+        res.redirect('/account/admin/vouchers?error=' + encodeURIComponent('Error deleting voucher.'));
     }
 });
 

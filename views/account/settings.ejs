@@ -4,25 +4,38 @@
         
         <div class="d-flex align-items-center gap-3">
             <div class="profile-avatar-placeholder rounded-circle bg-body-secondary d-flex align-items-center justify-content-center position-relative overflow-hidden" style="width: 64px; height: 64px; font-size: 1.5rem; color: var(--text-color-secondary);">
-                <% if (currentUser.profilePictureUrl) { %>
-                    <img src="<%= currentUser.profilePictureUrl %>" alt="Profile" style="width: 100%; height: 100%; object-fit: cover;">
-                <% } else if (currentUser.firstName) { %>
-                    <%= currentUser.firstName.charAt(0).toUpperCase() %>
+                <% if (user.profilePictureUrl) { %>
+                    <img src="<%= user.profilePictureUrl %>" alt="Profile" style="width: 100%; height: 100%; object-fit: cover;">
+                <% } else if (user.firstName) { %>
+                    <%= user.firstName.charAt(0).toUpperCase() %>
                 <% } else { %>
                     <i class="bi bi-person-fill"></i>
                 <% } %>
             </div>
             <div>
-                <h5 class="fw-bold mb-0"><%= currentUser.firstName %> <%= currentUser.lastName %></h5>
-                <p class="text-body-secondary small mb-0"><%= currentUser.email %></p>
-                <% if (currentUser.role === 'admin') { %>
+                <h5 class="fw-bold mb-0"><%= user.firstName %> <%= user.lastName %></h5>
+                <p class="text-body-secondary small mb-0"><%= user.email %></p>
+                <% if (user.role === 'admin') { %>
                     <span class="badge bg-dark mt-1">Administrator</span>
                 <% } %>
             </div>
         </div>
     </div>
 
-    <% if (currentUser.role === 'admin') { %>
+    <% if (typeof message !== 'undefined' && message) { %>
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <%= message %>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    <% } %>
+    <% if (typeof error !== 'undefined' && error) { %>
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <%= error %>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    <% } %>
+
+    <% if (user.role === 'admin') { %>
     <div class="settings-menu-group mb-4">
         <h6 class="text-uppercase text-body-secondary small fw-bold mb-3 ps-1">Admin Controls</h6>
         <div class="list-group settings-list-group rounded-4 overflow-hidden border-0 shadow-sm">
@@ -40,14 +53,19 @@
                 <div class="setting-icon-wrapper me-3 text-center" style="width: 24px;">
                     <i class="bi bi-list-check fs-5 text-primary"></i>
                 </div>
-                <div class="flex-grow-1 d-flex justify-content-between align-items-center pe-2">
-                    <div>
-                        <div class="fw-semibold">Orders</div>
-                        <small class="text-body-secondary">Manage Shipments</small>
-                    </div>
-                    <% if (typeof newOrderCount !== 'undefined' && newOrderCount > 0) { %>
-                        <span class="badge bg-danger rounded-pill"><%= newOrderCount %> New</span>
-                    <% } %>
+                <div class="flex-grow-1">
+                    <div class="fw-semibold">Orders</div>
+                    <small class="text-body-secondary">Manage Shipments</small>
+                </div>
+                <i class="bi bi-chevron-right text-body-tertiary"></i>
+            </a>
+            <a href="/account/admin/vouchers" class="list-group-item list-group-item-action d-flex align-items-center p-3 border-0 border-bottom">
+                <div class="setting-icon-wrapper me-3 text-center" style="width: 24px;">
+                    <i class="bi bi-ticket-detailed-fill fs-5 text-primary"></i>
+                </div>
+                <div class="flex-grow-1">
+                    <div class="fw-semibold">Vouchers</div>
+                    <small class="text-body-secondary">Manage Coupons</small>
                 </div>
                 <i class="bi bi-chevron-right text-body-tertiary"></i>
             </a>
@@ -55,14 +73,9 @@
                 <div class="setting-icon-wrapper me-3 text-center" style="width: 24px;">
                     <i class="bi bi-envelope-fill fs-5 text-primary"></i>
                 </div>
-                <div class="flex-grow-1 d-flex justify-content-between align-items-center pe-2">
-                    <div>
-                        <div class="fw-semibold">Inbox</div>
-                        <small class="text-body-secondary">Support Tickets</small>
-                    </div>
-                    <% if (typeof newTicketCount !== 'undefined' && newTicketCount > 0) { %>
-                        <span class="badge bg-danger rounded-pill"><%= newTicketCount %> New</span>
-                    <% } %>
+                <div class="flex-grow-1">
+                    <div class="fw-semibold">Inbox</div>
+                    <small class="text-body-secondary">Support Tickets</small>
                 </div>
                 <i class="bi bi-chevron-right text-body-tertiary"></i>
             </a>
@@ -146,6 +159,16 @@
                 <div class="flex-grow-1">
                     <div class="fw-semibold">Order History</div>
                     <small class="text-body-secondary">Track, Return, Buy Again</small>
+                </div>
+                <i class="bi bi-chevron-right text-body-tertiary"></i>
+            </a>
+            <a href="/account/vouchers" class="list-group-item list-group-item-action d-flex align-items-center p-3 border-0 border-bottom">
+                <div class="setting-icon-wrapper me-3 text-center" style="width: 24px;">
+                    <i class="bi bi-ticket-perforated fs-5"></i>
+                </div>
+                <div class="flex-grow-1">
+                    <div class="fw-semibold">My Vouchers</div>
+                    <small class="text-body-secondary">Discounts & Coupons</small>
                 </div>
                 <i class="bi bi-chevron-right text-body-tertiary"></i>
             </a>

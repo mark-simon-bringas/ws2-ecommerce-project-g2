@@ -1,11 +1,12 @@
+// routes/users.js
+
 const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcrypt');
-const { title } = require('process');
 const saltRounds = 12;
 const { Resend } = require('resend');
 const resend = new Resend(process.env.RESEND_API_KEY);
-const verifyTurnstile = require('../utils/turnstileVerify'); // Import the helper function
+const verifyTurnstile = require('../utils/turnstileVerify');
 
 // Show registration form
 router.get('/register', (req, res) => {
@@ -13,20 +14,18 @@ router.get('/register', (req, res) => {
         title: "Register",
         errors: [],
         page: 'auth',
-        turnstileSiteKey: process.env.TURNSTILE_SITEKEY // Pass site key to the view
+        turnstileSiteKey: process.env.TURNSTILE_SITEKEY
     });
 });
 
 // Handle registration form submission
 router.post('/register', async (req, res) => {
     try {
-        // --- Turnstile Verification ---
         const token = req.body['cf-turnstile-response']; 
         const ip = req.ip;
         const result = await verifyTurnstile(token, ip);
 
         if (!result.success) { 
-            // If verification fails, re-render the form with an error.
             return res.status(400).render('register', { 
                 title: "Register",
                 errors: [{ msg: 'Human verification failed. Please try again.' }],
@@ -37,7 +36,6 @@ router.post('/register', async (req, res) => {
                 turnstileSiteKey: process.env.TURNSTILE_SITEKEY
             });
         }
-        // --- End Verification ---
 
         const { v4: uuidv4 } = await import('uuid');
         const db = req.app.locals.client.db(req.app.locals.dbName);
@@ -83,6 +81,17 @@ router.post('/register', async (req, res) => {
         const currentDate = new Date();
         const verificationToken = uuidv4();
 
+        // --- AUTO-ASSIGN NEW USER VOUCHERS ---
+        const vouchersCollection = db.collection('vouchers');
+        const welcomeVouchers = await vouchersCollection.find({ isNewUser: true, isActive: true }).toArray();
+        
+        const userVouchers = welcomeVouchers.map(v => ({
+            voucherId: v._id,
+            isUsed: false,
+            redeemedAt: new Date()
+        }));
+        // -------------------------------------
+
         const newUser = {
             userId: uuidv4(),
             firstName: req.body.firstName,
@@ -95,8 +104,9 @@ router.post('/register', async (req, res) => {
             verificationToken: verificationToken,
             tokenExpiry: new Date(Date.now() + 3600000),
             wishlist: [],
-            loginHistory: [], // Initialize empty login history
-            profilePictureUrl: null, // Initialize profile picture
+            loginHistory: [],
+            vouchers: userVouchers, // Assigned here
+            profilePictureUrl: null,
             createdAt: currentDate,
             updatedAt: currentDate
         };
@@ -133,14 +143,13 @@ router.get('/login', (req, res) => {
         error: req.query.error,
         redirect: req.query.redirect, 
         page: 'auth',
-        turnstileSiteKey: process.env.TURNSTILE_SITEKEY // Pass site key to the view
+        turnstileSiteKey: process.env.TURNSTILE_SITEKEY
     });
 });
 
 // Handle login form submission
 router.post('/login', async (req, res) => {
     try {
-        // --- Turnstile Verification ---
         const token = req.body['cf-turnstile-response']; 
         const ip = req.ip;
         const result = await verifyTurnstile(token, ip); 
@@ -154,13 +163,11 @@ router.post('/login', async (req, res) => {
                 turnstileSiteKey: process.env.TURNSTILE_SITEKEY
             });
         }
-        // --- End Verification ---
         
         const db = req.app.locals.client.db(req.app.locals.dbName);
         const usersCollection = db.collection('users');
 
         const user = await usersCollection.findOne({ email: req.body.email });
-        
         const isPasswordValid = user ? await bcrypt.compare(req.body.password, user.passwordHash) : false;
 
         if (!user || !isPasswordValid) {
@@ -200,10 +207,10 @@ router.post('/login', async (req, res) => {
             email: user.email,
             role: user.role,
             isEmailVerified: user.isEmailVerified,
-            profilePictureUrl: user.profilePictureUrl // ADDED: Load profile pic into session
+            profilePictureUrl: user.profilePictureUrl
         };
 
-        // --- NEW: Track Login History ---
+        // Track Login History
         try {
             const userAgent = req.headers['user-agent'] || 'Unknown Device';
             const ip = req.headers['x-forwarded-for'] || req.ip || req.connection.remoteAddress;
@@ -213,13 +220,9 @@ router.post('/login', async (req, res) => {
                 {
                     $push: {
                         loginHistory: {
-                            $each: [{ 
-                                userAgent, 
-                                ip, 
-                                timestamp: new Date() 
-                            }],
+                            $each: [{ userAgent, ip, timestamp: new Date() }],
                             $sort: { timestamp: -1 },
-                            $slice: 5 // Keep only the last 5 entries
+                            $slice: 5 
                         }
                     }
                 }
@@ -227,7 +230,6 @@ router.post('/login', async (req, res) => {
         } catch (historyErr) {
             console.error("Failed to save login history:", historyErr);
         }
-        // -------------------------------
         
         const redirectUrl = req.body.redirect || '/account';
         res.redirect(redirectUrl);
@@ -238,19 +240,14 @@ router.post('/login', async (req, res) => {
     }
 });
 
-// Email Verification Route
 router.get('/verify/:token', async (req, res) => {
     try {
         const db = req.app.locals.client.db(req.app.locals.dbName);
         const usersCollection = db.collection('users');
         const user = await usersCollection.findOne({ verificationToken: req.params.token });
 
-        if (!user) {
-            return res.send("Invalid or expired verification link.");
-        }
-        if (user.tokenExpiry < new Date()) {
-            return res.send("Verification link has expired. Please register again.");
-        }
+        if (!user) return res.send("Invalid or expired verification link.");
+        if (user.tokenExpiry < new Date()) return res.send("Verification link has expired. Please register again.");
 
         await usersCollection.updateOne(
             { verificationToken: req.params.token },
@@ -265,26 +262,9 @@ router.get('/verify/:token', async (req, res) => {
     }
 });
 
-// Old dashboard route now redirects to /account
-router.get('/dashboard', (req, res) => {
-    res.redirect('/account');
-});
-
-// Old admin route now redirects to the admin section of the account page
-router.get('/admin', (req, res) => {
-    if (!req.session.user || req.session.user.role !== 'admin') {
-        return res.redirect('/users/login');
-    }
-    res.redirect('/account/admin'); 
-});
-
-// Logout route
 router.get('/logout', (req, res) => {
     req.session.destroy(err => {
-        if (err) {
-            console.error("Error destroying session:", err);
-            return res.send("Something went wrong during logout.");
-        }
+        if (err) console.error("Error destroying session:", err);
         res.clearCookie('connect.sid');
         res.redirect('/users/login?status=loggedout');
     });

@@ -1,112 +1,136 @@
 <div class="container my-5 py-5 order-success-page">
-    <div class="row gx-lg-5">
+    <div class="row gx-lg-5 justify-content-center">
         
-        <div class="col-lg-7">
-            <div class="d-flex align-items-center gap-3 mb-4 success-header">
-                <i class="bi bi-check-circle-fill"></i>
-                <h1 class="h2 mb-0 fw-bold">Thank you for your order!</h1>
+        <div class="col-lg-10">
+            <div class="text-center mb-5">
+                <div class="d-inline-flex align-items-center justify-content-center rounded-circle bg-success text-white mb-3" style="width: 64px; height: 64px;">
+                    <i class="bi bi-check-lg fs-1"></i>
+                </div>
+                <h1 class="display-5 fw-bold mb-2">Thank you for your order!</h1>
+                <p class="text-body-secondary lead">
+                    Your order <span class="fw-bold text-dark">#<%= order._id.toString().slice(-7).toUpperCase() %></span> has been placed.
+                </p>
+                <p class="text-body-secondary small">
+                    We've sent a confirmation email to <strong><%= order.customer.email %></strong>.
+                </p>
             </div>
 
-            <div class="confirmation-card">
-                <div class="card-section">
-                    <h5 class="fw-semibold">Your order is confirmed</h5>
-                    <p class="text-dark mb-1">Order ID: <strong>#<%= order._id.toString().slice(-7).toUpperCase() %></strong></p>
-                    <p class="text-body-secondary">You'll receive a confirmation email with your order details soon.</p>
-                </div>
-                <div class="card-section">
-                    <h6 class="fw-semibold">Shipping to:</h6>
-                    <p class="text-body-secondary mb-0">
-                        <%= order.customer.firstName %> <%= order.customer.lastName %><br>
-                        <%= order.shippingAddress.address %><br>
-                        <%= order.shippingAddress.state %>, <%= order.shippingAddress.zip %>
-                    </p>
-                </div>
-                 <div class="card-section">
-                    <h6 class="fw-semibold">Payment</h6>
-                    <p class="text-body-secondary mb-0">
-                        <% if (order.paymentDetails.last4) { %>
-                            <i class="bi bi-credit-card-fill"></i> <%= order.paymentDetails.method %> ending in <%= order.paymentDetails.last4 %>
-                        <% } else { %>
-                            <i class="bi bi-cash-stack"></i> <%= order.paymentDetails.method %>
-                        <% } %>
-                    </p>
-                </div>
-            </div>
-
-            <div class="whats-next-timeline mt-4">
-                <div class="timeline-step active">
-                    <div class="timeline-icon"><i class="bi bi-check-lg"></i></div>
-                    <div class="timeline-content">
-                        <strong>Order Confirmed</strong>
-                        <p class="text-body-secondary small">We've received your order.</p>
-                    </div>
-                </div>
-                <div class="timeline-step">
-                    <div class="timeline-icon"><i class="bi bi-truck"></i></div>
-                    <div class="timeline-content">
-                        <strong>Order Shipped</strong>
-                        <p class="text-body-secondary small">We'll notify you once it's on its way.</p>
-                    </div>
-                </div>
-                <div class="timeline-step">
-                    <div class="timeline-icon"><i class="bi bi-box-seam-fill"></i></div>
-                    <div class="timeline-content">
-                        <strong>Delivered</strong>
-                        <p class="text-body-secondary small">Your order has arrived.</p>
+            <div class="card border-0 shadow-sm rounded-4 mb-5 overflow-hidden">
+                <div class="card-body p-4 p-md-5">
+                    <div class="whats-next-timeline">
+                        <div class="timeline-step active">
+                            <div class="timeline-icon"><i class="bi bi-check-lg"></i></div>
+                            <div class="timeline-content">
+                                <strong>Confirmed</strong>
+                                <p class="small text-body-secondary d-none d-md-block">We've received your order.</p>
+                            </div>
+                        </div>
+                        <div class="timeline-step">
+                            <div class="timeline-icon"><i class="bi bi-truck"></i></div>
+                            <div class="timeline-content">
+                                <strong>Shipped</strong>
+                                <p class="small text-body-secondary d-none d-md-block">We'll notify you when it ships.</p>
+                            </div>
+                        </div>
+                        <div class="timeline-step">
+                            <div class="timeline-icon"><i class="bi bi-box-seam-fill"></i></div>
+                            <div class="timeline-content">
+                                <strong>Delivered</strong>
+                                <p class="small text-body-secondary d-none d-md-block">Package arrived.</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <hr class="my-4">
-            
-            <% if (!currentUser) { %>
-                <div class="dashboard-card text-center">
-                    <div class="card-body">
-                        <h5 class="fw-semibold">Track your order</h5>
-                        <p class="text-body-secondary">Create an account to easily track your order status and manage your purchase history.</p>
-                        <a href="/users/register?email=<%= order.customer.email %>" class="btn btn-secondary">Create an Account</a>
+            <div class="row g-4">
+                <div class="col-lg-7">
+                    <div class="card border-0 shadow-sm rounded-4 h-100">
+                        <div class="card-header bg-white border-bottom p-4">
+                            <h5 class="fw-bold mb-0">Order Details</h5>
+                        </div>
+                        <div class="card-body p-4">
+                            <div class="row g-4 mb-4">
+                                <div class="col-md-6">
+                                    <h6 class="small fw-bold text-secondary text-uppercase mb-2">Shipping Address</h6>
+                                    <p class="mb-0 small">
+                                        <%= order.customer.firstName %> <%= order.customer.lastName %><br>
+                                        <%= order.shippingAddress.address %><br>
+                                        <%= order.shippingAddress.state %>, <%= order.shippingAddress.zip %>
+                                    </p>
+                                </div>
+                                <div class="col-md-6">
+                                    <h6 class="small fw-bold text-secondary text-uppercase mb-2">Payment Method</h6>
+                                    <p class="mb-0 small d-flex align-items-center gap-2">
+                                        <% if (order.paymentDetails.last4) { %>
+                                            <i class="bi bi-credit-card-fill"></i> <%= order.paymentDetails.method %> •••• <%= order.paymentDetails.last4 %>
+                                        <% } else { %>
+                                            <i class="bi bi-cash-stack"></i> <%= order.paymentDetails.method %>
+                                        <% } %>
+                                    </p>
+                                </div>
+                            </div>
+                            
+                            <hr class="border-light my-4">
+                            
+                            <h6 class="small fw-bold text-secondary text-uppercase mb-3">Items Ordered</h6>
+                            <div class="list-group list-group-flush">
+                                <% order.items.forEach(item => { %>
+                                    <div class="list-group-item px-0 border-0 d-flex align-items-center gap-3">
+                                        <div class="position-relative">
+                                            <img src="<%= item.thumbnailUrl %>" alt="<%= item.name %>" class="rounded-3 border bg-light" style="width: 64px; height: 64px; object-fit: contain;">
+                                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-secondary border border-light" style="font-size: 0.65rem;"><%= item.qty %></span>
+                                        </div>
+                                        <div class="flex-grow-1">
+                                            <h6 class="fw-bold mb-0 small text-truncate" style="max-width: 200px;"><%= item.name %></h6>
+                                            <small class="text-body-secondary">Size: <%= item.size %></small>
+                                        </div>
+                                        <div class="text-end">
+                                            <span class="fw-medium small"><%= locationData.symbol %><%= item.price.toLocaleString(undefined, { minimumFractionDigits: 2 }) %></span>
+                                        </div>
+                                    </div>
+                                <% }) %>
+                            </div>
+                        </div>
                     </div>
                 </div>
-                <hr class="my-4">
-            <% } %>
 
-            <div class="d-flex justify-content-between align-items-center">
-                 <a href="/products" class="btn btn-primary">Continue Shopping</a>
-                 <a href="/support/contact" class="text-body-secondary small">Need help? Contact Us</a>
+                <div class="col-lg-5">
+                    <div class="card border-0 shadow-sm rounded-4 bg-light h-100">
+                        <div class="card-body p-4">
+                            <h5 class="fw-bold mb-4">Summary</h5>
+                            <ul class="list-unstyled mb-0 d-flex flex-column gap-2">
+                                <li class="d-flex justify-content-between small">
+                                    <span class="text-secondary">Subtotal</span>
+                                    <span class="fw-medium"><%= locationData.symbol %><%= order.subtotal.toLocaleString(undefined, { minimumFractionDigits: 2 }) %></span>
+                                </li>
+                                <% if (order.discount && order.discount > 0) { %>
+                                    <li class="d-flex justify-content-between small text-success">
+                                        <span>Discount (<%= order.voucherCode || 'Applied' %>)</span>
+                                        <span class="fw-medium">-<%= locationData.symbol %><%= order.discount.toLocaleString(undefined, { minimumFractionDigits: 2 }) %></span>
+                                    </li>
+                                <% } %>
+                                <li class="d-flex justify-content-between small">
+                                    <span class="text-secondary">Shipping</span>
+                                    <span class="fw-medium"><%= order.shippingCost > 0 ? locationData.symbol + order.shippingCost.toLocaleString(undefined, { minimumFractionDigits: 2 }) : 'Free' %></span>
+                                </li>
+                                <li class="d-flex justify-content-between align-items-center pt-3 mt-2 border-top border-secondary-subtle">
+                                    <span class="fw-bold fs-5">Total</span>
+                                    <span class="fw-bold fs-4"><%= locationData.symbol %><%= order.total.toLocaleString(undefined, { minimumFractionDigits: 2 }) %></span>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
             </div>
 
-        </div>
-
-        <div class="col-lg-5">
-            <h4 class="mb-3 fw-bold">Order Summary</h4>
-            <div class="summary-box">
-                <ul class="list-group list-group-flush">
-                   <li class="list-group-item d-flex justify-content-between px-0">
-                       <span>Subtotal</span>
-                       <strong><%= locationData.symbol %><%= order.subtotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></strong>
-                   </li>
-                   <li class="list-group-item d-flex justify-content-between px-0">
-                       <span>Delivery/Shipping</span>
-                       <strong><%= order.shippingCost > 0 ? locationData.symbol + order.shippingCost.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : 'Free' %></strong>
-                   </li>
-                   <li class="list-group-item d-flex justify-content-between px-0 fs-5">
-                       <strong class="fw-bolder">Total</strong>
-                       <strong class="fw-bolder"><%= locationData.symbol %><%= order.total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></strong>
-                   </li>
-               </ul>
+            <div class="text-center mt-5 d-flex justify-content-center gap-3">
+                <a href="/products" class="btn btn-dark rounded-pill px-5 py-3 fw-bold">Continue Shopping</a>
+                <% if (currentUser) { %>
+                    <a href="/account/orders" class="btn btn-outline-secondary rounded-pill px-5 py-3 fw-bold">View Order History</a>
+                <% } %>
             </div>
-            
-            <% order.items.forEach(item => { %>
-                <div class="summary-product-item mt-3">
-                   <img src="<%= item.thumbnailUrl %>" alt="<%= item.name %>">
-                   <div class="summary-product-details">
-                       <p class="summary-product-title"><%= item.name %></p>
-                       <p class="summary-product-meta">Qty: <%= item.qty %></p>
-                       <p class="summary-product-meta">Size: <%= item.size %></p>
-                   </div>
-                   <p class="summary-product-price"><%= locationData.symbol %><%= item.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></p>
-               </div>
-            <% }) %>
+
         </div>
     </div>
 </div>
