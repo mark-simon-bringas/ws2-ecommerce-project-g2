@@ -88,7 +88,10 @@
     <div class="navbar-mobile">
         <a href="/" class="navbar-mobile-link"><img src="/icons/favbutton.png" alt="SneaksLab Logo" style="height:24px; width:auto;"></a>
         <div class="navbar-mobile-actions">
-            <a href="#" class="navbar-mobile-link" id="mobile-search-btn"><span class="iconify" data-icon="material-symbols:search-rounded" style="color: white;" data-width="24" data-height="24"></span></a>
+            <a href="/support/contact" class="navbar-mobile-link" id="mobile-support-btn">
+                <i class="bi bi-headset" style="font-size: 1.4rem; color: white;"></i>
+            </a>
+            
             <a href="/cart" class="navbar-mobile-link cart-icon-container">
                 <span class="iconify" data-icon="material-symbols:shopping-bag-outline" style="color: white;" data-width="24" data-height="24"></span>
                 <span class="cart-badge" style="display: <%= (typeof cart !== 'undefined' && cart && cart.totalQty > 0) ? 'flex' : 'none' %>;">
@@ -354,29 +357,39 @@
         </div>
     </footer>
 
-    <%# UPDATED: Now includes Wishlist page, excludes Cart page AND Chat page %>
     <% if (typeof isDashboard !== 'undefined' && (!isDashboard || view === 'wishlist') && path !== '/cart' && !path.startsWith('/support/tickets/')) { %>
+    <div class="search-overlay-gradient"></div>
+    
     <div class="mobile-bottom-nav d-lg-none">
-        <a href="/" class="nav-item <%= path === '/' ? 'active' : '' %>">
-            <i class="bi bi-house-door-fill"></i>
-            <span>Home</span>
-        </a>
-        <a href="#" class="nav-item" id="bottom-search-btn">
-            <i class="bi bi-search"></i>
-            <span>Search</span>
-        </a>
-        <a href="/account/wishlist" class="nav-item <%= path === '/account/wishlist' ? 'active' : '' %>">
-            <i class="bi bi-heart-fill"></i>
-            <span>Wishlist</span>
-        </a>
-        <a href="<%= currentUser ? '/account' : '/users/login' %>" class="nav-item <%= path.startsWith('/users') ? 'active' : '' %>">
-            <i class="bi bi-person-fill"></i>
-            <span>Profile</span>
-        </a>
+        <div class="nav-items-wrapper">
+            <a href="/" class="nav-item <%= path === '/' ? 'active' : '' %>" id="nav-home">
+                <i class="bi bi-house-door-fill"></i>
+                <span>Home</span>
+            </a>
+            <a href="#" class="nav-item" id="bottom-search-btn">
+                <i class="bi bi-search"></i>
+                <span>Search</span>
+            </a>
+            <a href="/account/wishlist" class="nav-item <%= path === '/account/wishlist' ? 'active' : '' %>" id="nav-wishlist">
+                <i class="bi bi-heart-fill"></i>
+                <span>Wishlist</span>
+            </a>
+            <a href="<%= currentUser ? '/account' : '/users/login' %>" class="nav-item <%= path.startsWith('/users') ? 'active' : '' %>" id="nav-profile">
+                <i class="bi bi-person-fill"></i>
+                <span>Profile</span>
+            </a>
+        </div>
+        
+        <div class="bottom-search-container" style="display: none;">
+            <form action="/products/search" method="GET" class="d-flex align-items-center w-100 h-100">
+                <button type="submit" class="btn-search-submit"><i class="bi bi-search"></i></button>
+                <input type="text" name="q" id="bottom-search-input" placeholder="Search products..." autocomplete="off">
+                <button type="button" class="btn-search-close">&times;</button>
+            </form>
+        </div>
     </div>
     <% } %>
 
-    <%# UPDATED: Excludes Wishlist page %>
     <% if (typeof isDashboard !== 'undefined' && isDashboard && currentUser && view !== 'wishlist') { %>
     <div class="bottom-navbar d-lg-none">
         <% if (currentUser.role === 'admin') { %>

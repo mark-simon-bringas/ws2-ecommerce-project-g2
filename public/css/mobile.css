@@ -30,6 +30,7 @@
         padding: 12px 0.5rem;
         padding-bottom: calc(12px + env(safe-area-inset-bottom));
         z-index: 1100;
+        transition: transform 0.3s ease;
     }
 
     .bottom-navbar-link {
@@ -75,34 +76,75 @@
         padding: 0.3em 0.5em;
     }
 
-    /* --- NEW: Consumer Mobile Bottom Navigation (Floating Pill with Glassmorphism) --- */
+    /* --- NEW: Consumer Mobile Bottom Navigation (Floating Pill) --- */
     .mobile-bottom-nav {
         position: fixed;
         bottom: 24px; /* Floating height */
         left: 50%;
         transform: translateX(-50%);
         width: 92%;
-        max-width: 400px; /* Prevent it from getting too wide on tablets */
+        max-width: 400px; 
+        height: 64px; /* Fixed height for consistent transitions */
         
-        /* Glassmorphism Background: Dark Grey with transparency */
-        background-color: rgba(50, 50, 50, 0.8); 
-        
-        /* The Blur Effect */
-        backdrop-filter: blur(16px) saturate(180%);
-        -webkit-backdrop-filter: blur(16px) saturate(180%);
-        
-        /* Subtle border to define edges */
-        border: 1px solid rgba(255, 255, 255, 0.15); 
-        border-radius: 60px; /* Pill Shape */
+        /* Default State */
+        background-color: rgba(50, 50, 50, 0.85); 
+        backdrop-filter: blur(20px) saturate(180%);
+        -webkit-backdrop-filter: blur(20px) saturate(180%);
+        border: 1px solid rgba(255, 255, 255, 0.12); 
+        border-radius: 60px; 
         
         display: flex;
-        justify-content: space-between; /* Spread items evenly */
+        justify-content: space-between; 
         align-items: center;
-        padding: 12px 32px; /* Padding inside the pill */
+        padding: 0 32px; 
         z-index: 1040;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
         
-        /* Soft shadow for depth */
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+        /* Transitions for hiding and search mode */
+        transition: transform 0.6s cubic-bezier(0.33, 1, 0.68, 1), 
+                    width 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), 
+                    background-color 0.4s ease,
+                    padding 0.4s ease;
+        
+        overflow: hidden; /* Mask the sliding icons */
+    }
+
+    /* Scroll Hide State */
+    .mobile-bottom-nav.nav-hidden,
+    .bottom-navbar.nav-hidden {
+        transform: translate(-50%, 180%); /* Move further down to completely clear shadow */
+    }
+    .bottom-navbar.nav-hidden {
+        transform: translateY(100%);
+    }
+
+    /* Search Mode State */
+    .mobile-bottom-nav.search-mode {
+        width: 96%; /* Almost full width */
+        background-image: linear-gradient(135deg, rgba(40, 40, 40, 0.98), rgba(25, 25, 25, 0.98));
+        background-color: #111; 
+        border-color: rgba(255, 255, 255, 0.25);
+        box-shadow: 0 12px 40px rgba(0, 113, 227, 0.15); /* Subtle blue glow */
+        padding: 0 16px; 
+        transform: translate(-50%, 0); 
+    }
+
+    /* Nav Items Wrapper Animation */
+    .nav-items-wrapper {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        width: 100%;
+        min-width: 100%; 
+        transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), 
+                    opacity 0.3s ease 0.1s; 
+    }
+    
+    .mobile-bottom-nav.search-mode .nav-items-wrapper {
+        transform: translateX(-25%);
+        opacity: 0; 
+        pointer-events: none;
+        position: absolute; 
     }
 
     .mobile-bottom-nav .nav-item {
@@ -111,9 +153,10 @@
         align-items: center;
         justify-content: center;
         text-decoration: none;
-        color: rgba(255, 255, 255, 0.6); /* Inactive items are dimmed white */
+        color: rgba(255, 255, 255, 0.6);
         transition: all 0.2s ease;
         -webkit-tap-highlight-color: transparent;
+        flex: 1; 
     }
 
     .mobile-bottom-nav .nav-item i {
@@ -130,12 +173,11 @@
     }
 
     .mobile-bottom-nav .nav-item.active {
-        color: #ffffff; /* Active item is bright white */
-        transform: translateY(-2px); /* Slight lift for active item */
-        text-shadow: 0 0 15px rgba(255, 255, 255, 0.3); /* Glow effect */
+        color: #ffffff;
+        transform: translateY(-2px);
+        text-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
     }
-    
-    /* Cart Icon Wrapper for Badge Positioning */
+
     .mobile-bottom-nav .icon-wrapper {
         position: relative;
         display: inline-block;
@@ -145,7 +187,7 @@
         position: absolute;
         top: -4px;
         right: -6px;
-        background-color: #ff3b30; /* Alert red */
+        background-color: #ff3b30;
         color: white;
         border-radius: 50%;
         min-width: 14px;
@@ -156,20 +198,101 @@
         justify-content: center;
         align-items: center;
         padding: 0 3px;
-        border: 1px solid rgba(50, 50, 50, 0.8); /* Match pill bg for cutout effect */
+        border: 1px solid rgba(50, 50, 50, 0.8);
         box-shadow: 0 2px 4px rgba(0,0,0,0.2);
     }
 
-    /* Add padding to body to prevent content from being hidden behind the floating pill */
+    /* --- Bottom Search Container Styles --- */
+    .bottom-search-container {
+        width: 100%;
+        height: 100%;
+        opacity: 0;
+        pointer-events: none;
+        transform: scale(0.95);
+        transition: opacity 0.3s ease 0.15s, transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) 0.15s;
+    }
+
+    .mobile-bottom-nav.search-mode .bottom-search-container {
+        opacity: 1;
+        pointer-events: auto;
+        display: block !important; 
+        transform: scale(1);
+    }
+
+    .bottom-search-container form {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        height: 100%;
+    }
+
+    .btn-search-submit, .btn-search-close {
+        background: none;
+        border: none;
+        color: #fff;
+        font-size: 1.2rem;
+        padding: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+    }
+    
+    /* UPDATED: Removed background color to remove outline effect */
+    .btn-search-submit {
+        background-color: transparent;
+        padding-left: 0;
+    }
+
+    .btn-search-close {
+        color: rgba(255,255,255,0.5);
+        font-size: 1.5rem;
+    }
+
+    #bottom-search-input {
+        flex-grow: 1;
+        background: transparent;
+        border: none;
+        color: #fff;
+        font-size: 1.1rem; 
+        font-weight: 500;
+        outline: none;
+        height: 100%;
+    }
+    #bottom-search-input::placeholder {
+        color: rgba(255,255,255,0.3);
+    }
+
+    /* --- Search Overlay Gradient --- */
+    .search-overlay-gradient {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: radial-gradient(circle at 50% 90%, rgba(20, 20, 20, 0.85) 0%, rgba(0,0,0,0.95) 100%);
+        z-index: 1030;
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.5s ease, visibility 0.5s ease;
+        pointer-events: none;
+    }
+
+    .search-overlay-gradient.is-active {
+        opacity: 1;
+        visibility: visible;
+        pointer-events: auto; 
+        backdrop-filter: blur(8px);
+    }
+
     body {
         padding-bottom: 90px; 
     }
-    /* Override for dashboard layouts to avoid double padding */
     .dashboard-layout body {
         padding-bottom: 0;
     }
 
-    /* --- UPDATED: Styles for Mobile Sticky Checkout --- */
+    /* --- Mobile Sticky Checkout --- */
     .mobile-checkout-sticky {
         position: fixed;
         bottom: 0;
@@ -191,7 +314,7 @@
         border-top: 1px solid var(--border-color);
         transform: translateY(100%);
         opacity: 0;
-        pointer-events: none; /* Prevents clicks when hidden */
+        pointer-events: none;
         transition: transform 0.3s ease-in-out, opacity 0.3s ease-in-out;
     }
     .checkout-options.is-active {
@@ -208,7 +331,6 @@
         pointer-events: none;
     }
 
-    /* Hide the desktop summary buttons on mobile */
     .summary-card-desktop #desktop-checkout-buttons {
         display: none !important;
     }
@@ -251,7 +373,6 @@
         padding-bottom: 1rem;
     }
 
-    /* --- Added: Styles for Legal Page on Mobile --- */
     .legal-page-content h1 {
         font-size: 2.25rem;
     }

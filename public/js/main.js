@@ -17,7 +17,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // --- Location Data for Mini-Cart ---
     const locationData = JSON.parse(document.body.dataset.location || '{}');
 
-    // --- Desktop Navbar Dropdown Logic (UPDATED) ---
+    // --- Desktop Navbar Dropdown Logic ---
     const desktopNavLinks = document.querySelectorAll(".navbar-desktop .list-menu, #desktop-search-btn");
     const dropdownContainer = document.querySelector(".dropdown");
     const contentPanels = document.querySelectorAll(".dropdown .con-1");
@@ -27,7 +27,7 @@ document.addEventListener('DOMContentLoaded', function() {
             dropdownContainer.style.height = "0px";
             contentPanels.forEach(panel => {
                 panel.style.opacity = "0";
-                panel.style.pointerEvents = "none"; // Make invisible panels non-interactive
+                panel.style.pointerEvents = "none";
             });
         };
         const openDropdown = (activeIndex) => {
@@ -35,10 +35,10 @@ document.addEventListener('DOMContentLoaded', function() {
             contentPanels.forEach((panel, index) => {
                 if (index === activeIndex) {
                     panel.style.opacity = "1";
-                    panel.style.pointerEvents = "auto"; // Make the active panel interactive
+                    panel.style.pointerEvents = "auto";
                 } else {
                     panel.style.opacity = "0";
-                    panel.style.pointerEvents = "none"; // Make all other panels non-interactive
+                    panel.style.pointerEvents = "none";
                 }
             });
         };
@@ -77,10 +77,9 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // --- Mobile Overlay Logic ---
+    // --- Mobile Overlay Logic (Top Nav) ---
     const mobileMenuBtn = document.getElementById('mobile-menu-btn');
-    const mobileSearchBtn = document.getElementById('mobile-search-btn');
-    const bottomSearchBtn = document.getElementById('bottom-search-btn'); // ADDED: Selector for bottom nav search
+    const mobileSearchBtn = document.getElementById('mobile-search-btn'); // Note: This might be removed if you removed the button from layout
     const mobileMenuOverlay = document.getElementById('mobile-menu-overlay');
     const searchOverlay = document.querySelector('.overlay#search-overlay');
     const mobileMenuCloseBtn = document.getElementById('mobile-menu-close-btn');
@@ -102,12 +101,66 @@ document.addEventListener('DOMContentLoaded', function() {
     
     if (mobileMenuBtn) { mobileMenuBtn.addEventListener('click', (e) => { e.preventDefault(); openOverlay(mobileMenuOverlay); }); }
     if (mobileSearchBtn) { mobileSearchBtn.addEventListener('click', (e) => { e.preventDefault(); openOverlay(searchOverlay); }); }
-    
-    // ADDED: Event listener for bottom nav search button
-    if (bottomSearchBtn) { bottomSearchBtn.addEventListener('click', (e) => { e.preventDefault(); openOverlay(searchOverlay); }); }
-    
     if (mobileMenuCloseBtn) { mobileMenuCloseBtn.addEventListener('click', (e) => { e.preventDefault(); closeAllOverlays(); }); }
     if (searchOverlayCloseBtn) { searchOverlayCloseBtn.addEventListener('click', (e) => { e.preventDefault(); closeAllOverlays(); }); }
+
+
+    // --- NEW: Mobile Bottom Navigation Logic ---
+    const bottomSearchBtn = document.getElementById('bottom-search-btn');
+    const mobileBottomNav = document.querySelector('.mobile-bottom-nav');
+    const searchOverlayGradient = document.querySelector('.search-overlay-gradient');
+    const bottomSearchInput = document.getElementById('bottom-search-input');
+    const btnSearchClose = document.querySelector('.btn-search-close');
+
+    // 1. Search Mode Transition
+    if (bottomSearchBtn && mobileBottomNav) {
+        const openBottomSearch = () => {
+            mobileBottomNav.classList.add('search-mode');
+            if (searchOverlayGradient) searchOverlayGradient.classList.add('is-active');
+            if (bottomSearchInput) bottomSearchInput.focus();
+        };
+
+        const closeBottomSearch = () => {
+            mobileBottomNav.classList.remove('search-mode');
+            if (searchOverlayGradient) searchOverlayGradient.classList.remove('is-active');
+            if (bottomSearchInput) {
+                bottomSearchInput.blur();
+                bottomSearchInput.value = ''; // Optional: Clear search on close
+            }
+        };
+
+        bottomSearchBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            openBottomSearch();
+        });
+
+        if (btnSearchClose) btnSearchClose.addEventListener('click', closeBottomSearch);
+        if (searchOverlayGradient) searchOverlayGradient.addEventListener('click', closeBottomSearch);
+    }
+
+    // 2. Hide Bottom Nav on Scroll
+    if (mobileBottomNav) {
+        let lastScrollTop = 0;
+        const scrollThreshold = 50; // Minimum scroll amount before triggering hide
+
+        window.addEventListener('scroll', () => {
+            // Don't hide if search mode is active
+            if (mobileBottomNav.classList.contains('search-mode')) return;
+
+            const scrollTop = window.scrollY || document.documentElement.scrollTop;
+            
+            if (scrollTop > lastScrollTop && scrollTop > scrollThreshold) {
+                // Scrolling DOWN -> Hide Nav
+                mobileBottomNav.classList.add('nav-hidden');
+            } else {
+                // Scrolling UP -> Show Nav
+                mobileBottomNav.classList.remove('nav-hidden');
+            }
+            
+            lastScrollTop = scrollTop <= 0 ? 0 : scrollTop; // For Mobile or negative scrolling
+        }, { passive: true });
+    }
+
 
     // --- Product Carousel Navigation Logic ---
     const carouselSections = document.querySelectorAll('.product-carousel-section');

@@ -1,11 +1,9 @@
 <div class="container my-5 overflow-hidden">
     <div class="text-center pt-4 pb-5">
-        <%# Updated: Responsive typography to prevent overflow %>
         <h1 class="display-5 display-lg-3 fw-bold"><%= mainHeading %></h1>
         <p class="lead text-body-secondary mt-3 fst-italic">"<%= subHeading %>"</p>
     </div>
 
-    <%# Updated: Responsive gutter (g-4 on mobile, g-5 on desktop) %>
     <div class="row g-4 g-lg-5 align-items-center mb-5 pb-5 border-bottom">
         <div class="col-lg-6">
             <img src="<%= story.image.src %>" class="img-fluid rounded-4 shadow-sm" alt="<%= story.image.alt %>">
@@ -17,12 +15,41 @@
         </div>
     </div>
 
+    <div class="mb-5 pb-5 border-bottom">
+        <div class="text-center mb-5">
+            <h2 class="display-5 fw-bold">The Sneakslab Difference</h2>
+        </div>
+        <div class="row g-4">
+            <div class="col-md-4 text-center">
+                <div class="feature-icon-container mb-3">
+                    <i class="bi bi-shield-check"></i>
+                </div>
+                <h4 class="fw-bold">100% Authentic</h4>
+                <p class="text-body-secondary">Every item is verified by our expert team to ensure you get the real deal.</p>
+            </div>
+            <div class="col-md-4 text-center">
+                <div class="feature-icon-container mb-3">
+                    <i class="bi bi-truck"></i>
+                </div>
+                <h4 class="fw-bold">Fast Shipping</h4>
+                <p class="text-body-secondary">We know you want your kicks fast. We ship orders within 1-2 business days.</p>
+            </div>
+            <div class="col-md-4 text-center">
+                <div class="feature-icon-container mb-3">
+                    <i class="bi bi-headset"></i>
+                </div>
+                <h4 class="fw-bold">Expert Support</h4>
+                <p class="text-body-secondary">Have a question? Our team of sneakerheads is here to help you out.</p>
+            </div>
+        </div>
+    </div>
+
     <div class="text-center mb-5">
         <h2 class="display-5 fw-bold"><%= team.heading %></h2>
         <p class="lead text-body-secondary mt-3"><%= team.subHeading %></p>
     </div>
 
-    <div class="row g-4 justify-content-center">
+    <div class="row g-4 justify-content-center mb-5 pb-5 border-bottom">
         <% team.members.forEach(member => { %>
         <div class="col-md-6 col-lg-5">
             <div class="card h-100 text-center">
@@ -37,5 +64,25 @@
             </div>
         </div>
         <% }); %>
+    </div>
+
+    <div class="mb-5">
+        <div class="text-center mb-4">
+            <h3 class="fw-bold">Shop by Brand</h3>
+        </div>
+        <div class="brand-logo-grid">
+            <a href="/products?brand=Nike" class="brand-logo-item">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/a/a6/Logo_NIKE.svg" alt="Nike">
+            </a>
+            <a href="/products?brand=Jordan" class="brand-logo-item">
+                <img src="https://upload.wikimedia.org/wikipedia/en/thumb/3/37/Jumpman_logo.svg/1200px-Jumpman_logo.svg.png" alt="Jordan">
+            </a>
+            <a href="/products?brand=Adidas" class="brand-logo-item">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/2/20/Adidas_Logo.svg" alt="Adidas">
+            </a>
+            <a href="/products?brand=New%20Balance" class="brand-logo-item">
+                <img src="https://logos-world.net/wp-content/uploads/2020/09/New-Balance-Emblem-700x394.png" alt="New Balance">
+            </a>
+        </div>
     </div>
 </div>
