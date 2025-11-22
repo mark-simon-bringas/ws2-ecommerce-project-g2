@@ -1,59 +1,185 @@
-<div class="page-header d-flex justify-content-between align-items-center">
-    <div>
-        <h1>Support Inbox</h1>
-        <p class="text-body-secondary">View and respond to customer support tickets.</p>
+<div class="settings-page-wrapper" style="max-width: 1000px;">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4">
+        <div class="d-flex align-items-center mb-3 mb-md-0">
+            <a href="/account/settings" class="btn btn-icon btn-light rounded-circle me-3">
+                <i class="bi bi-arrow-left"></i>
+            </a>
+            <div>
+                <h1 class="h3 fw-bold mb-0">Inbox</h1>
+                <p class="text-body-secondary small mb-0">Customer support tickets</p>
+            </div>
+        </div>
+        <div class="input-group" style="max-width: 300px;">
+            <span class="input-group-text bg-white border-end-0 rounded-start-pill ps-3"><i class="bi bi-search text-secondary"></i></span>
+            <input type="text" id="inbox-search" class="form-control border-start-0 rounded-end-pill" placeholder="Search messages...">
+        </div>
+    </div>
+
+    <div class="mb-4 overflow-x-auto">
+        <ul class="nav nav-pills flex-nowrap gap-2" id="inbox-filters">
+            <li class="nav-item"><button class="nav-link active rounded-pill px-4 bg-dark" data-filter="all">All</button></li>
+            <li class="nav-item"><button class="nav-link rounded-pill px-4 text-secondary bg-light" data-filter="Open">Open</button></li>
+            <li class="nav-item"><button class="nav-link rounded-pill px-4 text-secondary bg-light" data-filter="Answered">Answered</button></li>
+            <li class="nav-item"><button class="nav-link rounded-pill px-4 text-secondary bg-light" data-filter="Closed">Closed</button></li>
+        </ul>
+    </div>
+
+    <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+        <div class="list-group list-group-flush" id="tickets-list">
+            <% if (tickets && tickets.length > 0) { %>
+                <% tickets.forEach(ticket => { %>
+                    <a href="/account/admin/tickets/<%= ticket.ticketId %>" class="list-group-item list-group-item-action p-4 d-flex align-items-center gap-3 border-0 border-bottom ticket-item" data-status="<%= ticket.status %>">
+                        <div class="flex-shrink-0">
+                            <% if (ticket.status === 'Open') { %>
+                                <div class="rounded-circle bg-primary-subtle text-primary d-flex align-items-center justify-content-center" style="width: 48px; height: 48px;">
+                                    <i class="bi bi-exclamation-circle-fill fs-5"></i>
+                                </div>
+                            <% } else if (ticket.status === 'Answered') { %>
+                                <div class="rounded-circle bg-success-subtle text-success d-flex align-items-center justify-content-center" style="width: 48px; height: 48px;">
+                                    <i class="bi bi-check-circle-fill fs-5"></i>
+                                </div>
+                            <% } else { %>
+                                <div class="rounded-circle bg-secondary-subtle text-secondary d-flex align-items-center justify-content-center" style="width: 48px; height: 48px;">
+                                    <i class="bi bi-archive-fill fs-5"></i>
+                                </div>
+                            <% } %>
+                        </div>
+
+                        <div class="flex-grow-1 min-w-0">
+                            <div class="d-flex justify-content-between align-items-baseline mb-1">
+                                <h6 class="fw-bold mb-0 text-truncate me-2 ticket-subject"><%= ticket.subject %></h6>
+                                <small class="text-body-tertiary text-nowrap" style="font-size: 0.75rem;">
+                                    <%= new Date(ticket.updatedAt).toLocaleDateString() %>
+                                </small>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <p class="text-secondary small mb-0 text-truncate ticket-meta" style="max-width: 80%;">
+                                    <%= ticket.userEmail %> • #<%= ticket.ticketId %>
+                                </p>
+                                <% if (ticket.status === 'Open') { %>
+                                    <span class="badge bg-primary rounded-pill" style="font-size: 0.6rem;">New</span>
+                                <% } %>
+                            </div>
+                        </div>
+                        
+                        <i class="bi bi-chevron-right text-body-tertiary"></i>
+                    </a>
+                <% }) %>
+            <% } else { %>
+                <div class="text-center p-5" id="empty-state">
+                    <div class="bg-light rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px;">
+                        <i class="bi bi-chat-square-text text-secondary fs-4"></i>
+                    </div>
+                    <p class="text-secondary mb-0">Your inbox is empty.</p>
+                </div>
+            <% } %>
+            
+            <div id="no-results" class="text-center p-5 d-none">
+                <div class="bg-light rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px;">
+                    <i class="bi bi-search text-secondary fs-4"></i>
+                </div>
+                <p class="text-secondary mb-0">No tickets found matching your search.</p>
+            </div>
+        </div>
     </div>
 </div>
 
-<div class="dashboard-card">
-    <div class="card-body">
-        <% if (tickets && tickets.length > 0) { %>
-            <div class="table-responsive">
-                <table class="table table-hover align-middle">
-                    <thead class="table-light">
-                        <tr>
-                            <th>Ticket ID</th>
-                            <th>Subject</th>
-                            <th>Customer</th>
-                            <th>Status</th>
-                            <th>Last Updated</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <% tickets.forEach(ticket => { %>
-                            <tr>
-                                <td>
-                                    <a href="/account/admin/tickets/<%= ticket.ticketId %>" class="fw-semibold">
-                                        #<%= ticket.ticketId %>
-                                    </a>
-                                </td>
-                                <td><%= ticket.subject %></td>
-                                <td><%= ticket.userEmail %></td>
-                                <td>
-                                    <% if (ticket.status === 'Open') { %>
-                                        <span class="badge bg-primary-subtle text-primary-emphasis rounded-pill"><%= ticket.status %></span>
-                                    <% } else if (ticket.status === 'Answered') { %>
-                                        <span class="badge bg-success-subtle text-success-emphasis rounded-pill"><%= ticket.status %></span>
-                                    <% } else { %>
-                                        <span class="badge bg-secondary-subtle text-secondary-emphasis rounded-pill"><%= ticket.status %></span>
-                                    <% } %>
-                                </td>
-                                <td><%= new Date(ticket.updatedAt).toLocaleString() %></td>
-                                <td>
-                                    <a href="/account/admin/tickets/<%= ticket.ticketId %>" class="btn btn-sm btn-outline-secondary">
-                                        <i class="bi bi-eye"></i> View
-                                    </a>
-                                </td>
-                            </tr>
-                        <% }) %>
-                    </tbody>
-                </table>
-            </div>
-        <% } else { %>
-            <div class="text-center p-5">
-                <p class="lead text-body-secondary">There are no support tickets yet.</p>
-            </div>
-        <% } %>
-    </div>
-</div>
+<style>
+    .settings-page-wrapper {
+        margin: 0 auto;
+        padding: 1rem;
+    }
+    .btn-icon {
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid var(--border-color);
+    }
+    .ticket-item:hover {
+        background-color: #f8f9fa;
+    }
+    /* Hide scrollbar for tabs */
+    .overflow-x-auto::-webkit-scrollbar {
+        display: none;
+    }
+    .overflow-x-auto {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const searchInput = document.getElementById('inbox-search');
+        const filterButtons = document.querySelectorAll('#inbox-filters button');
+        const ticketItems = document.querySelectorAll('.ticket-item');
+        const noResults = document.getElementById('no-results');
+        const emptyState = document.getElementById('empty-state');
+
+        let currentFilter = 'all';
+        let currentSearch = '';
+
+        function filterTickets() {
+            let visibleCount = 0;
+
+            ticketItems.forEach(item => {
+                const status = item.dataset.status;
+                const subject = item.querySelector('.ticket-subject').textContent.toLowerCase();
+                const meta = item.querySelector('.ticket-meta').textContent.toLowerCase(); // Contains email and ID
+                
+                const searchMatch = subject.includes(currentSearch) || meta.includes(currentSearch);
+                const statusMatch = currentFilter === 'all' || status === currentFilter;
+
+                if (searchMatch && statusMatch) {
+                    item.style.display = ''; // Reset to default flex
+                    visibleCount++;
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+
+            // Toggle No Results message
+            if (noResults) {
+                // Show "No Results" only if we have tickets in DB but search filtered them all out
+                if (ticketItems.length > 0 && visibleCount === 0) {
+                    noResults.classList.remove('d-none');
+                } else {
+                    noResults.classList.add('d-none');
+                }
+            }
+            // Hide default empty state if we are searching/filtering
+            if (emptyState && ticketItems.length > 0) {
+                emptyState.style.display = 'none';
+            }
+        }
+
+        // Search Listener
+        if (searchInput) {
+            searchInput.addEventListener('input', (e) => {
+                currentSearch = e.target.value.toLowerCase();
+                filterTickets();
+            });
+        }
+
+        // Filter Tabs Listener
+        filterButtons.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                
+                // Update visual state of tabs
+                filterButtons.forEach(b => {
+                    b.classList.remove('active', 'bg-dark', 'text-white');
+                    b.classList.add('text-secondary', 'bg-light');
+                });
+                e.target.classList.add('active', 'bg-dark', 'text-white');
+                e.target.classList.remove('text-secondary', 'bg-light');
+
+                // Apply Filter
+                currentFilter = e.target.dataset.filter;
+                filterTickets();
+            });
+        });
+    });
+</script>

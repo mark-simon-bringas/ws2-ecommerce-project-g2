@@ -1,55 +1,40 @@
-<div class="page-header">
-    <h1>Product Management</h1>
-    <p>Manage your store's inventory and import new products from the supplier database.</p>
-</div>
-
-<nav>
-    <div class="nav nav-tabs" id="nav-tab" role="tablist">
-        <button class="nav-link active" id="nav-inventory-tab" data-bs-toggle="tab" data-bs-target="#nav-inventory" type="button" role="tab" aria-controls="nav-inventory" aria-selected="true">My Inventory</button>
-        <button class="nav-link" id="nav-import-tab" data-bs-toggle="tab" data-bs-target="#nav-import" type="button" role="tab" aria-controls="nav-import" aria-selected="false">Import Products</button>
-    </div>
-</nav>
-
-<div class="tab-content" id="nav-tabContent">
-    <%# My Inventory Pane %>
-    <div class="tab-pane fade show active" id="nav-inventory" role="tabpanel" aria-labelledby="nav-inventory-tab" tabindex="0">
-        
-        <div class="row g-4 mt-3">
-            <div class="col-md-6">
-                <div class="dashboard-card h-100">
-                    <div class="card-body d-flex align-items-center gap-4">
-                        <div class="stat-icon bg-primary-subtle text-primary-emphasis"><i class="bi bi-box-seam-fill"></i></div>
-                        <div>
-                            <p class="stat-value mb-0"><%= localProducts.length %></p>
-                            <p class="stat-title mb-0">Total Products</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-6">
-                <div class="dashboard-card h-100">
-                    <div class="card-body d-flex align-items-center gap-4">
-                        <div class="stat-icon bg-success-subtle text-success-emphasis"><i class="bi bi-currency-dollar"></i></div>
-                        <div>
-                            <% const totalValue = localProducts.reduce((sum, p) => sum + p.retailPrice, 0); %>
-                            <p class="stat-value mb-0">$<%= totalValue.toLocaleString() %></p>
-                            <p class="stat-title mb-0">Total Inventory Value</p>
-                        </div>
-                    </div>
-                </div>
+<div class="settings-page-wrapper" style="max-width: 1200px;">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4">
+        <div class="d-flex align-items-center mb-3 mb-md-0">
+            <a href="/account/settings" class="btn btn-icon btn-light rounded-circle me-3">
+                <i class="bi bi-arrow-left"></i>
+            </a>
+            <div>
+                <h1 class="h3 fw-bold mb-0">Products</h1>
+                <p class="text-body-secondary small mb-0">Manage inventory & imports</p>
             </div>
         </div>
+    </div>
 
-        <div class="dashboard-card mt-4">
-            <div class="card-body">
-                <%# UPDATED: Filters are now in a form that submits on change %>
-                <form action="/products/manage" method="GET" id="inventory-filter-form">
-                    <div class="row g-3 mb-4">
-                        <div class="col-lg-6">
-                            <input type="text" class="form-control form-control-lg form-control-clean" name="q" placeholder="Search by name or SKU..." value="<%= filters.q || '' %>">
+    <div class="mb-4 overflow-x-auto">
+        <div class="nav nav-pills flex-nowrap gap-2" id="product-tabs" role="tablist">
+            <button class="nav-link active rounded-pill px-4 border-0" id="inventory-tab" data-bs-toggle="tab" data-bs-target="#nav-inventory" type="button" role="tab">
+                <i class="bi bi-box-seam me-2"></i>My Inventory
+            </button>
+            <button class="nav-link rounded-pill px-4 border-0 text-secondary bg-light" id="import-tab" data-bs-toggle="tab" data-bs-target="#nav-import" type="button" role="tab">
+                <i class="bi bi-cloud-download me-2"></i>Import New
+            </button>
+        </div>
+    </div>
+
+    <div class="tab-content" id="nav-tabContent">
+        <div class="tab-pane fade show active" id="nav-inventory" role="tabpanel" tabindex="0">
+            <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+                <div class="card-header bg-white border-bottom-0 p-4">
+                    <form action="/products/manage" method="GET" class="row g-3">
+                        <div class="col-md-6">
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-0"><i class="bi bi-search text-secondary"></i></span>
+                                <input type="text" class="form-control bg-light border-0" name="q" placeholder="Search by name or SKU..." value="<%= filters.q || '' %>">
+                            </div>
                         </div>
-                        <div class="col-lg-3">
-                            <select class="form-select form-select-lg form-control-clean" name="brand" onchange="this.form.submit()">
+                        <div class="col-md-3">
+                            <select class="form-select bg-light border-0" name="brand" onchange="this.form.submit()">
                                 <option value="">All Brands</option>
                                 <% const brands = [...new Set(localProducts.map(p => p.brand))]; %>
                                 <% brands.sort().forEach(brand => { %>
@@ -57,156 +42,185 @@
                                 <% }) %>
                             </select>
                         </div>
-                        <div class="col-lg-3">
-                            <select class="form-select form-select-lg form-control-clean" name="sort" onchange="this.form.submit()">
-                                <option value="date-desc" <%= (filters.sort === 'date-desc' || !filters.sort) ? 'selected' : '' %>>Sort by Date (Newest)</option>
-                                <option value="date-asc" <%= (filters.sort === 'date-asc') ? 'selected' : '' %>>Sort by Date (Oldest)</option>
-                                <option value="name-asc" <%= (filters.sort === 'name-asc') ? 'selected' : '' %>>Sort by Name (A-Z)</option>
-                                <option value="name-desc" <%= (filters.sort === 'name-desc') ? 'selected' : '' %>>Sort by Name (Z-A)</option>
-                                <option value="price-desc" <%= (filters.sort === 'price-desc') ? 'selected' : '' %>>Sort by Price (High-Low)</option>
-                                <option value="price-asc" <%= (filters.sort === 'price-asc') ? 'selected' : '' %>>Sort by Price (Low-High)</option>
+                        <div class="col-md-3">
+                            <select class="form-select bg-light border-0" name="sort" onchange="this.form.submit()">
+                                <option value="date-desc">Newest First</option>
+                                <option value="price-desc">Price: High to Low</option>
+                                <option value="price-asc">Price: Low to High</option>
                             </select>
                         </div>
-                    </div>
-                </form>
-
-                <form action="/products/delete-multiple" method="POST" id="inventory-delete-form">
-                    <div class="table-responsive">
-                        <table class="table table-hover align-middle" id="inventory-table">
-                            <thead>
-                                <tr>
-                                    <th style="width: 5%;"><input class="form-check-input" type="checkbox" id="select-all-inventory"></th>
-                                    <th style="width: 10%;">Image</th>
-                                    <th>Name</th>
-                                    <th>SKU</th>
-                                    <th>Price</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <% localProducts.forEach(product => { %>
-                                    <tr>
-                                        <td><input class="form-check-input inventory-checkbox" type="checkbox" name="productIds" value="<%= product._id %>"></td>
-                                        <td><img src="<%= product.thumbnailUrl %>" alt="<%= product.name %>" class="img-fluid rounded-2"></td>
-                                        <td>
-                                            <div class="fw-semibold"><%= product.name %></div>
-                                            <div class="small text-body-secondary"><%= product.brand %></div>
-                                        </td>
-                                        <td><small class="text-monospace text-body-secondary"><%= product.sku %></small></td>
-                                        <td class="fw-semibold product-price">$<%= product.retailPrice %></td>
-                                        <td>
-                                            <a href="/products/stock/<%= product._id %>" class="btn btn-sm btn-outline-secondary me-1" title="Edit Stock">
-                                                <i class="bi bi-pencil-square"></i>
-                                            </a>
-                                        </td>
-                                    </tr>
-                                <% }) %>
-                            </tbody>
-                        </table>
-                    </div>
-                </form>
-                <% if (!localProducts || localProducts.length === 0) { %>
-                    <p class="text-body-secondary p-4 text-center">No products found for your current filter.</p>
-                <% } %>
-                
-            </div>
-        </div>
-    </div>
-
-    <%# Import Products Pane %>
-    <div class="tab-pane fade" id="nav-import" role="tabpanel" aria-labelledby="nav-import-tab" tabindex="0">
-        <div class="dashboard-card mt-4">
-            <div class="card-body">
-                <div class="mb-4">
-                    <h2 class="h4 card-title">Find Products to Import</h2>
-                    <p class="card-subtitle text-body-secondary">Search The Sneaker Database and select products to add to your store.</p>
+                    </form>
                 </div>
-                <form id="search-form" action="/products/search" method="POST">
-                    <div class="row g-3">
-                        <div class="col-lg-5">
-                            <input type="text" class="form-control form-control-lg form-control-clean" name="query" placeholder="e.g., Jordan 1 Retro High OG" required>
+
+                <div class="card-body p-0">
+                    <% if (localProducts && localProducts.length > 0) { %>
+                        <div class="table-responsive d-none d-md-block">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="bg-light">
+                                    <tr>
+                                        <th class="ps-4 py-3 text-secondary small text-uppercase border-0">Product</th>
+                                        <th class="py-3 text-secondary small text-uppercase border-0">SKU</th>
+                                        <th class="py-3 text-secondary small text-uppercase border-0">Price</th>
+                                        <th class="py-3 text-secondary small text-uppercase border-0">Stock</th>
+                                        <th class="pe-4 py-3 text-end text-secondary small text-uppercase border-0">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <% localProducts.forEach(product => { %>
+                                        <tr>
+                                            <td class="ps-4">
+                                                <div class="d-flex align-items-center">
+                                                    <img src="<%= product.thumbnailUrl %>" alt="" class="rounded-3 me-3 border" style="width: 48px; height: 48px; object-fit: contain; background: #f8f9fa;">
+                                                    <div>
+                                                        <div class="fw-bold text-dark"><%= product.name %></div>
+                                                        <small class="text-body-secondary"><%= product.brand %></small>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td><span class="badge bg-light text-dark border font-monospace"><%= product.sku %></span></td>
+                                            <td class="fw-bold">$<%= product.retailPrice %></td>
+                                            <td>
+                                                <% 
+                                                    const totalStock = product.stock ? Object.values(product.stock).reduce((a, b) => a + b, 0) : 0;
+                                                %>
+                                                <% if (totalStock > 0) { %>
+                                                    <span class="text-success small fw-bold"><i class="bi bi-check-circle-fill me-1"></i> <%= totalStock %> in stock</span>
+                                                <% } else { %>
+                                                    <span class="text-danger small fw-bold"><i class="bi bi-x-circle-fill me-1"></i> Out of stock</span>
+                                                <% } %>
+                                            </td>
+                                            <td class="text-end pe-4">
+                                                <a href="/products/stock/<%= product._id %>" class="btn btn-sm btn-light border rounded-pill px-3">Edit</a>
+                                            </td>
+                                        </tr>
+                                    <% }) %>
+                                </tbody>
+                            </table>
                         </div>
-                        <div class="col-lg-2">
-                            <select class="form-select form-select-lg form-control-clean" name="brand">
-                                <option value="">Any Brand</option>
-                                <option>Nike</option>
-                                <option>Jordan</option>
-                                <option>adidas</option>
-                                <option>New Balance</option>
-                                <option>Puma</option>
-                            </select>
+
+                        <div class="d-md-none">
+                            <% localProducts.forEach(product => { %>
+                                <div class="p-3 border-bottom d-flex gap-3 align-items-center">
+                                    <img src="<%= product.thumbnailUrl %>" alt="" class="rounded-3 border" style="width: 64px; height: 64px; object-fit: contain; background: #f8f9fa;">
+                                    <div class="flex-grow-1">
+                                        <h6 class="fw-bold mb-1 text-truncate" style="max-width: 200px;"><%= product.name %></h6>
+                                        <div class="d-flex gap-2 mb-1">
+                                            <span class="badge bg-light text-dark border"><%= product.brand %></span>
+                                            <span class="fw-bold small">$<%= product.retailPrice %></span>
+                                        </div>
+                                        <div class="small text-secondary text-truncate">SKU: <%= product.sku %></div>
+                                    </div>
+                                    <a href="/products/stock/<%= product._id %>" class="btn btn-icon-sm btn-light border rounded-circle flex-shrink-0">
+                                        <i class="bi bi-pencil-fill small"></i>
+                                    </a>
+                                </div>
+                            <% }) %>
                         </div>
-                        <div class="col-lg-2">
-                            <select class="form-select form-select-lg form-control-clean" name="gender">
-                                <option value="">Any Gender</option>
-                                <option>men</option>
-                                <option>women</option>
-                                <option>child</option>
-                                <option>unisex</option>
-                            </select>
+                    <% } else { %>
+                        <div class="text-center p-5">
+                            <div class="bg-light rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px;">
+                                <i class="bi bi-box text-secondary fs-4"></i>
+                            </div>
+                            <p class="text-secondary mb-0">No products found.</p>
                         </div>
-                        <div class="col-lg-3 d-grid">
-                            <button class="btn btn-primary btn-lg" type="submit" id="search-button">
-                                <i class="bi bi-search"></i> Search
-                            </button>
-                        </div>
-                    </div>
-                    <div class="form-check mt-3">
-                        <input class="form-check-input" type="checkbox" name="hasDescription" value="true" id="hasDescriptionCheck">
-                        <label class="form-check-label" for="hasDescriptionCheck">
-                            Must have description
-                        </label>
-                    </div>
-                </form>
+                    <% } %>
+                </div>
             </div>
         </div>
 
-        <form action="/products/import-multiple" method="POST" id="multi-import-form">
-            <div id="results-container" class="row row-cols-1 row-cols-sm-2 row-cols-lg-3 row-cols-xl-4 g-4 mt-1">
-                <% if (apiProducts && apiProducts.length > 0) { %>
-                    <% apiProducts.forEach(product => { %>
-                        <div class="col">
-                            <div class="card h-100 product-import-card">
-                                <input type="checkbox" name="selectedProducts" class="product-checkbox" value='<%- JSON.stringify(product) %>'>
-                                <img src="<%= product.image.thumbnail %>" class="card-img-top p-3" alt="<%= product.name %>" style="object-fit: contain; height: 200px;">
-                                <div class="card-body d-flex flex-column">
-                                    <h5 class="card-title small fw-semibold"><%= product.name %></h5>
-                                    <p class="card-text text-body-secondary small mt-auto"><%= product.brand %> | SKU: <%= product.sku %></p>
-                                    <h6 class="card-subtitle mt-2 fw-bold">$<%= product.retailPrice %></h6>
-                                </div>
+        <div class="tab-pane fade" id="nav-import" role="tabpanel" tabindex="0">
+            <div class="card border-0 shadow-sm rounded-4 mb-4">
+                <div class="card-body p-4">
+                    <h5 class="fw-bold mb-1">Search Database</h5>
+                    <p class="text-secondary small mb-4">Find and import products from the global sneaker database.</p>
+                    
+                    <form id="search-form" class="row g-3">
+                        <div class="col-lg-8">
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-0"><i class="bi bi-search"></i></span>
+                                <input type="text" class="form-control bg-light border-0" name="query" placeholder="e.g., Jordan 1 Retro High" required>
                             </div>
                         </div>
-                    <% }) %>
-                <% } else { %>
-                    <div class="col-12 mt-4">
-                        <div class="text-center p-5 dashboard-card">
-                            <p class="h4 text-body-secondary">No API results to show. Try a new search.</p>
+                        <div class="col-lg-4 d-grid">
+                            <button class="btn btn-dark rounded-pill" type="submit" id="search-button">Search</button>
                         </div>
-                    </div>
-                <% } %>
+                        <div class="col-12">
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="checkbox" name="hasDescription" value="true" id="hasDesc" checked>
+                                <label class="form-check-label small text-secondary" for="hasDesc">Must have description</label>
+                            </div>
+                        </div>
+                    </form>
+                </div>
             </div>
-        </form>
+
+            <form action="/products/import-multiple" method="POST" id="multi-import-form">
+                <div id="results-container" class="row row-cols-2 row-cols-md-3 row-cols-lg-4 g-3">
+                    <div class="col-12 text-center py-5">
+                        <p class="text-secondary">Search for products to begin importing.</p>
+                    </div>
+                </div>
+            </form>
+        </div>
     </div>
 </div>
 
 <div class="floating-action-bar" id="import-action-bar">
-    <div class="container d-flex justify-content-between align-items-center">
-        <h2 class="h5 mb-0 text-white">
-            <span id="selected-import-count">0</span> Products Selected
-        </h2>
-        <button type="submit" form="multi-import-form" class="btn btn-light btn-lg">
-            <i class="bi bi-download"></i> Import Selected
+    <div class="d-flex justify-content-between align-items-center gap-3">
+        <span class="fw-bold text-white small"><span id="selected-import-count">0</span> Selected</span>
+        <button type="submit" form="multi-import-form" class="btn btn-light btn-sm rounded-pill fw-bold px-3">
+            Import Now
         </button>
     </div>
 </div>
 
-<div class="floating-action-bar" id="delete-action-bar">
-    <div class="container d-flex justify-content-between align-items-center">
-        <h2 class="h5 mb-0 text-white">
-            <span id="selected-delete-count">0</span> Products Selected
-        </h2>
-        <button type="submit" form="inventory-delete-form" class="btn btn-danger btn-lg">
-            <i class="bi bi-trash"></i> Delete Selected
-        </button>
-    </div>
-</div>
+<style>
+    .settings-page-wrapper {
+        margin: 0 auto;
+        padding: 1rem;
+    }
+    .btn-icon {
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid var(--border-color);
+    }
+    .btn-icon-sm {
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    /* Nav Pills Styling */
+    .nav-pills .nav-link {
+        color: var(--text-color);
+        font-weight: 500;
+        transition: all 0.2s;
+    }
+    .nav-pills .nav-link.active {
+        background-color: var(--nike-black);
+        color: #fff;
+    }
+</style>
+
+<script>
+    // JS for Import Tab (Simplified for brevity, assumes main.js handles the fetch logic)
+    // This ensures the tabs toggle correctly
+    const tabs = document.querySelectorAll('#product-tabs button');
+    tabs.forEach(tab => {
+        tab.addEventListener('click', function (event) {
+            event.preventDefault();
+            // Bootstrap Tab Logic is handled via data-bs-target, but we can add custom visual logic here if needed
+            tabs.forEach(t => {
+                t.classList.remove('active', 'bg-dark', 'text-white');
+                t.classList.add('text-secondary', 'bg-light');
+            });
+            this.classList.add('active', 'bg-dark', 'text-white');
+            this.classList.remove('text-secondary', 'bg-light');
+        })
+    });
+</script>

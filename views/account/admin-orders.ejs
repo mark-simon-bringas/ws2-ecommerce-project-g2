@@ -1,68 +1,230 @@
-<div class="page-header d-flex justify-content-between align-items-center">
-    <div>
-        <h1>Order Management</h1>
-        <p class="text-body-secondary">View and manage all customer orders.</p>
+<div class="settings-page-wrapper" style="max-width: 1000px;">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4">
+        <div class="d-flex align-items-center mb-3 mb-md-0">
+            <a href="/account/settings" class="btn btn-icon btn-light rounded-circle me-3">
+                <i class="bi bi-arrow-left"></i>
+            </a>
+            <div>
+                <h1 class="h3 fw-bold mb-0">Orders</h1>
+                <p class="text-body-secondary small mb-0">Manage customer shipments</p>
+            </div>
+        </div>
+        <div class="d-flex gap-2">
+            <div class="input-group">
+                <span class="input-group-text bg-white border-end-0 rounded-start-pill ps-3"><i class="bi bi-search text-secondary"></i></span>
+                <input type="text" id="order-search" class="form-control border-start-0 rounded-end-pill" placeholder="Search orders..." style="max-width: 200px;">
+            </div>
+        </div>
     </div>
-</div>
 
-<% if (typeof message !== 'undefined' && message) { %>
-    <div class="alert alert-success alert-dismissible fade show" role="alert">
-        <%= message %>
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    <% if (typeof message !== 'undefined' && message) { %>
+        <div class="alert alert-success alert-dismissible fade show rounded-4 border-0 shadow-sm mb-4" role="alert">
+            <i class="bi bi-check-circle-fill me-2"></i> <%= message %>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    <% } %>
+
+    <div class="mb-4 overflow-x-auto">
+        <ul class="nav nav-pills flex-nowrap gap-2" id="order-filters">
+            <li class="nav-item"><button class="nav-link active rounded-pill px-4 bg-dark" data-filter="all">All</button></li>
+            <li class="nav-item"><button class="nav-link rounded-pill px-4 text-secondary bg-light" data-filter="Processing">Processing</button></li>
+            <li class="nav-item"><button class="nav-link rounded-pill px-4 text-secondary bg-light" data-filter="Shipped">Shipped</button></li>
+            <li class="nav-item"><button class="nav-link rounded-pill px-4 text-secondary bg-light" data-filter="Delivered">Delivered</button></li>
+        </ul>
     </div>
-<% } %>
 
-<div class="dashboard-card">
-    <div class="card-body">
-        <% if (orders && orders.length > 0) { %>
-            <div class="table-responsive">
-                <table class="table table-hover align-middle">
-                    <thead class="table-light">
-                        <tr>
-                            <th>Order ID</th>
-                            <th>Date</th>
-                            <th>Customer</th>
-                            <th>Total</th>
-                            <th>Status</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <% orders.forEach(order => { %>
+    <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+        <div class="card-body p-0">
+            <% if (orders && orders.length > 0) { %>
+                <div class="table-responsive d-none d-md-block">
+                    <table class="table table-hover align-middle mb-0" id="orders-table">
+                        <thead class="bg-light">
                             <tr>
-                                <td>
-                                    <a href="/account/admin/orders/<%= order._id %>" class="fw-semibold">
-                                        ...<%= order._id.toString().slice(-6) %>
-                                    </a>
-                                </td>
-                                <td><%= new Date(order.orderDate).toLocaleDateString() %></td>
-                                <td><%= order.customer.firstName %> <%= order.customer.lastName %></td>
-                                <td class="fw-bold"><%= order.total.toLocaleString('en-US', { style: 'currency', currency: 'USD' }) %></td>
-                                <td>
-                                    <% if (order.status === 'Processing') { %>
-                                        <span class="badge bg-info-subtle text-info-emphasis rounded-pill"><%= order.status %></span>
-                                    <% } else if (order.status === 'Shipped') { %>
-                                        <span class="badge bg-primary-subtle text-primary-emphasis rounded-pill"><%= order.status %></span>
-                                    <% } else if (order.status === 'Cancelled') { %>
-                                        <span class="badge bg-secondary-subtle text-secondary-emphasis rounded-pill"><%= order.status %></span>
-                                    <% } else { %>
-                                        <span class="badge bg-success-subtle text-success-emphasis rounded-pill"><%= order.status %></span>
-                                    <% } %>
-                                </td>
-                                <td>
-                                    <a href="/account/admin/orders/<%= order._id %>" class="btn btn-sm btn-outline-secondary">
-                                        <i class="bi bi-eye"></i> View
-                                    </a>
-                                </td>
+                                <th class="ps-4 py-3 text-secondary small text-uppercase border-0">Order ID</th>
+                                <th class="py-3 text-secondary small text-uppercase border-0">Date</th>
+                                <th class="py-3 text-secondary small text-uppercase border-0">Customer</th>
+                                <th class="py-3 text-secondary small text-uppercase border-0">Total</th>
+                                <th class="py-3 text-secondary small text-uppercase border-0">Status</th>
+                                <th class="pe-4 py-3 text-end text-secondary small text-uppercase border-0">Action</th>
                             </tr>
-                        <% }) %>
-                    </tbody>
-                </table>
-            </div>
-        <% } else { %>
-            <div class="text-center p-5">
-                <p class="lead text-body-secondary">There are no orders to display yet.</p>
-            </div>
-        <% } %>
+                        </thead>
+                        <tbody>
+                            <% orders.forEach(order => { %>
+                                <tr class="order-item" data-status="<%= order.status %>">
+                                    <td class="ps-4">
+                                        <span class="fw-medium text-dark order-id">#<%= order._id.toString().slice(-6).toUpperCase() %></span>
+                                    </td>
+                                    <td class="text-secondary"><%= new Date(order.orderDate).toLocaleDateString() %></td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="rounded-circle bg-body-secondary d-flex align-items-center justify-content-center me-2" style="width: 32px; height: 32px; font-size: 0.8rem;">
+                                                <%= order.customer.firstName.charAt(0) %>
+                                            </div>
+                                            <span class="fw-medium customer-name"><%= order.customer.firstName %> <%= order.customer.lastName %></span>
+                                        </div>
+                                    </td>
+                                    <td class="fw-bold">$<%= order.total.toLocaleString(undefined, { minimumFractionDigits: 2 }) %></td>
+                                    <td>
+                                        <% if (order.status === 'Processing') { %>
+                                            <span class="badge bg-info-subtle text-info-emphasis rounded-pill px-3 py-2"><i class="bi bi-hourglass-split me-1"></i> Processing</span>
+                                        <% } else if (order.status === 'Shipped') { %>
+                                            <span class="badge bg-primary-subtle text-primary-emphasis rounded-pill px-3 py-2"><i class="bi bi-truck me-1"></i> Shipped</span>
+                                        <% } else if (order.status === 'Cancelled') { %>
+                                            <span class="badge bg-secondary-subtle text-secondary-emphasis rounded-pill px-3 py-2"><i class="bi bi-x-circle me-1"></i> Cancelled</span>
+                                        <% } else { %>
+                                            <span class="badge bg-success-subtle text-success-emphasis rounded-pill px-3 py-2"><i class="bi bi-check-circle me-1"></i> Delivered</span>
+                                        <% } %>
+                                    </td>
+                                    <td class="text-end pe-4">
+                                        <a href="/account/admin/orders/<%= order._id %>" class="btn btn-sm btn-light rounded-circle border">
+                                            <i class="bi bi-chevron-right"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                            <% }) %>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="d-md-none" id="orders-list-mobile">
+                    <% orders.forEach(order => { %>
+                        <div class="p-4 border-bottom order-item" data-status="<%= order.status %>">
+                            <div class="d-flex justify-content-between align-items-start mb-3">
+                                <div>
+                                    <h6 class="fw-bold mb-1 order-id">#<%= order._id.toString().slice(-6).toUpperCase() %></h6>
+                                    <p class="text-secondary small mb-0"><%= new Date(order.orderDate).toLocaleDateString() %> • <%= order.items.length %> Items</p>
+                                </div>
+                                <% if (order.status === 'Processing') { %>
+                                    <span class="badge bg-info-subtle text-info-emphasis rounded-pill">Processing</span>
+                                <% } else if (order.status === 'Shipped') { %>
+                                    <span class="badge bg-primary-subtle text-primary-emphasis rounded-pill">Shipped</span>
+                                <% } else if (order.status === 'Cancelled') { %>
+                                    <span class="badge bg-secondary-subtle text-secondary-emphasis rounded-pill">Cancelled</span>
+                                <% } else { %>
+                                    <span class="badge bg-success-subtle text-success-emphasis rounded-pill">Delivered</span>
+                                <% } %>
+                            </div>
+                            <div class="d-flex align-items-center gap-3 mb-3">
+                                <div class="rounded-circle bg-body-secondary d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                    <%= order.customer.firstName.charAt(0) %>
+                                </div>
+                                <div>
+                                    <p class="mb-0 fw-medium customer-name"><%= order.customer.firstName %> <%= order.customer.lastName %></p>
+                                    <p class="text-secondary small mb-0"><%= order.customer.email %></p>
+                                </div>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="fw-bold fs-5">$<%= order.total.toLocaleString(undefined, { minimumFractionDigits: 2 }) %></span>
+                                <a href="/account/admin/orders/<%= order._id %>" class="btn btn-outline-secondary btn-sm rounded-pill px-3">
+                                    View Details
+                                </a>
+                            </div>
+                        </div>
+                    <% }) %>
+                </div>
+
+                <div id="no-results" class="text-center p-5 d-none">
+                    <div class="bg-light rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px;">
+                        <i class="bi bi-search text-secondary fs-4"></i>
+                    </div>
+                    <p class="text-secondary mb-0">No orders match your search.</p>
+                </div>
+
+            <% } else { %>
+                <div class="text-center p-5">
+                    <div class="bg-light rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px;">
+                        <i class="bi bi-inbox text-secondary fs-4"></i>
+                    </div>
+                    <p class="text-secondary mb-0">No orders found.</p>
+                </div>
+            <% } %>
+        </div>
     </div>
 </div>
+
+<style>
+    .settings-page-wrapper {
+        margin: 0 auto;
+        padding: 1rem;
+    }
+    .btn-icon {
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid var(--border-color);
+    }
+    /* Hide scrollbar for tabs */
+    .overflow-x-auto::-webkit-scrollbar {
+        display: none;
+    }
+    .overflow-x-auto {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const searchInput = document.getElementById('order-search');
+        const filterButtons = document.querySelectorAll('#order-filters button');
+        const orderItems = document.querySelectorAll('.order-item');
+        const noResults = document.getElementById('no-results');
+
+        let currentFilter = 'all';
+        let currentSearch = '';
+
+        function filterOrders() {
+            let visibleCount = 0;
+
+            orderItems.forEach(item => {
+                const status = item.dataset.status;
+                const id = item.querySelector('.order-id').textContent.toLowerCase();
+                const name = item.querySelector('.customer-name').textContent.toLowerCase();
+                const searchMatch = id.includes(currentSearch) || name.includes(currentSearch);
+                const statusMatch = currentFilter === 'all' || status === currentFilter;
+
+                if (searchMatch && statusMatch) {
+                    item.style.display = ''; // Reset to default (table-row or block)
+                    // For table rows, we need to ensure they display as table-row
+                    if (item.tagName === 'TR') item.style.display = 'table-row';
+                    else item.style.display = 'block';
+                    visibleCount++;
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+
+            // Toggle No Results message
+            if (noResults) {
+                noResults.classList.toggle('d-none', visibleCount > 0);
+            }
+        }
+
+        // Search Listener
+        if (searchInput) {
+            searchInput.addEventListener('input', (e) => {
+                currentSearch = e.target.value.toLowerCase();
+                filterOrders();
+            });
+        }
+
+        // Filter Tabs Listener
+        filterButtons.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                // Update active state visually
+                filterButtons.forEach(b => {
+                    b.classList.remove('active', 'bg-dark');
+                    b.classList.add('text-secondary', 'bg-light');
+                });
+                e.target.classList.add('active', 'bg-dark');
+                e.target.classList.remove('text-secondary', 'bg-light');
+
+                currentFilter = e.target.dataset.filter;
+                filterOrders();
+            });
+        });
+    });
+</script>

@@ -285,8 +285,9 @@
         backdrop-filter: blur(8px);
     }
 
+    /* UPDATED: Removed extra padding below footer */
     body {
-        padding-bottom: 90px; 
+        padding-bottom: 0; 
     }
     .dashboard-layout body {
         padding-bottom: 0;

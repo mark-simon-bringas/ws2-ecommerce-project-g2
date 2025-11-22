@@ -12,16 +12,21 @@
     </div>
 
     <div class="row justify-content-center">
-        <div class="col-lg-12">
+        <div class="col-lg-8 px-0 px-lg-3">
             <div class="chat-container">
                 <div class="chat-header">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div style="min-width: 0;">
-                            <h1 class="mb-0 text-truncate">Ticket #<%= ticket.ticketId %></h1>
-                            <p class="text-body-secondary small mb-0 text-truncate">Subject: <%= ticket.subject %></p>
+                    <div class="d-flex align-items-center">
+                        <a href="/account/admin/inbox" class="btn btn-icon-sm btn-light rounded-circle me-3 d-lg-none flex-shrink-0 text-dark border-0" style="width: 32px; height: 32px;">
+                            <i class="bi bi-arrow-left"></i>
+                        </a>
+
+                        <div class="flex-grow-1 min-w-0 me-2">
+                            <h1 class="mb-0 text-truncate fs-6 fw-bold">Ticket #<%= ticket.ticketId %></h1>
+                            <p class="text-body-secondary small mb-0 text-truncate"><%= ticket.subject %></p>
                         </div>
-                        <form action="/account/admin/tickets/<%= ticket.ticketId %>/update-status" method="POST" class="d-flex align-items-center gap-2 ms-2 flex-shrink-0">
-                            <select name="status" class="form-select form-select-sm w-auto" onchange="this.form.submit()">
+
+                        <form action="/account/admin/tickets/<%= ticket.ticketId %>/update-status" method="POST" class="d-flex align-items-center gap-2 flex-shrink-0">
+                            <select name="status" class="form-select form-select-sm w-auto border-0 bg-light fw-medium" style="min-width: 90px;" onchange="this.form.submit()">
                                 <option value="Open" <%= ticket.status === 'Open' ? 'selected' : '' %>>Open</option>
                                 <option value="Answered" <%= ticket.status === 'Answered' ? 'selected' : '' %>>Answered</option>
                                 <option value="Closed" <%= ticket.status === 'Closed' ? 'selected' : '' %>>Closed</option>
@@ -32,7 +37,6 @@
 
                 <div class="chat-messages" id="chat-messages">
                     <% ticket.messages.forEach(message => { %>
-                        <%# Logic Swap: In Admin View, Admin is 'User' (Right), Customer is 'Support' (Left) for visual consistency %>
                         <% if (message.sender === 'admin') { %>
                             <div class="chat-message user-message">
                                 <div class="message-bubble">
@@ -73,7 +77,7 @@
                     </div>
                 <% } else { %>
                      <div class="chat-reply-form text-center bg-light">
-                        <p class="text-body-secondary mb-0 small">This ticket is closed. Replying will re-open it.</p>
+                        <p class="text-body-secondary mb-0 small">This ticket is closed.</p>
                          <form id="reply-form" class="mt-2">
                             <div class="reply-box-wrapper">
                                 <textarea 
@@ -89,6 +93,28 @@
                         </form>
                     </div>
                 <% } %>
+            </div>
+        </div>
+
+        <div class="col-lg-4 d-none d-lg-block">
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-body p-4">
+                    <h6 class="fw-bold mb-3">Customer Details</h6>
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="rounded-circle bg-body-secondary d-flex align-items-center justify-content-center me-3" style="width: 48px; height: 48px;">
+                            <i class="bi bi-person-fill fs-4 text-secondary"></i>
+                        </div>
+                        <div>
+                            <div class="fw-bold text-truncate" style="max-width: 150px;"><%= ticket.userEmail %></div>
+                            <small class="text-body-secondary">Customer</small>
+                        </div>
+                    </div>
+                    <hr>
+                    <h6 class="fw-bold mb-2">Ticket Info</h6>
+                    <p class="small text-body-secondary mb-1"><strong>ID:</strong> <%= ticket.ticketId %></p>
+                    <p class="small text-body-secondary mb-1"><strong>Created:</strong> <%= new Date(ticket.createdAt).toLocaleDateString() %></p>
+                    <p class="small text-body-secondary mb-0"><strong>Subject:</strong> <%= ticket.subject %></p>
+                </div>
             </div>
         </div>
     </div>
@@ -166,10 +192,8 @@
 
         function appendMessage(message) {
             const messageElement = document.createElement('div');
-            // Logic Swap: Check if sender is admin to decide side
             const isAdminMessage = message.sender === 'admin';
             
-            // Apply CSS classes based on "My Message" (user-message) vs "Their Message" (support-message)
             messageElement.classList.add('chat-message', isAdminMessage ? 'user-message' : 'support-message');
             
             const bubble = document.createElement('div');
@@ -180,7 +204,6 @@
             meta.classList.add('message-meta');
             
             const timeString = new Date(message.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-            // If I sent it (Admin), say "You", otherwise show Customer Name
             const senderName = isAdminMessage ? 'You' : message.name;
             
             meta.textContent = `${senderName} • ${timeString}`;

@@ -1,6 +1,7 @@
 <div class="container mt-0 my-lg-5 pt-0 support-page-wrapper">
     <div class="row g-4 justify-content-center">
-        <div class="col-lg-8 px-0 px-lg-3"> <div class="chat-container">
+        <div class="col-lg-8 px-0 px-lg-3">
+            <div class="chat-container">
                 <div class="chat-header">
                     <div class="d-flex justify-content-between align-items-center">
                         <div style="min-width: 0;">
@@ -27,7 +28,7 @@
                                     <%- message.message.replace(/\n/g, '<br>') %>
                                 </div>
                                 <div class="message-meta">
-                                    <%= new Date(message.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) %>
+                                    You • <%= new Date(message.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) %>
                                 </div>
                             </div>
                         <% } else { %>
@@ -36,7 +37,7 @@
                                     <%- message.message.replace(/\n/g, '<br>') %>
                                 </div>
                                 <div class="message-meta">
-                                    <%= message.adminName || 'Support' %> • <%= new Date(message.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) %>
+                                    <%= message.adminName || 'Support Team' %> • <%= new Date(message.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) %>
                                 </div>
                             </div>
                         <% } %>
@@ -64,7 +65,10 @@
                     </div>
                 <% } else { %>
                     <div class="chat-reply-form text-center bg-light">
-                        <p class="text-body-secondary mb-0 small">This ticket is closed. <a href="/support/contact" class="text-decoration-underline">Open a new ticket</a>.</p>
+                        <p class="text-body-secondary mb-0 small">
+                            This ticket is closed. 
+                            <a href="/support/contact" class="text-decoration-underline text-dark fw-medium">Open a new ticket</a>
+                        </p>
                     </div>
                 <% } %>
             </div>
@@ -98,7 +102,6 @@
     </div>
 </div>
 
-
 <script src="/socket.io/socket.io.js"></script>
 
 <script>
@@ -108,41 +111,41 @@
         const replyForm = document.getElementById('reply-form');
         const messageInput = document.getElementById('message-input');
         const ticketId = '<%= ticket.ticketId %>';
-        const userName = '<%= ticket.messages[0].name %>';
+        // In user view, userName is essentially "Me", used if the server broadcasts back to me (rare, usually handled by append)
+        // but good for consistency
+        const userName = '<%= ticket.messages[0].name %>'; 
 
-        // Scroll to bottom immediately
+        // Scroll to bottom function
         const scrollToBottom = () => {
             if (chatMessages) {
                 chatMessages.scrollTop = chatMessages.scrollHeight;
             }
         };
-        // Use requestAnimationFrame to ensure rendering is done before scrolling
+        // Use requestAnimationFrame to ensure rendering is complete before scrolling
         window.requestAnimationFrame(scrollToBottom);
 
-        // 1. Join the specific ticket room
+        // 1. Join Room
         socket.emit('joinTicket', ticketId);
 
-        // 2. Listen for new messages
+        // 2. Listen for messages
         socket.on('newMessage', (message) => {
             appendMessage(message);
         });
 
-        // 3. Auto-resize Textarea Logic
+        // 3. Auto-resize Textarea
         if (messageInput) {
             messageInput.addEventListener('input', function() {
-                this.style.height = 'auto'; // Reset height to recalculate
+                this.style.height = 'auto'; 
                 this.style.height = (this.scrollHeight) + 'px';
-                
-                // Optional: Ensure we scroll to bottom if text grows
                 scrollToBottom();
             });
 
-            // 4. Handle Shift+Enter vs Enter
+            // Handle Shift+Enter
             messageInput.addEventListener('keydown', function(e) {
                 if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault(); // Prevent default newline
+                    e.preventDefault(); 
                     if (this.value.trim() !== '') {
-                        sendMessage(); // Submit
+                        sendMessage();
                     }
                 }
             });
@@ -165,12 +168,10 @@
                     name: userName
                 };
                 
-                // Emit to server
                 socket.emit('chatMessage', messageData);
                 
-                // Reset Input
                 messageInput.value = '';
-                messageInput.style.height = 'auto'; // Reset size
+                messageInput.style.height = 'auto'; 
                 messageInput.focus();
             }
         }
@@ -188,11 +189,10 @@
             const meta = document.createElement('div');
             meta.classList.add('message-meta');
             
-            // Format time short (e.g., 10:30 AM)
             const timeString = new Date(message.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-            const senderName = isUserMessage ? '' : (message.adminName || 'Support') + ' • ';
+            const senderName = isUserMessage ? 'You' : (message.adminName || 'Support Team');
             
-            meta.textContent = `${senderName}${timeString}`;
+            meta.textContent = `${senderName} • ${timeString}`;
 
             messageElement.appendChild(bubble);
             messageElement.appendChild(meta);

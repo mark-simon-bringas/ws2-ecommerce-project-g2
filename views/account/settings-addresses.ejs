@@ -1,0 +1,213 @@
+<div class="settings-page-wrapper">
+    <div class="d-flex align-items-center mb-4">
+        <a href="/account/settings" class="btn btn-icon btn-light rounded-circle me-3">
+            <i class="bi bi-arrow-left"></i>
+        </a>
+        <div>
+            <h1 class="h3 fw-bold mb-0">Addresses</h1>
+            <p class="text-body-secondary small mb-0">Manage shipping and billing addresses</p>
+        </div>
+    </div>
+
+    <% if (typeof message !== 'undefined' && message) { %>
+        <div class="alert alert-success alert-dismissible fade show rounded-4 border-0 shadow-sm mb-4" role="alert">
+            <i class="bi bi-check-circle-fill me-2"></i> <%= message %>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    <% } %>
+    
+    <% if (typeof error !== 'undefined' && error) { %>
+        <div class="alert alert-danger alert-dismissible fade show rounded-4 border-0 shadow-sm mb-4" role="alert">
+            <i class="bi bi-exclamation-circle-fill me-2"></i> <%= error %>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    <% } %>
+
+    <button class="btn btn-outline-secondary w-100 rounded-4 border-dashed py-3 mb-4 d-flex align-items-center justify-content-center gap-2" data-bs-toggle="modal" data-bs-target="#addAddressModal">
+        <i class="bi bi-plus-lg"></i> Add New Address
+    </button>
+
+    <% if (user.addresses && user.addresses.length > 0) { %>
+        <div class="d-flex flex-column gap-3">
+            <% user.addresses.forEach(addr => { %>
+                <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+                    <div class="card-body p-4">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="bg-primary-subtle text-primary rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                    <i class="bi bi-house-door-fill"></i>
+                                </div>
+                                <div>
+                                    <h6 class="fw-bold mb-0">
+                                        <%= addr.firstName %> <%= addr.lastName %>
+                                        <% if (addr.isDefault) { %>
+                                            <span class="badge bg-dark ms-2 text-white" style="font-size: 0.65rem; vertical-align: middle;">Default</span>
+                                        <% } %>
+                                    </h6>
+                                </div>
+                            </div>
+                            <div class="d-flex gap-2">
+                                <button class="btn btn-icon-sm btn-light rounded-circle text-secondary" data-bs-toggle="modal" data-bs-target="#editAddressModal-<%= addr.addressId %>">
+                                    <i class="bi bi-pencil-fill"></i>
+                                </button>
+                                <form action="/account/settings/delete-address/<%= addr.addressId %>" method="POST" onsubmit="return confirm('Delete this address?');" style="margin:0;">
+                                    <button type="submit" class="btn btn-icon-sm btn-light rounded-circle text-danger">
+                                        <i class="bi bi-trash-fill"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                        
+                        <div class="ps-5 ms-2">
+                            <p class="text-secondary mb-1 small"><%= addr.address %></p>
+                            <p class="text-secondary mb-1 small"><%= addr.state %>, <%= addr.zip %></p>
+                            <p class="text-secondary mb-3 small"><%= addr.country %></p>
+                            <p class="text-secondary small mb-0"><i class="bi bi-telephone me-2"></i><%= addr.phone %></p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal fade" id="editAddressModal-<%= addr.addressId %>" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content rounded-4 border-0">
+                            <div class="modal-header border-0 pb-0">
+                                <h5 class="modal-title fw-bold">Edit Address</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body pt-4">
+                                <form action="/account/settings/edit-address/<%= addr.addressId %>" method="POST">
+                                    <div class="row g-3 mb-3">
+                                        <div class="col-6">
+                                            <input type="text" class="form-control bg-light border-0" name="firstName" value="<%= addr.firstName %>" placeholder="First Name" required>
+                                        </div>
+                                        <div class="col-6">
+                                            <input type="text" class="form-control bg-light border-0" name="lastName" value="<%= addr.lastName %>" placeholder="Last Name" required>
+                                        </div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <input type="text" class="form-control bg-light border-0" name="address" value="<%= addr.address %>" placeholder="Street Address" required>
+                                    </div>
+                                    <div class="row g-3 mb-3">
+                                        <div class="col-6">
+                                            <input type="text" class="form-control bg-light border-0" name="state" value="<%= addr.state %>" placeholder="State/Region" required>
+                                        </div>
+                                        <div class="col-6">
+                                            <input type="text" class="form-control bg-light border-0" name="zip" value="<%= addr.zip %>" placeholder="Zip Code" required>
+                                        </div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <select class="form-select bg-light border-0" name="country" required>
+                                            <option value="Philippines">Philippines</option>
+                                        </select>
+                                    </div>
+                                    <div class="mb-3">
+                                        <input type="tel" class="form-control bg-light border-0" name="phone" value="<%= addr.phone %>" placeholder="Phone Number" required>
+                                    </div>
+                                    <div class="form-check mb-4">
+                                        <input class="form-check-input" type="checkbox" name="isDefault" id="default-<%= addr.addressId %>" <%= addr.isDefault ? 'checked' : '' %>>
+                                        <label class="form-check-label small text-secondary" for="default-<%= addr.addressId %>">
+                                            Set as default address
+                                        </label>
+                                    </div>
+                                    <div class="d-grid">
+                                        <button type="submit" class="btn btn-dark rounded-pill">Save Changes</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            <% }) %>
+        </div>
+    <% } else { %>
+        <div class="text-center py-5">
+            <div class="bg-light rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px;">
+                <i class="bi bi-geo-alt text-secondary fs-4"></i>
+            </div>
+            <p class="text-secondary">No addresses saved yet.</p>
+        </div>
+    <% } %>
+</div>
+
+<div class="modal fade" id="addAddressModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-4 border-0">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold">Add New Address</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body pt-4">
+                <form action="/account/settings/add-address" method="POST">
+                    <div class="row g-3 mb-3">
+                        <div class="col-6">
+                            <input type="text" class="form-control bg-light border-0" name="firstName" placeholder="First Name" required>
+                        </div>
+                        <div class="col-6">
+                            <input type="text" class="form-control bg-light border-0" name="lastName" placeholder="Last Name" required>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <input type="text" class="form-control bg-light border-0" name="address" placeholder="Street Address" required>
+                    </div>
+                    <div class="row g-3 mb-3">
+                        <div class="col-6">
+                            <input type="text" class="form-control bg-light border-0" name="state" placeholder="State/Region" required>
+                        </div>
+                        <div class="col-6">
+                            <input type="text" class="form-control bg-light border-0" name="zip" placeholder="Zip Code" required>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <select class="form-select bg-light border-0" name="country" required>
+                            <option value="Philippines">Philippines</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <input type="tel" class="form-control bg-light border-0" name="phone" placeholder="Phone Number" required>
+                    </div>
+                    <div class="form-check mb-4">
+                        <input class="form-check-input" type="checkbox" name="isDefault" id="addNewDefault">
+                        <label class="form-check-label small text-secondary" for="addNewDefault">
+                            Set as default address
+                        </label>
+                    </div>
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-dark rounded-pill">Save Address</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .settings-page-wrapper {
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 1rem;
+    }
+    .btn-icon {
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid var(--border-color);
+    }
+    .btn-icon-sm {
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid var(--border-color);
+    }
+    .border-dashed {
+        border-style: dashed !important;
+        border-width: 2px !important;
+    }
+    .form-control:focus, .form-select:focus {
+        background-color: #fff !important;
+        box-shadow: 0 0 0 3px rgba(0,0,0,0.05) !important;
+    }
+</style>

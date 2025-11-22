@@ -1,99 +1,151 @@
-<div class="page-header">
-    <h1>Dashboard Overview</h1>
-    <p class="text-body-secondary">Welcome back, <%= user.firstName %>. Here's a snapshot of your store's activity.</p>
-</div>
+<div class="settings-page-wrapper" style="max-width: 1000px;">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-5">
+        <div class="d-flex align-items-center mb-3 mb-md-0">
+            <a href="/account/settings" class="btn btn-icon btn-light rounded-circle me-3">
+                <i class="bi bi-arrow-left"></i>
+            </a>
+            <div>
+                <h1 class="h3 fw-bold mb-0">Dashboard</h1>
+                <p class="text-body-secondary small mb-0">Store overview & analytics</p>
+            </div>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="/products/manage" class="btn btn-outline-secondary rounded-pill px-3">
+                <i class="bi bi-box-seam me-2"></i> Manage Inventory
+            </a>
+            <a href="/account/admin/sales" class="btn btn-dark rounded-pill px-3">
+                <i class="bi bi-plus-lg me-2"></i> Create Sale
+            </a>
+        </div>
+    </div>
 
-<div class="row g-4">
-    <div class="col-md-6 col-xl-3">
-        <div class="dashboard-card stat-card h-100">
-            <div class="card-body">
-                <div class="stat-details">
-                    <p class="stat-title mb-1">Total Revenue</p>
-                    <p class="stat-value mb-0"><%= data.totalRevenue.toLocaleString('en-US', { style: 'currency', currency: 'USD' }) %></p>
-                    <small class="text-muted mt-2 d-block">All-time sales data</small>
+    <div class="row g-3 mb-5">
+        <div class="col-6 col-lg-3">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-body p-3 p-lg-4">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div class="bg-success-subtle text-success rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                            <i class="bi bi-currency-dollar fs-5"></i>
+                        </div>
+                        <span class="badge bg-success-subtle text-success rounded-pill small">+12%</span>
+                    </div>
+                    <h3 class="fw-bold mb-1"><%= data.totalRevenue.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }) %></h3>
+                    <p class="text-secondary small mb-0">Total Revenue</p>
                 </div>
-                <div class="stat-icon stat-icon-revenue">
-                    <i class="bi bi-currency-dollar"></i>
+            </div>
+        </div>
+        <div class="col-6 col-lg-3">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-body p-3 p-lg-4">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div class="bg-primary-subtle text-primary rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                            <i class="bi bi-bag-fill fs-5"></i>
+                        </div>
+                        <span class="badge bg-primary-subtle text-primary rounded-pill small">+5%</span>
+                    </div>
+                    <h3 class="fw-bold mb-1"><%= data.orderCount %></h3>
+                    <p class="text-secondary small mb-0">Total Orders</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-lg-3">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-body p-3 p-lg-4">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div class="bg-warning-subtle text-warning rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                            <i class="bi bi-people-fill fs-5"></i>
+                        </div>
+                        <span class="badge bg-warning-subtle text-warning-emphasis rounded-pill small">+8%</span>
+                    </div>
+                    <h3 class="fw-bold mb-1"><%= data.userCount %></h3>
+                    <p class="text-secondary small mb-0">Active Users</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-lg-3">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-body p-3 p-lg-4">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div class="bg-info-subtle text-info-emphasis rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                            <i class="bi bi-box-seam-fill fs-5"></i>
+                        </div>
+                    </div>
+                    <h3 class="fw-bold mb-1"><%= data.productCount %></h3>
+                    <p class="text-secondary small mb-0">Products Listed</p>
                 </div>
             </div>
         </div>
     </div>
-    <div class="col-md-6 col-xl-3">
-        <div class="dashboard-card stat-card h-100">
-            <div class="card-body">
-                <div class="stat-details">
-                    <p class="stat-title mb-1">Total Orders</p>
-                    <p class="stat-value mb-0"><%= data.orderCount %></p>
-                    <small class="text-muted mt-2 d-block">Completed & processing</small>
-                </div>
-                <div class="stat-icon stat-icon-orders">
-                    <i class="bi bi-receipt"></i>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-6 col-xl-3">
-        <div class="dashboard-card stat-card h-100">
-            <div class="card-body">
-                <div class="stat-details">
-                    <p class="stat-title mb-1">Total Users</p>
-                    <p class="stat-value mb-0"><%= data.userCount %></p>
-                    <small class="text-muted mt-2 d-block">Registered accounts</small>
-                </div>
-                <div class="stat-icon stat-icon-users">
-                    <i class="bi bi-people-fill"></i>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-6 col-xl-3">
-        <div class="dashboard-card stat-card h-100">
-            <div class="card-body">
-                <div class="stat-details">
-                    <p class="stat-title mb-1">Products</p>
-                    <p class="stat-value mb-0"><%= data.productCount %></p>
-                    <small class="text-muted mt-2 d-block">In your local inventory</small>
-                </div>
-                <div class="stat-icon stat-icon-products">
-                    <i class="bi bi-box-seam-fill"></i>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
 
-<div class="dashboard-card mt-4">
-    <div class="card-body">
-        <h5 class="card-title mb-4 fw-semibold">Recent Activity</h5>
-        
-        <% if (data.recentActivity && data.recentActivity.length > 0) { %>
-            <ul class="list-group list-group-flush">
+    <h5 class="fw-bold mb-3 px-1">Recent Activity</h5>
+    <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+        <div class="list-group list-group-flush">
+            <% if (data.recentActivity && data.recentActivity.length > 0) { %>
                 <% data.recentActivity.forEach(activity => { %>
-                    <li class="list-group-item d-flex justify-content-between align-items-center px-0">
-                        <div>
+                    <div class="list-group-item p-3 d-flex align-items-start gap-3 border-0 border-bottom">
+                        <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 mt-1" style="width: 36px; height: 36px; background-color: var(--bg-color);">
                             <% if (activity.type === 'ORDER') { %>
-                                <i class="bi bi-receipt text-info me-2"></i>
-                                New order #...<%= activity.data._id.toString().slice(-4) %> placed by <%= activity.data.customer.firstName %> for <strong><%= activity.data.total.toLocaleString('en-US', { style: 'currency', currency: 'USD' }) %></strong>
-                            <% } else if (activity.type === 'PRODUCT_IMPORT') { %> <%# FIXED: Changed 'IMPORT' to 'PRODUCT_IMPORT' %>
-                                <i class="bi bi-box-arrow-in-down text-success me-2"></i>
-                                Admin <strong><%= activity.data.userFirstName %></strong> imported <strong><%= activity.data.details.productCount %></strong> new products.
+                                <i class="bi bi-bag-check-fill text-success"></i>
+                            <% } else if (activity.type === 'PRODUCT_IMPORT') { %>
+                                <i class="bi bi-cloud-download-fill text-primary"></i>
                             <% } else if (activity.type === 'PRICE_UPDATE') { %>
-                                <i class="bi bi-tag-fill text-warning me-2"></i>
-                                Admin <strong><%= activity.data.userFirstName %></strong> updated the price for <%= activity.data.details.productName %> from <del>$<%= activity.data.details.oldPrice %></del> to <strong>$<%= activity.data.details.newPrice %></strong>.
-                            <% } else if (activity.type === 'PRODUCT_DELETE') { %>
-                                <i class="bi bi-trash-fill text-danger me-2"></i>
-                                Admin <strong><%= activity.data.userFirstName %></strong> deleted the product: <strong><%= activity.data.details.productName %></strong>.
-                             <% } else if (activity.type === 'PRODUCT_DELETE_MULTIPLE') { %>
-                                <i class="bi bi-trash-fill text-danger me-2"></i>
-                                Admin <strong><%= activity.data.userFirstName %></strong> deleted <strong><%= activity.data.details.productCount %></strong> products.
+                                <i class="bi bi-tag-fill text-warning"></i>
+                            <% } else { %>
+                                <i class="bi bi-info-circle-fill text-secondary"></i>
                             <% } %>
                         </div>
-                        <small class="text-body-secondary"><%= new Date(activity.timestamp).toLocaleDateString() %></small>
-                    </li>
+                        <div class="flex-grow-1">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <% if (activity.type === 'ORDER') { %>
+                                    <span class="fw-medium text-dark">New Order Received</span>
+                                <% } else if (activity.type === 'PRODUCT_IMPORT') { %>
+                                    <span class="fw-medium text-dark">Inventory Imported</span>
+                                <% } else if (activity.type === 'PRICE_UPDATE') { %>
+                                    <span class="fw-medium text-dark">Price Update</span>
+                                <% } else { %>
+                                    <span class="fw-medium text-dark">System Update</span>
+                                <% } %>
+                                <small class="text-body-tertiary" style="font-size: 0.75rem;"><%= new Date(activity.timestamp).toLocaleDateString() %></small>
+                            </div>
+                            
+                            <p class="text-secondary small mb-0 mt-1">
+                                <% if (activity.type === 'ORDER') { %>
+                                    <%= activity.data.customer.firstName %> placed order #<%= activity.data._id.toString().slice(-4).toUpperCase() %> (<%= activity.data.total.toLocaleString('en-US', { style: 'currency', currency: 'USD' }) %>)
+                                <% } else if (activity.type === 'PRODUCT_IMPORT') { %>
+                                    Admin <%= activity.data.userFirstName %> imported <%= activity.data.details.productCount %> new items.
+                                <% } else if (activity.type === 'PRICE_UPDATE') { %>
+                                    <%= activity.data.details.productName %> updated to $<%= activity.data.details.newPrice %>
+                                <% } else { %>
+                                    <%= activity.type.replace(/_/g, ' ') %>
+                                <% } %>
+                            </p>
+                        </div>
+                    </div>
                 <% }) %>
-            </ul>
-        <% } else { %>
-            <p class="text-body-secondary text-center p-4">No recent activity to show.</p>
-        <% } %>
+            <% } else { %>
+                <div class="text-center p-5">
+                    <p class="text-secondary mb-0">No recent activity recorded.</p>
+                </div>
+            <% } %>
+        </div>
+        <div class="card-footer bg-white border-0 p-3 text-center">
+            <a href="/account/admin/orders" class="small text-decoration-none fw-bold text-dark">View All Orders</a>
+        </div>
     </div>
 </div>
+
+<style>
+    /* Specific override for this page since it's wider */
+    .settings-page-wrapper {
+        margin: 0 auto;
+        padding: 1rem;
+    }
+    .btn-icon {
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid var(--border-color);
+    }
+</style>

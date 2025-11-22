@@ -1,0 +1,89 @@
+<div class="settings-page-wrapper">
+    <div class="d-flex align-items-center mb-4">
+        <a href="/account/settings" class="btn btn-icon btn-light rounded-circle me-3">
+            <i class="bi bi-arrow-left"></i>
+        </a>
+        <div>
+            <h1 class="h3 fw-bold mb-0">Security</h1>
+            <p class="text-body-secondary small mb-0">Keep your account secure</p>
+        </div>
+    </div>
+
+    <% if (typeof message !== 'undefined' && message) { %>
+        <div class="alert alert-success alert-dismissible fade show rounded-4 border-0 shadow-sm mb-4" role="alert">
+            <i class="bi bi-check-circle-fill me-2"></i> <%= message %>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    <% } %>
+    
+    <% if (typeof error !== 'undefined' && error) { %>
+        <div class="alert alert-danger alert-dismissible fade show rounded-4 border-0 shadow-sm mb-4" role="alert">
+            <i class="bi bi-exclamation-circle-fill me-2"></i> <%= error %>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    <% } %>
+
+    <div class="card border-0 shadow-sm rounded-4 mb-4 bg-success-subtle">
+        <div class="card-body p-4 d-flex align-items-start gap-3">
+            <div class="bg-success text-white rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 40px; height: 40px;">
+                <i class="bi bi-shield-check fs-5"></i>
+            </div>
+            <div>
+                <h6 class="fw-bold text-success-emphasis mb-1">Account Protected</h6>
+                <p class="small text-success-emphasis mb-0 opacity-75">Your account is secured with password authentication.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm rounded-4 mb-4">
+        <div class="card-body p-4">
+            <h5 class="fw-bold mb-4"><i class="bi bi-key me-2 text-body-secondary"></i> Change Password</h5>
+            
+            <form action="/account/settings/update-password" method="POST">
+                <div class="mb-3">
+                    <label for="currentPassword" class="form-label small fw-bold text-secondary text-uppercase">Current Password</label>
+                    <input type="password" class="form-control form-control-lg bg-light border-0" id="currentPassword" name="currentPassword" placeholder="Enter current password" required>
+                </div>
+
+                <div class="mb-3">
+                    <label for="newPassword" class="form-label small fw-bold text-secondary text-uppercase">New Password</label>
+                    <input type="password" class="form-control form-control-lg bg-light border-0" id="newPassword" name="newPassword" placeholder="Enter new password" required>
+                </div>
+
+                <div class="mb-4">
+                    <label for="confirmPassword" class="form-label small fw-bold text-secondary text-uppercase">Confirm New Password</label>
+                    <input type="password" class="form-control form-control-lg bg-light border-0" id="confirmPassword" name="confirmPassword" placeholder="Confirm new password" required>
+                </div>
+
+                <div class="d-grid mb-4">
+                    <button type="submit" class="btn btn-dark btn-lg rounded-pill py-3">Update Password</button>
+                </div>
+
+                <div class="bg-light rounded-3 p-3">
+                    <h6 class="small fw-bold text-secondary mb-2">Password Requirements</h6>
+                    <ul class="list-unstyled small text-body-secondary mb-0 d-flex flex-column gap-1">
+                        <li><i class="bi bi-dot"></i> At least 8 characters long</li>
+                        <li><i class="bi bi-dot"></i> Contains uppercase & lowercase letters</li>
+                        <li><i class="bi bi-dot"></i> Includes at least one number</li>
+                        <li><i class="bi bi-dot"></i> Contains special characters</li>
+                    </ul>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm rounded-4 mb-4 opacity-75" style="background-color: #f8f9fa;">
+        <div class="card-body p-4 d-flex align-items-center justify-content-between">
+            <div class="d-flex align-items-center gap-3">
+                <div class="bg-body-secondary text-secondary rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 40px; height: 40px;">
+                    <i class="bi bi-phone-vibrate fs-5"></i>
+                </div>
+                <div>
+                    <h6 class="fw-bold mb-1">Two-Factor Authentication</h6>
+                    <p class="small text-body-secondary mb-0">Add an extra layer of security.</p>
+                </div>
+            </div>
+            <span class="badge bg-secondary rounded-pill">Coming Soon</span>
+        </div>
+    </div>
+</div>

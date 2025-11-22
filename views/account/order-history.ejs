@@ -1,45 +1,106 @@
-<h1 class="h2 mb-4">Order History</h1>
-    
-<div class="dashboard-card">
-    <div class="card-body">
-        <% if (orders && orders.length > 0) { %>
-            <div class="table-responsive">
-                <table class="table table-hover align-middle">
-                    <thead class="table-light">
-                        <tr>
-                            <th>Order ID</th>
-                            <th>Date</th>
-                            <th>Total</th>
-                            <th>Status</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <% orders.forEach(order => { %>
-                            <tr>
-                                <td><small class="text-body-secondary text-monospace">...<%= order._id.toString().slice(-6) %></small></td>
-                                <td><%= new Date(order.orderDate).toLocaleDateString() %></td>
-                                <td class="fw-bold">$<%= order.total.toFixed(2) %></td>
-                                <td>
-                                    <% if (order.status === 'Processing') { %>
-                                        <span class="badge bg-info-subtle text-info-emphasis"><%= order.status %></span>
-                                    <% } else if (order.status === 'Shipped') { %>
-                                            <span class="badge bg-primary-subtle text-primary-emphasis"><%= order.status %></span>
-                                    <% } else if (order.status === 'Cancelled') { %>
-                                        <span class="badge bg-secondary-subtle text-secondary-emphasis"><%= order.status %></span>
-                                    <% } else { %>
-                                            <span class="badge bg-success-subtle text-success-emphasis"><%= order.status %></span>
-                                    <% } %>
-                                </td>
-                            </tr>
-                        <% }) %>
-                    </tbody>
-                </table>
-            </div>
-        <% } else { %>
-            <div class="text-center p-5">
-                <p class="lead text-body-secondary">You have not placed any orders yet.</p>
-                <a href="/products" class="btn btn-primary mt-3">Start Shopping</a>
-            </div>
-        <% } %>
+<div class="settings-page-wrapper">
+    <div class="d-flex align-items-center mb-4">
+        <a href="/account/settings" class="btn btn-icon btn-light rounded-circle me-3">
+            <i class="bi bi-arrow-left"></i>
+        </a>
+        <div>
+            <h1 class="h3 fw-bold mb-0">Order History</h1>
+            <p class="text-body-secondary small mb-0">Track, return, or buy again</p>
+        </div>
     </div>
+
+    <% if (orders && orders.length > 0) { %>
+        <div class="d-flex flex-column gap-3">
+            <% orders.forEach(order => { %>
+                <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+                    <div class="card-body p-4">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <div>
+                                <h6 class="fw-bold mb-1">
+                                    ORD-<%= order._id.toString().slice(-4).toUpperCase() %>
+                                </h6>
+                                <p class="text-secondary small mb-0">
+                                    <%= new Date(order.orderDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) %>
+                                </p>
+                            </div>
+                            <div class="text-end">
+                                <h6 class="fw-bold mb-1">$<%= order.total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></h6>
+                                <a href="/checkout/success/<%= order._id %>" class="small text-primary text-decoration-none fw-medium">View Details &gt;</a>
+                            </div>
+                        </div>
+
+                        <div class="mb-4 ps-3 border-start border-2 border-light">
+                            <ul class="list-unstyled mb-0">
+                                <% order.items.forEach(item => { %>
+                                    <li class="text-secondary small mb-1 d-flex align-items-center">
+                                        <i class="bi bi-dot fs-5 lh-1 me-1 text-body-tertiary"></i>
+                                        <span class="text-truncate" style="max-width: 250px;"><%= item.name %></span>
+                                        <span class="text-body-tertiary ms-1">x<%= item.qty %></span>
+                                    </li>
+                                <% }) %>
+                            </ul>
+                        </div>
+
+                        <% 
+                            const steps = ['Processing', 'Shipped', 'Delivered'];
+                            const currentStatusIndex = steps.indexOf(order.status);
+                            const isCancelled = order.status === 'Cancelled';
+                        %>
+
+                        <% if (isCancelled) { %>
+                            <div class="alert alert-secondary py-2 px-3 d-flex align-items-center gap-2 rounded-3 mb-0">
+                                <i class="bi bi-x-circle-fill text-secondary"></i>
+                                <span class="small fw-medium text-secondary">Order Cancelled</span>
+                            </div>
+                        <% } else { %>
+                            <div class="position-relative mt-2 mx-2">
+                                <div class="position-absolute top-0 start-0 w-100" style="height: 2px; background-color: #e9ecef; top: 6px;"></div>
+                                
+                                <div class="position-absolute top-0 start-0 bg-success transition-all" style="height: 2px; top: 6px; width: <%= (currentStatusIndex / (steps.length - 1)) * 100 %>%;"></div>
+
+                                <div class="d-flex justify-content-between position-relative">
+                                    <% steps.forEach((step, index) => { %>
+                                        <% const isActive = index <= currentStatusIndex; %>
+                                        <div class="text-center d-flex flex-column align-items-center" style="width: 80px;">
+                                            <div class="rounded-circle d-flex align-items-center justify-content-center mb-2 <%= isActive ? 'bg-success text-white' : 'bg-white border border-2 border-light text-light' %>" style="width: 14px; height: 14px; z-index: 2; transition: all 0.3s ease;">
+                                            </div>
+                                            <span class="small fw-bold text-uppercase <%= isActive ? 'text-success' : 'text-body-tertiary' %>" style="font-size: 0.65rem; letter-spacing: 0.5px;"><%= step %></span>
+                                        </div>
+                                    <% }) %>
+                                </div>
+                            </div>
+                        <% } %>
+                    </div>
+                </div>
+            <% }) %>
+        </div>
+    <% } else { %>
+        <div class="text-center py-5">
+            <div class="bg-light rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 80px; height: 80px;">
+                <i class="bi bi-bag text-secondary fs-1"></i>
+            </div>
+            <h5 class="fw-bold">No orders yet</h5>
+            <p class="text-secondary mb-4">Looks like you haven't made your first drop yet.</p>
+            <a href="/products" class="btn btn-dark rounded-pill px-4 py-2">Start Shopping</a>
+        </div>
+    <% } %>
 </div>
+
+<style>
+    .settings-page-wrapper {
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 1rem;
+    }
+    .btn-icon {
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid var(--border-color);
+    }
+    .transition-all {
+        transition: all 0.5s ease;
+    }
+</style>

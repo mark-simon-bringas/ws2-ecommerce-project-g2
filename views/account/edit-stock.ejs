@@ -1,54 +1,85 @@
-<div class="page-header d-flex justify-content-between align-items-center">
-    <div>
-        <h1>Manage Stock & Price</h1>
-        <p class="text-body-secondary">Update inventory levels and pricing.</p>
+<div class="settings-page-wrapper" style="max-width: 800px;">
+    <div class="d-flex align-items-center mb-4">
+        <a href="/products/manage" class="btn btn-icon btn-light rounded-circle me-3">
+            <i class="bi bi-arrow-left"></i>
+        </a>
+        <div>
+            <h1 class="h3 fw-bold mb-0">Edit Inventory</h1>
+            <p class="text-body-secondary small mb-0">Update stock levels & pricing</p>
+        </div>
     </div>
-    <a href="/products/manage" class="btn btn-outline-secondary">
-        <i class="bi bi-arrow-left"></i> Back to Products
-    </a>
-</div>
 
-<div class="row">
-    <div class="col-lg-8">
-        <div class="dashboard-card">
-            <div class="card-body">
-                <div class="d-flex align-items-center mb-4">
-                    <img src="<%= product.thumbnailUrl %>" alt="<%= product.name %>" style="width: 80px; height: 80px; object-fit: contain;" class="me-3 rounded-3 bg-light p-2">
-                    <div>
-                        <h2 class="h5 mb-0"><%= product.name %></h2>
-                        <p class="text-body-secondary mb-0"><%= product.brand %></p>
+    <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+        <div class="card-body p-4">
+            <div class="d-flex align-items-center mb-4 pb-4 border-bottom">
+                <img src="<%= product.thumbnailUrl %>" alt="<%= product.name %>" class="rounded-3 border me-3" style="width: 80px; height: 80px; object-fit: contain; background: #f8f9fa;">
+                <div>
+                    <h5 class="fw-bold mb-1"><%= product.name %></h5>
+                    <div class="text-secondary small mb-1"><%= product.brand %> • <span class="font-monospace"><%= product.sku %></span></div>
+                </div>
+            </div>
+
+            <form action="/products/stock/<%= product._id %>" method="POST">
+                <div class="mb-4">
+                    <label for="retailPrice" class="form-label small fw-bold text-uppercase text-secondary">Retail Price</label>
+                    <div class="input-group input-group-lg">
+                        <span class="input-group-text bg-light border-0">$</span>
+                        <input type="number" class="form-control bg-light border-0 fw-bold" id="retailPrice" name="retailPrice" value="<%= product.retailPrice %>" min="0" step="0.01" required>
                     </div>
                 </div>
 
-                <form action="/products/stock/<%= product._id %>" method="POST">
-                    <%# ADDED: Input field for Retail Price %>
-                    <div class="mb-4">
-                        <label for="retailPrice" class="form-label fw-semibold">Retail Price</label>
-                        <div class="input-group">
-                            <span class="input-group-text">$</span>
-                            <input type="number" class="form-control" id="retailPrice" name="retailPrice" value="<%= product.retailPrice %>" min="0" step="0.01">
-                        </div>
-                    </div>
-
-                    <h5 class="fw-semibold">Stock Levels by Size</h5>
-                    <hr>
+                <div class="mb-4">
+                    <label class="form-label small fw-bold text-uppercase text-secondary mb-3">Stock Levels by Size</label>
                     <div class="row g-3">
                         <% if (product.stock && Object.keys(product.stock).length > 0) { %>
                             <% Object.keys(product.stock).sort((a, b) => parseFloat(a.replace('_', '.')) - parseFloat(b.replace('_', '.'))).forEach(sizeKey => { %>
                                 <% const displaySize = sizeKey.replace('_', '.'); %>
-                                <div class="col-md-4 col-lg-3">
-                                    <label for="stock-<%= sizeKey %>" class="form-label">Size <%= displaySize %></label>
-                                    <input type="number" class="form-control" id="stock-<%= sizeKey %>" name="stock[<%= displaySize %>]" value="<%= product.stock[sizeKey] %>" min="0">
+                                <div class="col-6 col-sm-4 col-md-3">
+                                    <div class="p-2 border rounded-3 bg-white">
+                                        <label for="stock-<%= sizeKey %>" class="d-block small text-secondary text-center mb-1">US <%= displaySize %></label>
+                                        <input type="number" class="form-control form-control-sm text-center border-0 fw-bold p-0" id="stock-<%= sizeKey %>" name="stock[<%= displaySize %>]" value="<%= product.stock[sizeKey] %>" min="0" style="box-shadow: none; background: transparent;">
+                                    </div>
                                 </div>
                             <% }) %>
                         <% } else { %>
-                            <p class="text-body-secondary">No stock information available for this product.</p>
+                            <div class="col-12">
+                                <div class="alert alert-light border text-center text-secondary mb-0">
+                                    No stock configuration found for this product.
+                                </div>
+                            </div>
                         <% } %>
                     </div>
-                    <hr class="my-4">
-                    <button type="submit" class="btn btn-primary">Save Changes</button>
-                </form>
-            </div>
+                </div>
+
+                <div class="d-grid">
+                    <button type="submit" class="btn btn-dark btn-lg rounded-pill py-3">Save Changes</button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
+
+<style>
+    .settings-page-wrapper {
+        margin: 0 auto;
+        padding: 1rem;
+    }
+    .btn-icon {
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid var(--border-color);
+    }
+    
+    /* Remove arrows from number inputs in the stock grid for cleaner look */
+    input[type=number]::-webkit-inner-spin-button, 
+    input[type=number]::-webkit-outer-spin-button { 
+        -webkit-appearance: none; 
+        margin: 0; 
+    }
+    input[type=number] {
+        -moz-appearance: textfield;
+    }
+</style>

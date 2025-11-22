@@ -9,7 +9,7 @@ const saltRounds = 12;
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-// Helper function to create a consistent, beautiful email template for status updates
+// Helper function for status emails (Keep existing logic)
 const createStatusEmailHtml = (order) => {
     const itemsHtml = order.items.map(item => `
         <tr>
@@ -103,13 +103,65 @@ const isAdmin = (req, res, next) => {
 
 router.use(isLoggedIn);
 
+// UPDATED: Main Account Redirect
 router.get('/', (req, res) => {
     if (req.session.user.role === 'admin') {
         res.redirect('/account/admin/dashboard');
     } else {
-        res.redirect('/account/orders');
+        // Redirect normal users to the new Settings Menu Hub
+        res.redirect('/account/settings');
     }
 });
+
+// --- NEW: SETTINGS HUB & SUB-PAGES ---
+
+// 1. Settings Menu (The Hub)
+router.get('/settings', async (req, res) => {
+    // No DB call needed, just render the menu with session data
+    res.render('account/settings-menu', {
+        title: "Settings",
+        view: 'settings'
+    });
+});
+
+// 2. Identity Page
+router.get('/identity', async (req, res) => {
+    const db = req.app.locals.client.db(req.app.locals.dbName);
+    const user = await db.collection('users').findOne({ userId: req.session.user.userId });
+    res.render('account/settings-identity', {
+        title: "Identity",
+        view: 'settings',
+        user: user,
+        message: req.query.message,
+        error: req.query.error
+    });
+});
+
+// 3. Security Page
+router.get('/security', async (req, res) => {
+    res.render('account/settings-security', {
+        title: "Security",
+        view: 'settings',
+        message: req.query.message,
+        error: req.query.error
+    });
+});
+
+// 4. Addresses Page
+router.get('/addresses', async (req, res) => {
+    const db = req.app.locals.client.db(req.app.locals.dbName);
+    const user = await db.collection('users').findOne({ userId: req.session.user.userId });
+    res.render('account/settings-addresses', {
+        title: "Addresses",
+        view: 'settings',
+        user: user,
+        message: req.query.message,
+        error: req.query.error
+    });
+});
+
+
+// --- EXISTING LOGIC (Refactored paths where needed) ---
 
 router.post('/wishlist/toggle', async (req, res) => {
     try {
@@ -178,7 +230,112 @@ router.get('/wishlist', async (req, res) => {
     }
 });
 
-// --- ADMIN ROUTES ---
+router.get('/orders', async (req, res) => {
+    try {
+        const db = req.app.locals.client.db(req.app.locals.dbName);
+        const userOrders = await db.collection('orders').find({ userId: req.session.user.userId }).sort({ orderDate: -1 }).toArray();
+        res.render('account/order-history', { title: "Order History", orders: userOrders, view: 'orders' });
+    } catch (err) {
+        console.error("Error fetching order history:", err);
+        res.status(500).send("Could not load your order history.");
+    }
+});
+
+// --- FORM ACTIONS (Redirects updated to new paths) ---
+
+router.post('/settings/update-profile', async (req, res) => {
+    try {
+        const { firstName, lastName } = req.body;
+        const userId = req.session.user.userId;
+        if (!firstName || !lastName) { return res.redirect('/account/identity?error=' + encodeURIComponent('First and last name cannot be empty.')); }
+        const db = req.app.locals.client.db(req.app.locals.dbName);
+        await db.collection('users').updateOne(
+            { userId: userId },
+            { $set: { firstName: firstName, lastName: lastName, updatedAt: new Date() } }
+        );
+        req.session.user.firstName = firstName;
+        req.session.user.lastName = lastName;
+        res.redirect('/account/identity?message=' + encodeURIComponent('Profile updated successfully!'));
+    } catch (err) {
+        console.error("Error updating profile:", err);
+        res.redirect('/account/identity?error=' + encodeURIComponent('An error occurred while updating your profile.'));
+    }
+});
+
+router.post('/settings/update-password', async (req, res) => {
+    try {
+        const { currentPassword, newPassword, confirmPassword } = req.body;
+        const userId = req.session.user.userId;
+        if (newPassword !== confirmPassword) { return res.redirect('/account/security?error=' + encodeURIComponent('New passwords do not match.')); }
+        const db = req.app.locals.client.db(req.app.locals.dbName);
+        const user = await db.collection('users').findOne({ userId: userId });
+        const isPasswordValid = await bcrypt.compare(currentPassword, user.passwordHash);
+        if (!isPasswordValid) { return res.redirect('/account/security?error=' + encodeURIComponent('Incorrect current password.')); }
+        const hashedPassword = await bcrypt.hash(newPassword, saltRounds);
+        await db.collection('users').updateOne(
+            { userId: userId },
+            { $set: { passwordHash: hashedPassword, updatedAt: new Date() } }
+        );
+        res.redirect('/account/security?message=' + encodeURIComponent('Password updated successfully!'));
+    } catch (err) {
+        console.error("Error updating password:", err);
+        res.redirect('/account/security?error=' + encodeURIComponent('An error occurred while updating your password.'));
+    }
+});
+
+router.post('/settings/add-address', async (req, res) => {
+    try {
+        const { v4: uuidv4 } = await import('uuid');
+        const db = req.app.locals.client.db(req.app.locals.dbName);
+        const userId = req.session.user.userId;
+        const newAddress = {
+            addressId: uuidv4(), firstName: req.body.firstName, lastName: req.body.lastName,
+            address: req.body.address, country: req.body.country, state: req.body.state,
+            zip: req.body.zip, phone: req.body.phone, isDefault: req.body.isDefault === 'on'
+        };
+        if (newAddress.isDefault) { await db.collection('users').updateOne({ userId: userId }, { $set: { "addresses.$[].isDefault": false } }); }
+        await db.collection('users').updateOne({ userId: userId }, { $push: { addresses: newAddress } });
+        res.redirect('/account/addresses?message=' + encodeURIComponent('Address added successfully!'));
+    } catch (err) {
+        console.error("Error adding address:", err);
+        res.redirect('/account/addresses?error=' + encodeURIComponent('Could not add address.'));
+    }
+});
+
+router.post('/settings/edit-address/:addressId', async (req, res) => {
+    try {
+        const db = req.app.locals.client.db(req.app.locals.dbName);
+        const userId = req.session.user.userId;
+        const { addressId } = req.params;
+        const updatedAddress = {
+            addressId: addressId, firstName: req.body.firstName, lastName: req.body.lastName,
+            address: req.body.address, country: req.body.country, state: req.body.state,
+            zip: req.body.zip, phone: req.body.phone, isDefault: req.body.isDefault === 'on'
+        };
+        if (updatedAddress.isDefault) { await db.collection('users').updateOne({ userId: userId }, { $set: { "addresses.$[].isDefault": false } }); }
+        await db.collection('users').updateOne({ userId: userId, "addresses.addressId": addressId }, { $set: { "addresses.$": updatedAddress } });
+        res.redirect('/account/addresses?message=' + encodeURIComponent('Address updated successfully!'));
+    } catch (err) {
+        console.error("Error updating address:", err);
+        res.redirect('/account/addresses?error=' + encodeURIComponent('Could not update address.'));
+    }
+});
+
+router.post('/settings/delete-address/:addressId', async (req, res) => {
+    try {
+        const db = req.app.locals.client.db(req.app.locals.dbName);
+        const userId = req.session.user.userId;
+        const { addressId } = req.params;
+        await db.collection('users').updateOne({ userId: userId }, { $pull: { addresses: { addressId: addressId } } });
+        res.redirect('/account/addresses?message=' + encodeURIComponent('Address removed successfully!'));
+    } catch (err) {
+        console.error("Error deleting address:", err);
+        res.redirect('/account/addresses?error=' + encodeURIComponent('Could not remove address.'));
+    }
+});
+
+// --- ADMIN ROUTES (Kept as is, essentially) ---
+// ... [Admin routes logic remains the same, just ensuring no overlap] ...
 router.get('/admin/dashboard', isAdmin, async (req, res) => {
     try {
         const db = req.app.locals.client.db(req.app.locals.dbName);
@@ -359,7 +516,6 @@ router.get('/admin/users', isAdmin, async (req, res) => {
     }
 });
 
-// --- ADMIN SUPPORT TICKET ROUTES ---
 router.get('/admin/inbox', isAdmin, async (req, res) => {
     try {
         const db = req.app.locals.client.db(req.app.locals.dbName);
@@ -427,7 +583,6 @@ router.post('/admin/tickets/:ticketId/update-status', isAdmin, async (req, res) 
     }
 });
 
-// --- ADMIN SALES ROUTES ---
 router.get('/admin/sales', isAdmin, async (req, res) => {
     try {
         const db = req.app.locals.client.db(req.app.locals.dbName);
@@ -457,14 +612,13 @@ router.post('/admin/sales/create', isAdmin, async (req, res) => {
             return res.redirect('/account/admin/sales?error=' + encodeURIComponent('All fields are required.'));
         }
 
-        // Ensure productIds is an array
         const productObjectIds = Array.isArray(productIds) ? productIds.map(id => new ObjectId(id)) : [new ObjectId(productIds)];
 
         const newSale = {
             name: saleName,
             discountPercentage: parseInt(discountPercentage, 10),
             startDate: new Date(startDate),
-            endDate: new Date(new Date(endDate).setHours(23, 59, 59, 999)), // End of the selected day
+            endDate: new Date(new Date(endDate).setHours(23, 59, 59, 999)),
             productIds: productObjectIds,
             createdAt: new Date()
         };
@@ -475,119 +629,6 @@ router.post('/admin/sales/create', isAdmin, async (req, res) => {
     } catch (err) {
         console.error("Error creating sale:", err);
         res.redirect('/account/admin/sales?error=' + encodeURIComponent('An error occurred.'));
-    }
-});
-
-
-// --- CUSTOMER ACCOUNT ROUTES ---
-router.get('/orders', async (req, res) => {
-    try {
-        const db = req.app.locals.client.db(req.app.locals.dbName);
-        const userOrders = await db.collection('orders').find({ userId: req.session.user.userId }).sort({ orderDate: -1 }).toArray();
-        res.render('account/order-history', { title: "Order History", orders: userOrders, view: 'orders' });
-    } catch (err) {
-        console.error("Error fetching order history:", err);
-        res.status(500).send("Could not load your order history.");
-    }
-});
-
-router.get('/settings', async (req, res) => {
-    const db = req.app.locals.client.db(req.app.locals.dbName);
-    const user = await db.collection('users').findOne({ userId: req.session.user.userId });
-    res.render('account/settings', {
-        title: "Account Settings", view: 'settings', user: user,
-        message: req.query.message, error: req.query.error
-    });
-});
-
-router.post('/settings/update-profile', async (req, res) => {
-    try {
-        const { firstName, lastName } = req.body;
-        const userId = req.session.user.userId;
-        if (!firstName || !lastName) { return res.redirect('/account/settings?error=' + encodeURIComponent('First and last name cannot be empty.')); }
-        const db = req.app.locals.client.db(req.app.locals.dbName);
-        await db.collection('users').updateOne(
-            { userId: userId },
-            { $set: { firstName: firstName, lastName: lastName, updatedAt: new Date() } }
-        );
-        req.session.user.firstName = firstName;
-        req.session.user.lastName = lastName;
-        res.redirect('/account/settings?tab=profile&message=' + encodeURIComponent('Profile updated successfully!'));
-    } catch (err) {
-        console.error("Error updating profile:", err);
-        res.redirect('/account/settings?tab=profile&error=' + encodeURIComponent('An error occurred while updating your profile.'));
-    }
-});
-
-router.post('/settings/update-password', async (req, res) => {
-    try {
-        const { currentPassword, newPassword, confirmPassword } = req.body;
-        const userId = req.session.user.userId;
-        if (newPassword !== confirmPassword) { return res.redirect('/account/settings?tab=security&error=' + encodeURIComponent('New passwords do not match.')); }
-        const db = req.app.locals.client.db(req.app.locals.dbName);
-        const user = await db.collection('users').findOne({ userId: userId });
-        const isPasswordValid = await bcrypt.compare(currentPassword, user.passwordHash);
-        if (!isPasswordValid) { return res.redirect('/account/settings?tab=security&error=' + encodeURIComponent('Incorrect current password.')); }
-        const hashedPassword = await bcrypt.hash(newPassword, saltRounds);
-        await db.collection('users').updateOne(
-            { userId: userId },
-            { $set: { passwordHash: hashedPassword, updatedAt: new Date() } }
-        );
-        res.redirect('/account/settings?tab=security&message=' + encodeURIComponent('Password updated successfully!'));
-    } catch (err) {
-        console.error("Error updating password:", err);
-        res.redirect('/account/settings?tab=security&error=' + encodeURIComponent('An error occurred while updating your password.'));
-    }
-});
-
-router.post('/settings/add-address', async (req, res) => {
-    try {
-        const { v4: uuidv4 } = await import('uuid');
-        const db = req.app.locals.client.db(req.app.locals.dbName);
-        const userId = req.session.user.userId;
-        const newAddress = {
-            addressId: uuidv4(), firstName: req.body.firstName, lastName: req.body.lastName,
-            address: req.body.address, country: req.body.country, state: req.body.state,
-            zip: req.body.zip, phone: req.body.phone, isDefault: req.body.isDefault === 'on'
-        };
-        if (newAddress.isDefault) { await db.collection('users').updateOne({ userId: userId }, { $set: { "addresses.$[].isDefault": false } }); }
-        await db.collection('users').updateOne({ userId: userId }, { $push: { addresses: newAddress } });
-        res.redirect('/account/settings?tab=addresses&message=' + encodeURIComponent('Address added successfully!'));
-    } catch (err) {
-        console.error("Error adding address:", err);
-        res.redirect('/account/settings?tab=addresses&error=' + encodeURIComponent('Could not add address.'));
-    }
-});
-
-router.post('/settings/edit-address/:addressId', async (req, res) => {
-    try {
-        const db = req.app.locals.client.db(req.app.locals.dbName);
-        const userId = req.session.user.userId;
-        const { addressId } = req.params;
-        const updatedAddress = {
-            addressId: addressId, firstName: req.body.firstName, lastName: req.body.lastName,
-            address: req.body.address, country: req.body.country, state: req.body.state,
-            zip: req.body.zip, phone: req.body.phone, isDefault: req.body.isDefault === 'on'
-        };
-        if (updatedAddress.isDefault) { await db.collection('users').updateOne({ userId: userId }, { $set: { "addresses.$[].isDefault": false } }); }
-        await db.collection('users').updateOne({ userId: userId, "addresses.addressId": addressId }, { $set: { "addresses.$": updatedAddress } });
-        res.redirect('/account/settings?tab=addresses&message=' + encodeURIComponent('Address updated successfully!'));
-    } catch (err) {
-        console.error("Error updating address:", err);
-        res.redirect('/account/settings?tab=addresses&error=' + encodeURIComponent('Could not update address.'));
-    }
-});
-
-router.post('/settings/delete-address/:addressId', async (req, res) => {
-    try {
-        const db = req.app.locals.client.db(req.app.locals.dbName);
-        const userId = req.session.user.userId;
-        const { addressId } = req.params;
-        await db.collection('users').updateOne({ userId: userId }, { $pull: { addresses: { addressId: addressId } } });
-        res.redirect('/account/settings?tab=addresses&message=' + encodeURIComponent('Address removed successfully!'));
-    } catch (err) {
-        console.error("Error deleting address:", err);
-        res.redirect('/account/settings?tab=addresses&error=' + encodeURIComponent('Could not remove address.'));
     }
 });
 
