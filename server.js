@@ -178,14 +178,9 @@ io.on('connection', (socket) => {
 // =================================== //
 // ===== DYNAMIC SITEMAP ROUTE ===== //
 // =================================== //
-// Placed before general routes
-app.get('/sitemap.xml', async (req, res, next) => { // Added next for error handling
-    console.log(`Received request for /sitemap.xml at ${new Date().toISOString()}`); // Log request
+app.get('/sitemap.xml', async (req, res, next) => {
+    console.log(`Received request for /sitemap.xml at ${new Date().toISOString()}`);
     try {
-        // *** Use dynamic import HERE ***
-        const { create } = await import('xmlbuilder2');
-        console.log('xmlbuilder2 imported successfully in sitemap route.'); // Log import success
-
         // Check DB connection
         if (!req.app.locals.client || !req.app.locals.client.topology || !req.app.locals.client.topology.isConnected()) {
              console.error("Sitemap generation failed: Database not connected.");
@@ -194,15 +189,14 @@ app.get('/sitemap.xml', async (req, res, next) => { // Added next for error hand
 
         const db = req.app.locals.client.db(req.app.locals.dbName);
         const productsCollection = db.collection('products');
-        // *** Use your LIVE domain here from environment variable ***
-        const baseUrl = process.env.BASE_URL_LIVE || 'https://www.sneakslab.shop'; // Fallback just in case
-        console.log(`Sitemap using base URL: ${baseUrl}`); // Log base URL
+        const baseUrl = process.env.BASE_URL_LIVE || 'https://www.sneakslab.shop'; 
+        const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
 
-        // Start XML structure
-        const root = create({ version: '1.0', encoding: 'UTF-8' })
-            .ele('urlset', { xmlns: 'http://www.sitemaps.org/schemas/sitemap/0.9' });
+        // 1. Start XML String
+        let xml = '<?xml version="1.0" encoding="UTF-8"?>';
+        xml += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">';
 
-        // Static Pages Definition
+        // 2. Define Static Pages
         const staticPages = [
             { loc: '/', priority: '1.00' },
             { loc: '/products', priority: '0.90' },
@@ -216,68 +210,54 @@ app.get('/sitemap.xml', async (req, res, next) => { // Added next for error hand
             { loc: '/support/order-status', priority: '0.50' },
             { loc: '/support/shipping', priority: '0.50' },
             { loc: '/support/returns', priority: '0.50' },
-            // Category/Brand Pages
             { loc: '/products?category=men', priority: '0.80' },
             { loc: '/products?category=women', priority: '0.80' },
             { loc: '/products?brand=Nike', priority: '0.85' },
             { loc: '/products?brand=Jordan', priority: '0.85' },
             { loc: '/products?brand=Adidas', priority: '0.85' },
-            { loc: '/products?brand=New%20Balance', priority: '0.85' }, // URL Encoded space
+            { loc: '/products?brand=New%20Balance', priority: '0.85' },
             { loc: '/products?new=true', priority: '0.80' },
         ];
-        const today = new Date().toISOString().split('T')[0]; // Format as YYYY-MM-DD
 
-        // Add Static Pages to XML
-        console.log(`Adding ${staticPages.length} static pages to sitemap...`); // Log count
+        // 3. Add Static Pages to XML
         staticPages.forEach(page => {
-             // Ensure URL encoding for query parameters
-             const urlPath = page.loc.includes('?') ? page.loc.split('?')[0] + '?' + encodeURI(page.loc.split('?')[1]) : page.loc;
-            root.ele('url')
-                .ele('loc').txt(baseUrl + urlPath).up()
-                .ele('lastmod').txt(today).up() // Use simplified date for static pages
-                .ele('priority').txt(page.priority).up()
-            .up();
+            const fullUrl = baseUrl + page.loc;
+            xml += `
+            <url>
+                <loc>${fullUrl}</loc>
+                <lastmod>${today}</lastmod>
+                <priority>${page.priority}</priority>
+            </url>`;
         });
-        console.log('Static pages added.'); // Log completion
 
-        // Add Dynamic Product Pages to XML
-        console.log('Fetching dynamic product pages...'); // Log fetching start
+        // 4. Fetch & Add Product Pages
         const productsCursor = productsCollection.find({}, { projection: { sku: 1, updatedAt: 1, importedAt: 1 } });
-        let productCount = 0;
-
-        // Process products using cursor iteration
+        
         for await (const product of productsCursor) {
-             productCount++;
-             if (!product.sku) {
-                console.warn(`Skipping product ID ${product._id} - missing SKU.`);
-                continue; // Skip products without an SKU
-             }
-             // Prefer updatedAt, fallback to importedAt, fallback to today's date string
+             if (!product.sku) continue;
+
              const lastModDate = product.updatedAt || product.importedAt || new Date();
-             const lastMod = lastModDate.toISOString().split('T')[0]; // Format as YYYY-MM-DD
+             const lastMod = lastModDate.toISOString().split('T')[0];
+             // Escape special characters in SKU if necessary (basic URL encoding)
+             const safeSku = encodeURIComponent(product.sku);
 
-            root.ele('url')
-                 // Ensure SKU is URL-safe, though it usually is
-                .ele('loc').txt(`${baseUrl}/products/${encodeURIComponent(product.sku)}`).up()
-                .ele('lastmod').txt(lastMod).up()
-                .ele('priority').txt('0.70').up() // Priority for individual products
-            .up();
+             xml += `
+            <url>
+                <loc>${baseUrl}/products/${safeSku}</loc>
+                <lastmod>${lastMod}</lastmod>
+                <priority>0.70</priority>
+            </url>`;
         }
-        console.log(`Added ${productCount} dynamic product pages.`); // Log count
 
-        // Finalize XML
-        console.log('Finalizing XML...'); // Log finalization
-        const xml = root.end({ prettyPrint: true });
+        // 5. Close XML
+        xml += '</urlset>';
 
         // Send Response
-        console.log('Sending sitemap.xml response.'); // Log sending response
         res.header('Content-Type', 'application/xml');
         res.status(200).send(xml);
 
     } catch (err) {
-        // Log the specific error encountered during sitemap generation
         console.error("ERROR in /sitemap.xml route handler:", err);
-        // Pass error to the global error handler
         next(err);
     }
 });

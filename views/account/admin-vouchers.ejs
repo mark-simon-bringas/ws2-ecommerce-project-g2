@@ -1,0 +1,145 @@
+<div class="settings-page-wrapper" style="max-width: 1000px;">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4">
+        <div class="d-flex align-items-center mb-3 mb-md-0">
+            <a href="/account/settings" class="btn btn-icon btn-light rounded-circle me-3">
+                <i class="bi bi-arrow-left"></i>
+            </a>
+            <div>
+                <h1 class="h3 fw-bold mb-0">Vouchers</h1>
+                <p class="text-body-secondary small mb-0">Manage discounts & coupons</p>
+            </div>
+        </div>
+        <button class="btn btn-dark rounded-pill px-4 fw-bold" data-bs-toggle="modal" data-bs-target="#createVoucherModal">
+            <i class="bi bi-plus-lg me-2"></i> Create Voucher
+        </button>
+    </div>
+
+    <% if (typeof message !== 'undefined' && message) { %>
+        <div class="alert alert-success alert-dismissible fade show rounded-4 border-0 shadow-sm mb-4" role="alert">
+            <i class="bi bi-check-circle-fill me-2"></i> <%= message %>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    <% } %>
+    
+    <% if (typeof error !== 'undefined' && error) { %>
+        <div class="alert alert-danger alert-dismissible fade show rounded-4 border-0 shadow-sm mb-4" role="alert">
+            <i class="bi bi-exclamation-circle-fill me-2"></i> <%= error %>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    <% } %>
+
+    <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+        <div class="card-body p-0">
+            <% if (vouchers && vouchers.length > 0) { %>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="bg-light">
+                            <tr>
+                                <th class="ps-4 py-3 text-secondary small text-uppercase border-0">Code</th>
+                                <th class="py-3 text-secondary small text-uppercase border-0">Discount</th>
+                                <th class="py-3 text-secondary small text-uppercase border-0">Type</th>
+                                <th class="py-3 text-secondary small text-uppercase border-0">Status</th>
+                                <th class="py-3 text-secondary small text-uppercase border-0">Expiry</th>
+                                <th class="pe-4 py-3 text-secondary small text-uppercase border-0 text-end">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% vouchers.forEach(voucher => { %>
+                                <tr>
+                                    <td class="ps-4 fw-bold text-dark font-monospace"><%= voucher.code %></td>
+                                    <td class="fw-bold text-success">
+                                        <%= voucher.discountType === 'percentage' ? voucher.discountValue + '%' : '$' + voucher.discountValue %> OFF
+                                    </td>
+                                    <td>
+                                        <% if (voucher.isNewUser) { %>
+                                            <span class="badge bg-info-subtle text-info-emphasis rounded-pill border border-info-subtle">New Users</span>
+                                        <% } else { %>
+                                            <span class="badge bg-light text-secondary rounded-pill border">General</span>
+                                        <% } %>
+                                    </td>
+                                    <td>
+                                        <% if (voucher.isActive && new Date(voucher.expiryDate) > new Date()) { %>
+                                            <span class="badge bg-success-subtle text-success-emphasis rounded-pill">Active</span>
+                                        <% } else { %>
+                                            <span class="badge bg-secondary-subtle text-secondary-emphasis rounded-pill">Expired/Inactive</span>
+                                        <% } %>
+                                    </td>
+                                    <td class="text-secondary small"><%= new Date(voucher.expiryDate).toLocaleDateString() %></td>
+                                    <td class="text-end pe-4">
+                                        <form action="/account/admin/vouchers/delete/<%= voucher._id %>" method="POST" onsubmit="return confirm('Delete this voucher?');">
+                                            <button type="submit" class="btn btn-icon-sm btn-light rounded-circle text-danger border">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            <% }) %>
+                        </tbody>
+                    </table>
+                </div>
+            <% } else { %>
+                <div class="text-center p-5">
+                    <div class="bg-light rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px;">
+                        <i class="bi bi-ticket-perforated text-secondary fs-4"></i>
+                    </div>
+                    <p class="text-secondary mb-0">No vouchers created yet.</p>
+                </div>
+            <% } %>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="createVoucherModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-4 border-0 shadow">
+            <div class="modal-header border-bottom-0 pb-0">
+                <h5 class="modal-title fw-bold">Create Voucher</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body pt-3">
+                <form action="/account/admin/vouchers/create" method="POST">
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-secondary text-uppercase">Voucher Code</label>
+                        <input type="text" class="form-control bg-light border-0 text-uppercase fw-bold" name="code" placeholder="e.g. WELCOME10" required>
+                    </div>
+                    <div class="row g-3 mb-3">
+                        <div class="col-6">
+                            <label class="form-label small fw-bold text-secondary text-uppercase">Type</label>
+                            <select class="form-select bg-light border-0" name="discountType">
+                                <option value="percentage">Percentage (%)</option>
+                                <option value="flat">Flat Amount ($)</option>
+                            </select>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small fw-bold text-secondary text-uppercase">Value</label>
+                            <input type="number" class="form-control bg-light border-0" name="discountValue" placeholder="10" min="1" required>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                         <label class="form-label small fw-bold text-secondary text-uppercase">Expiration Date</label>
+                         <input type="date" class="form-control bg-light border-0" name="expiryDate" required>
+                    </div>
+                    <div class="mb-3">
+                         <label class="form-label small fw-bold text-secondary text-uppercase">Min. Order Amount ($)</label>
+                         <input type="number" class="form-control bg-light border-0" name="minOrderAmount" value="0" min="0">
+                    </div>
+                    <div class="form-check mb-4">
+                        <input class="form-check-input" type="checkbox" name="isNewUser" id="isNewUser">
+                        <label class="form-check-label" for="isNewUser">
+                            Auto-assign to New Users (Welcome Voucher)
+                        </label>
+                    </div>
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-dark rounded-pill py-2 fw-bold">Create Voucher</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .settings-page-wrapper { margin: 0 auto; padding: 1rem; }
+    .btn-icon { width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border: 1px solid var(--border-color); }
+    .btn-icon-sm { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; }
+</style>

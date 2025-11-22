@@ -7,8 +7,40 @@ const { Resend } = require('resend');
 const bcrypt = require('bcrypt');
 const saltRounds = 12;
 const { convertCurrency } = require('./currency');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
 
 const resend = new Resend(process.env.RESEND_API_KEY);
+
+// --- Multer Setup for Image Uploads ---
+const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        const uploadPath = 'public/uploads/avatars';
+        if (!fs.existsSync(uploadPath)){
+            fs.mkdirSync(uploadPath, { recursive: true });
+        }
+        cb(null, uploadPath);
+    },
+    filename: function (req, file, cb) {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        cb(null, req.session.user.userId + '-' + uniqueSuffix + path.extname(file.originalname));
+    }
+});
+
+const upload = multer({ 
+    storage: storage,
+    limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+    fileFilter: function (req, file, cb) {
+        const filetypes = /jpeg|jpg|png|gif|webp/;
+        const mimetype = filetypes.test(file.mimetype);
+        const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
+        if (mimetype && extname) {
+            return cb(null, true);
+        }
+        cb(new Error('Only image files are allowed!'));
+    }
+});
 
 // Helper function for status emails
 const createStatusEmailHtml = (order) => {
@@ -104,19 +136,15 @@ const isAdmin = (req, res, next) => {
 
 router.use(isLoggedIn);
 
-// UPDATED: Main Account Redirect
 router.get('/', (req, res) => {
     if (req.session.user.role === 'admin') {
         res.redirect('/account/admin/dashboard');
     } else {
-        // Redirect normal users to the new Settings Menu Hub
         res.redirect('/account/settings');
     }
 });
 
-// --- NEW: SETTINGS HUB & SUB-PAGES ---
-
-// 1. Settings Menu (The Hub)
+// --- SETTINGS HUB & SUB-PAGES ---
 router.get('/settings', async (req, res) => {
     res.render('account/settings', {
         title: "Settings",
@@ -124,7 +152,6 @@ router.get('/settings', async (req, res) => {
     });
 });
 
-// 2. Identity Page
 router.get('/identity', async (req, res) => {
     const db = req.app.locals.client.db(req.app.locals.dbName);
     const user = await db.collection('users').findOne({ userId: req.session.user.userId });
@@ -137,26 +164,21 @@ router.get('/identity', async (req, res) => {
     });
 });
 
-// 3. Security Page (With Recent Devices)
 router.get('/security', async (req, res) => {
     const db = req.app.locals.client.db(req.app.locals.dbName);
     const user = await db.collection('users').findOne({ userId: req.session.user.userId });
 
-    // Helper to parse User Agent string
     const parseDevice = (uaString) => {
         if (!uaString) return { name: 'Unknown Device', icon: 'bi-question-circle' };
-        
         let name = 'Web Browser';
         let icon = 'bi-laptop';
 
-        // Detect OS
         if (/windows/i.test(uaString)) name += ' on Windows';
         else if (/macintosh|mac os x/i.test(uaString)) name += ' on macOS';
         else if (/linux/i.test(uaString)) name += ' on Linux';
         else if (/android/i.test(uaString)) { name = 'Android Device'; icon = 'bi-phone'; }
         else if (/iphone|ipad|ipod/i.test(uaString)) { name = 'iOS Device'; icon = 'bi-phone'; }
 
-        // Detect Browser (Basic)
         if (/chrome/i.test(uaString) && !/edg/i.test(uaString)) name = name.replace('Web Browser', 'Chrome');
         else if (/safari/i.test(uaString) && !/chrome/i.test(uaString)) name = name.replace('Web Browser', 'Safari');
         else if (/firefox/i.test(uaString)) name = name.replace('Web Browser', 'Firefox');
@@ -167,11 +189,7 @@ router.get('/security', async (req, res) => {
 
     const loginHistory = (user && user.loginHistory) ? user.loginHistory.map(entry => {
         const details = parseDevice(entry.userAgent);
-        return {
-            ...entry,
-            displayName: details.name,
-            icon: details.icon
-        };
+        return { ...entry, displayName: details.name, icon: details.icon };
     }) : [];
 
     res.render('account/settings-security', {
@@ -183,7 +201,6 @@ router.get('/security', async (req, res) => {
     });
 });
 
-// 4. Addresses Page
 router.get('/addresses', async (req, res) => {
     const db = req.app.locals.client.db(req.app.locals.dbName);
     const user = await db.collection('users').findOne({ userId: req.session.user.userId });
@@ -264,7 +281,6 @@ router.get('/wishlist', async (req, res) => {
     }
 });
 
-// 5. Order History
 router.get('/orders', async (req, res) => {
     try {
         const db = req.app.locals.client.db(req.app.locals.dbName);
@@ -273,7 +289,7 @@ router.get('/orders', async (req, res) => {
             title: "Order History", 
             orders: userOrders, 
             view: 'orders',
-            pageStyle: 'order-success' // Needed for the visual timeline CSS
+            pageStyle: 'order-success' 
         });
     } catch (err) {
         console.error("Error fetching order history:", err);
@@ -281,7 +297,7 @@ router.get('/orders', async (req, res) => {
     }
 });
 
-// 6. Single Order Details (Redirects to Tracker View)
+// Single Order Details
 router.get('/orders/:id', async (req, res) => {
     try {
         const db = req.app.locals.client.db(req.app.locals.dbName);
@@ -291,7 +307,7 @@ router.get('/orders/:id', async (req, res) => {
 
         const order = await ordersCollection.findOne({ 
             _id: new ObjectId(orderId),
-            userId: req.session.user.userId // Ensure ownership
+            userId: req.session.user.userId 
         });
 
         if (!order) {
@@ -322,18 +338,40 @@ router.get('/orders/:id', async (req, res) => {
 });
 
 // --- FORM ACTIONS ---
-router.post('/settings/update-profile', async (req, res) => {
+router.post('/settings/update-profile', upload.single('profilePhoto'), async (req, res) => {
     try {
-        const { firstName, lastName } = req.body;
+        const { firstName, lastName, phone, bio } = req.body;
         const userId = req.session.user.userId;
-        if (!firstName || !lastName) { return res.redirect('/account/identity?error=' + encodeURIComponent('First and last name cannot be empty.')); }
+        
+        if (!firstName || !lastName) { 
+            return res.redirect('/account/identity?error=' + encodeURIComponent('First and last name cannot be empty.')); 
+        }
+
         const db = req.app.locals.client.db(req.app.locals.dbName);
+        
+        let updateFields = {
+            firstName: firstName,
+            lastName: lastName,
+            phone: phone || "",
+            bio: bio || "",
+            updatedAt: new Date()
+        };
+
+        if (req.file) {
+            updateFields.profilePictureUrl = '/uploads/avatars/' + req.file.filename;
+        }
+
         await db.collection('users').updateOne(
             { userId: userId },
-            { $set: { firstName: firstName, lastName: lastName, updatedAt: new Date() } }
+            { $set: updateFields }
         );
+
         req.session.user.firstName = firstName;
         req.session.user.lastName = lastName;
+        if (req.file) {
+            req.session.user.profilePictureUrl = updateFields.profilePictureUrl;
+        }
+
         res.redirect('/account/identity?message=' + encodeURIComponent('Profile updated successfully!'));
     } catch (err) {
         console.error("Error updating profile:", err);
@@ -594,6 +632,66 @@ router.get('/admin/users', isAdmin, async (req, res) => {
     }
 });
 
+// NEW: View Single User Detail
+router.get('/admin/users/:id', isAdmin, async (req, res) => {
+    try {
+        const db = req.app.locals.client.db(req.app.locals.dbName);
+        const user = await db.collection('users').findOne({ _id: new ObjectId(req.params.id) });
+        
+        if (!user) { return res.redirect('/account/admin/users?error=' + encodeURIComponent('User not found.')); }
+
+        // Fetch user stats
+        const orders = await db.collection('orders').find({ userId: user.userId }).sort({ orderDate: -1 }).toArray();
+        const tickets = await db.collection('support_tickets').find({ userEmail: user.email }).sort({ createdAt: -1 }).toArray();
+
+        res.render('account/admin-user-detail', {
+            title: `User: ${user.firstName} ${user.lastName}`,
+            view: 'admin-users',
+            userDetails: user,
+            orders: orders,
+            tickets: tickets
+        });
+    } catch (err) {
+        console.error("Error fetching user details:", err);
+        res.status(500).send("An error occurred.");
+    }
+});
+
+// NEW: Delete Single User
+router.post('/admin/users/delete/:id', isAdmin, async (req, res) => {
+    try {
+        const db = req.app.locals.client.db(req.app.locals.dbName);
+        const result = await db.collection('users').deleteOne({ _id: new ObjectId(req.params.id) });
+        
+        if (result.deletedCount === 1) {
+             res.redirect('/account/admin/users?message=' + encodeURIComponent('User deleted successfully.'));
+        } else {
+             res.redirect('/account/admin/users?error=' + encodeURIComponent('Failed to delete user.'));
+        }
+    } catch (err) {
+        console.error("Error deleting user:", err);
+        res.redirect('/account/admin/users?error=' + encodeURIComponent('An error occurred.'));
+    }
+});
+
+// NEW: Delete Multiple Users
+router.post('/admin/users/delete-multiple', isAdmin, async (req, res) => {
+    try {
+        const db = req.app.locals.client.db(req.app.locals.dbName);
+        let { userIds } = req.body;
+        if (!userIds) return res.redirect('/account/admin/users');
+        if (!Array.isArray(userIds)) userIds = [userIds];
+
+        const objectIds = userIds.map(id => new ObjectId(id));
+        const result = await db.collection('users').deleteMany({ _id: { $in: objectIds } });
+
+        res.redirect('/account/admin/users?message=' + encodeURIComponent(`${result.deletedCount} users deleted successfully.`));
+    } catch (err) {
+        console.error("Error bulk deleting users:", err);
+        res.redirect('/account/admin/users?error=' + encodeURIComponent('An error occurred during bulk deletion.'));
+    }
+});
+
 router.get('/admin/inbox', isAdmin, async (req, res) => {
     try {
         const db = req.app.locals.client.db(req.app.locals.dbName);
@@ -650,7 +748,7 @@ router.post('/admin/tickets/:ticketId/update-status', isAdmin, async (req, res) 
                 from: process.env.RESEND_FROM_EMAIL,
                 to: ticket.userEmail,
                 subject: `Your Support Ticket [${ticket.ticketId}] has been updated`,
-                html: `<p>An agent has updated the status of your ticket to: <strong>${status}</strong>.</p><p>You can view the full conversation and reply by clicking the link below:</p><a href="${ticketUrl}">View Your Ticket</a>`
+                html: `<p>An agent has updated the status of your ticket to: <strong>${status}</strong>.</p><p><a href="${ticketUrl}">View Your Ticket</a></p>`
             });
         }
         

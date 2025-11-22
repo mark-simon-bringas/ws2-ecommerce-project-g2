@@ -1,0 +1,83 @@
+<div class="settings-page-wrapper" style="max-width: 800px;">
+    <div class="d-flex align-items-center mb-4">
+        <a href="/account/settings" class="btn btn-icon btn-light rounded-circle me-3">
+            <i class="bi bi-arrow-left"></i>
+        </a>
+        <div>
+            <h1 class="h3 fw-bold mb-0">My Vouchers</h1>
+            <p class="text-body-secondary small mb-0">View and redeem your discounts</p>
+        </div>
+    </div>
+
+    <% if (typeof message !== 'undefined' && message) { %>
+        <div class="alert alert-success alert-dismissible fade show rounded-4 border-0 shadow-sm mb-4" role="alert">
+            <i class="bi bi-check-circle-fill me-2"></i> <%= message %>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    <% } %>
+    
+    <% if (typeof error !== 'undefined' && error) { %>
+        <div class="alert alert-danger alert-dismissible fade show rounded-4 border-0 shadow-sm mb-4" role="alert">
+            <i class="bi bi-exclamation-circle-fill me-2"></i> <%= error %>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    <% } %>
+
+    <div class="card border-0 shadow-sm rounded-4 mb-4">
+        <div class="card-body p-4">
+            <h6 class="fw-bold mb-3">Redeem a Code</h6>
+            <form action="/account/vouchers/redeem" method="POST" class="d-flex gap-2">
+                <input type="text" name="code" class="form-control bg-light border-0" placeholder="Enter voucher code..." required>
+                <button type="submit" class="btn btn-dark rounded-pill px-4 fw-bold">Redeem</button>
+            </form>
+        </div>
+    </div>
+
+    <h6 class="fw-bold mb-3 px-2">Your Wallet</h6>
+    
+    <% if (userVouchers && userVouchers.length > 0) { %>
+        <div class="row g-3">
+            <% userVouchers.forEach(v => { %>
+                <div class="col-md-6">
+                    <div class="card border-0 shadow-sm rounded-4 h-100 position-relative overflow-hidden" style="border-left: 6px solid #111 !important;">
+                        <div class="card-body p-4">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h4 class="fw-bold text-dark mb-0">
+                                        <%= v.details.discountType === 'percentage' ? v.details.discountValue + '%' : '$' + v.details.discountValue %> OFF
+                                    </h4>
+                                    <p class="text-secondary small mb-2">Min. Spend $<%= v.details.minOrderAmount %></p>
+                                </div>
+                                <span class="badge bg-light text-dark border"><%= v.details.code %></span>
+                            </div>
+                            <hr class="border-dashed my-3">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <small class="text-body-tertiary" style="font-size: 0.75rem;">
+                                    Expires: <%= new Date(v.details.expiryDate).toLocaleDateString() %>
+                                </small>
+                                <% if (v.isUsed) { %>
+                                    <span class="badge bg-secondary-subtle text-secondary rounded-pill">Used</span>
+                                <% } else { %>
+                                    <span class="badge bg-success-subtle text-success rounded-pill">Available</span>
+                                <% } %>
+                            </div>
+                        </div>
+                        <div class="position-absolute top-50 start-0 translate-middle rounded-circle bg-white" style="width: 20px; height: 20px; margin-left: -2px;"></div>
+                        <div class="position-absolute top-50 end-0 translate-middle rounded-circle bg-white" style="width: 20px; height: 20px; margin-right: -18px;"></div>
+                    </div>
+                </div>
+            <% }) %>
+        </div>
+    <% } else { %>
+        <div class="text-center py-5 border rounded-4 bg-light">
+            <i class="bi bi-ticket-perforated-fill fs-1 text-body-tertiary mb-3 d-block"></i>
+            <p class="text-secondary mb-0">You have no vouchers yet.</p>
+        </div>
+    <% } %>
+</div>
+
+<style>
+    .settings-page-wrapper { margin: 0 auto; padding: 1rem; }
+    .btn-icon { width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border: 1px solid var(--border-color); }
+    .border-dashed { border-style: dashed !important; }
+</style>

@@ -183,16 +183,30 @@
                                         <a href="/products/<%= product.sku %>/review" class="btn btn-outline-secondary">Write a Review</a>
                                     </div>
                                     <% if (reviews && reviews.length > 0) { %>
-                                        <div class="review-list">
+                                        <div class="review-list d-flex flex-column gap-4">
                                             <% reviews.forEach(review => { %>
-                                                <div class="review-card">
-                                                    <div class="review-rating">
-                                                        <% for(let i = 1; i <= 5; i++) { %>
-                                                            <i class="bi <%= i <= review.rating ? 'bi-star-fill' : 'bi-star' %>"></i>
+                                                <div class="review-card d-flex gap-3">
+                                                    <div class="flex-shrink-0">
+                                                        <% if (review.author && review.author.profilePictureUrl) { %>
+                                                            <img src="<%= review.author.profilePictureUrl %>" class="rounded-circle object-fit-cover border" style="width: 48px; height: 48px;" alt="Avatar">
+                                                        <% } else { %>
+                                                            <div class="rounded-circle bg-secondary-subtle d-flex align-items-center justify-content-center text-secondary fw-bold" style="width: 48px; height: 48px; font-size: 1.2rem;">
+                                                                <%= review.author && review.author.firstName ? review.author.firstName.charAt(0).toUpperCase() : 'U' %>
+                                                            </div>
                                                         <% } %>
                                                     </div>
-                                                    <p class="review-body mb-1"><%= review.comment %></p>
-                                                    <p class="small text-body-secondary"><%= review.author.firstName %> - <%= new Date(review.createdAt).toLocaleDateString() %></p>
+                                                    
+                                                    <div>
+                                                        <div class="review-rating mb-1 small text-dark">
+                                                            <% for(let i = 1; i <= 5; i++) { %>
+                                                                <i class="bi <%= i <= review.rating ? 'bi-star-fill' : 'bi-star' %>"></i>
+                                                            <% } %>
+                                                        </div>
+                                                        <p class="review-body mb-1"><%= review.comment %></p>
+                                                        <p class="small text-body-secondary mb-0">
+                                                            <%= review.author.firstName %> &bull; <%= new Date(review.createdAt).toLocaleDateString() %>
+                                                        </p>
+                                                    </div>
                                                 </div>
                                             <% }) %>
                                         </div>
@@ -246,7 +260,7 @@
                                     <div class="product-price">
                                         <% if (relatedProduct.onSale) { %>
                                             <span class="fw-bold text-dark"><%= locationData.symbol %><%= relatedProduct.convertedSalePrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></span>
-                                            <del class="text-body-secondary ms-2"><%= locationData.symbol %><%= relatedProduct.convertedPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></del>
+                                            <del class="text-secondary ms-1"><%= locationData.symbol %><%= relatedProduct.convertedPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></del>
                                             <span class="text-success fw-bold ms-2"><%= relatedProduct.discountPercentage %>% OFF</span>
                                         <% } else { %>
                                             <span><%= locationData.symbol %><%= relatedProduct.convertedPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></span>
@@ -356,6 +370,7 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     }
 });
+
 function initMagnifier(imgId) {
     const img = document.getElementById(imgId);
     if (!img) return;
@@ -372,6 +387,7 @@ function initMagnifier(imgId) {
     const zoom = 2;
     lensImg.style.width = img.offsetWidth * zoom + "px";
     lensImg.style.height = img.offsetHeight * zoom + "px";
+    
     function moveLens(e) {
         e.preventDefault();
         const rect = img.getBoundingClientRect();

@@ -3,8 +3,10 @@
         <h1 class="h2 fw-bold mb-4">Settings</h1>
         
         <div class="d-flex align-items-center gap-3">
-            <div class="profile-avatar-placeholder rounded-circle bg-body-secondary d-flex align-items-center justify-content-center" style="width: 64px; height: 64px; font-size: 1.5rem; color: var(--text-color-secondary);">
-                <% if (currentUser.firstName) { %>
+            <div class="profile-avatar-placeholder rounded-circle bg-body-secondary d-flex align-items-center justify-content-center position-relative overflow-hidden" style="width: 64px; height: 64px; font-size: 1.5rem; color: var(--text-color-secondary);">
+                <% if (currentUser.profilePictureUrl) { %>
+                    <img src="<%= currentUser.profilePictureUrl %>" alt="Profile" style="width: 100%; height: 100%; object-fit: cover;">
+                <% } else if (currentUser.firstName) { %>
                     <%= currentUser.firstName.charAt(0).toUpperCase() %>
                 <% } else { %>
                     <i class="bi bi-person-fill"></i>

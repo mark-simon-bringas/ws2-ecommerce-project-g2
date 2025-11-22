@@ -96,6 +96,7 @@ router.post('/register', async (req, res) => {
             tokenExpiry: new Date(Date.now() + 3600000),
             wishlist: [],
             loginHistory: [], // Initialize empty login history
+            profilePictureUrl: null, // Initialize profile picture
             createdAt: currentDate,
             updatedAt: currentDate
         };
@@ -198,7 +199,8 @@ router.post('/login', async (req, res) => {
             lastName: user.lastName,
             email: user.email,
             role: user.role,
-            isEmailVerified: user.isEmailVerified
+            isEmailVerified: user.isEmailVerified,
+            profilePictureUrl: user.profilePictureUrl // ADDED: Load profile pic into session
         };
 
         // --- NEW: Track Login History ---
