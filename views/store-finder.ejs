@@ -1,0 +1,573 @@
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet-gesture-handling/dist/leaflet-gesture-handling.min.css" type="text/css">
+<script src="https://unpkg.com/leaflet-gesture-handling/dist/leaflet-gesture-handling.min.js"></script>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+
+<style>
+    /* --- 1. GLOBAL LAYOUT FIXES --- */
+    .content-wrapper {
+        margin: 0 !important;
+        padding: 0 !important;
+        max-width: 100% !important;
+        width: 100% !important;
+    }
+
+    /* Force Navbar Stickiness */
+    body > nav, .navbar, header.site-header, .main-header {
+        position: -webkit-sticky !important;
+        position: sticky !important;
+        top: 0;
+        z-index: 1050 !important; 
+        background-color: #fff; 
+    }
+
+    .store-finder-root {
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+        background-color: #fff;
+        min-height: 100vh;
+    }
+
+    /* --- 2. DESKTOP LAYOUT --- */
+    @media (min-width: 992px) {
+        .store-finder-root {
+            flex-direction: row;
+            height: calc(100vh - 60px); 
+            min-height: 600px;
+            overflow: hidden; 
+        }
+
+        .finder-sidebar {
+            width: 400px;
+            height: 100%; 
+            overflow-y: auto; 
+            flex-shrink: 0;
+            background: #fff;
+            border-right: 1px solid #f0f0f0;
+            z-index: 20;
+        }
+
+        .finder-map-container {
+            flex: 1;
+            height: 100%;
+            position: relative;
+        }
+        
+        .site-footer { display: none !important; }
+        .mobile-tabs, .mobile-map-cards-container { display: none !important; }
+    }
+
+    /* --- 3. MOBILE LAYOUT --- */
+    @media (max-width: 991.98px) {
+        .store-finder-root {
+            height: auto; 
+            overflow: visible; 
+        }
+
+        /* --- MOBILE TABS (FIXED) --- */
+        .mobile-tabs {
+            display: flex;
+            position: -webkit-sticky;
+            position: sticky;
+            /* Default fallback (will be overridden by JS) */
+            top: 48px; 
+            z-index: 1000;
+            /* Solid white background (removed transparency) */
+            background: #fff; 
+            /* Solid border to define structure */
+            border-bottom: 1px solid #e5e5e5;
+            /* Removed box-shadow to prevent "floating" look */
+            box-shadow: none; 
+        }
+        .mobile-tab-btn {
+            flex: 1;
+            padding: 0.8rem 1rem; /* Slightly thinner */
+            background: none;
+            border: none;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #757575;
+            border-bottom: 3px solid transparent;
+        }
+        .mobile-tab-btn.active {
+            color: #111;
+            border-bottom-color: #111;
+        }
+
+        /* Sidebar */
+        .finder-sidebar {
+            width: 100%;
+            height: auto; 
+        }
+        
+        /* Sidebar Header */
+        .sidebar-header {
+            position: sticky;
+            top: 98px; /* Approx nav + tab height */
+            z-index: 30;
+            background: #fff;
+            padding: 1.5rem 1.5rem 0.5rem 1.5rem;
+        }
+
+        /* Map Container */
+        .finder-map-container {
+            width: 100%;
+            height: 65vh; 
+            min-height: 400px;
+            display: none; 
+            position: relative;
+        }
+
+        /* TOGGLE LOGIC */
+        .store-finder-root.mode-list .finder-map-container { display: none; }
+        .store-finder-root.mode-list .finder-sidebar { display: block; }
+        .store-finder-root.mode-list .mobile-map-cards-container { display: none; }
+        
+        .store-finder-root.mode-map .finder-sidebar { display: none; }
+        .store-finder-root.mode-map .finder-map-container { display: block; }
+        .store-finder-root.mode-map .mobile-map-cards-container { display: block; }
+        
+        .store-finder-root.mode-map ~ .site-footer { display: block !important; }
+    }
+
+    /* --- 4. MAP CAROUSEL --- */
+    .mobile-map-cards-container {
+        padding: 1rem 0 1.5rem 1rem;
+        background: #fff;
+        border-top: 1px solid #f0f0f0;
+    }
+    .mobile-map-title { font-size: 0.9rem; font-weight: 700; margin-bottom: 0.75rem; color: #111; }
+    
+    .map-carousel {
+        display: flex; gap: 1rem; overflow-x: auto; padding-bottom: 1rem; padding-right: 1rem;
+        scroll-snap-type: x mandatory; scrollbar-width: none;
+    }
+    .map-carousel::-webkit-scrollbar { display: none; }
+
+    .carousel-card {
+        min-width: 280px; max-width: 280px;
+        background: #fff; border: 1px solid #e5e5e5; border-radius: 12px;
+        padding: 1.2rem; scroll-snap-align: start; flex-shrink: 0;
+        cursor: pointer; transition: border-color 0.2s;
+    }
+    .carousel-card:active { background-color: #fafafa; }
+
+    /* --- 5. COMMON UI --- */
+    @media (min-width: 992px) {
+        .sidebar-header { padding: 1.5rem 2rem; background: #fff; position: sticky; top: 0; z-index: 30; }
+    }
+
+    .search-container { position: relative; margin-bottom: 1rem; }
+    .search-input {
+        width: 100%; padding: 0.8rem 1rem 0.8rem 3rem;
+        border: 1px solid #e5e5e5; border-radius: 100px;
+        font-size: 1rem; background-color: #f5f5f5; outline: none; transition: all 0.2s;
+    }
+    .search-input:focus { background-color: #fff; border-color: #111; box-shadow: 0 0 0 4px rgba(0,0,0,0.05); }
+    .search-icon { position: absolute; left: 1.2rem; top: 50%; transform: translateY(-50%); color: #757575; }
+
+    .filter-scroll { display: flex; gap: 0.5rem; overflow-x: auto; padding-bottom: 5px; scrollbar-width: none; }
+    .filter-scroll::-webkit-scrollbar { display: none; }
+    .filter-pill {
+        white-space: nowrap; padding: 8px 20px; border-radius: 100px;
+        border: 1px solid #e5e5e5; background: #fff; color: #111;
+        font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: all 0.2s;
+    }
+    .filter-pill.active { background: #111; color: #fff; border-color: #111; }
+
+    .store-card { padding: 2rem; border-bottom: 1px solid #f5f5f5; cursor: pointer; transition: background 0.2s; }
+    .store-card:hover { background-color: #fafafa; }
+    .store-card.active { background-color: #f9f9f9; border-left: 4px solid #111; padding-left: calc(2rem - 4px); }
+    
+    .store-title { font-weight: 700; font-size: 1.1rem; margin-bottom: 0.25rem; color: #111; }
+    .store-address { color: #707072; font-size: 0.95rem; line-height: 1.5; margin-bottom: 0.75rem; }
+    .distance-tag { font-size: 0.8rem; color: #007bff; font-weight: 600; margin-left: 8px; }
+
+    .status-open { color: #007d48; font-weight: 600; font-size: 0.85rem; }
+    .status-closed { color: #d32f2f; font-weight: 600; font-size: 0.85rem; }
+    
+    #map { height: 100%; width: 100%; z-index: 1; }
+    
+    .locate-btn {
+        position: absolute; bottom: 2rem; right: 2rem;
+        width: 50px; height: 50px; border-radius: 50%; background: #fff;
+        border: none; box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+        z-index: 400; 
+        cursor: pointer; display: flex; align-items: center; justify-content: center;
+        transition: transform 0.2s;
+    }
+
+    .custom-pin { background: transparent; border: none; }
+    .custom-pin img { 
+        width: 100%; height: 100%; object-fit: contain; 
+        border-radius: 50%; border: 2px solid #fff; background: #111; 
+        box-shadow: 0 4px 10px rgba(0,0,0,0.3); transition: transform 0.3s ease; 
+    }
+    .custom-pin.active-pin img { transform: scale(1.3) translateY(-8px); border-color: #000; z-index: 999; }
+    
+    .leaflet-popup-content-wrapper { border-radius: 12px; box-shadow: 0 8px 30px rgba(0,0,0,0.15); padding: 0; overflow: hidden; }
+    .leaflet-popup-content { margin: 0; width: 240px !important; }
+    .popup-header { padding: 12px; background: #111; color: #fff; text-align: center; font-weight: 600; }
+    .popup-body { padding: 15px; text-align: center; }
+
+    .leaflet-gesture-handling:after { background: rgba(0,0,0,0.7); color: #fff; font-family: sans-serif; }
+</style>
+
+<div class="store-finder-root mode-list" id="finder-root">
+    
+    <div class="mobile-tabs d-lg-none" id="mobile-tabs-container">
+        <button class="mobile-tab-btn active" id="btn-list" onclick="setMobileView('list')">List View</button>
+        <button class="mobile-tab-btn" id="btn-map" onclick="setMobileView('map')">Map View</button>
+    </div>
+
+    <div class="finder-sidebar">
+        <div class="sidebar-header" id="sidebar-header">
+            <h1 class="h4 fw-bold mb-4">Find a Store</h1>
+            <div class="search-container">
+                <i class="bi bi-search search-icon"></i>
+                <input type="text" class="search-input" id="store-search" placeholder="Search location">
+            </div>
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <span class="small fw-bold text-secondary" id="result-count">Loading...</span>
+                <button class="btn btn-link p-0 text-dark fw-bold small text-decoration-none" onclick="resetFilters()">Reset</button>
+            </div>
+            <div class="filter-scroll">
+                <button class="filter-pill active" onclick="filterCity('All', this)">All</button>
+                <button class="filter-pill" onclick="filterCity('Metro Manila', this)">Manila</button>
+                <button class="filter-pill" onclick="filterCity('Baguio', this)">Baguio</button>
+                <button class="filter-pill" onclick="filterCity('Cebu', this)">Cebu</button>
+                <button class="filter-pill" onclick="filterCity('Davao', this)">Davao</button>
+            </div>
+        </div>
+
+        <div id="store-list-container"></div>
+        
+        <div class="p-4 d-lg-none"></div>
+    </div>
+
+    <div class="finder-map-container">
+        <div id="map"></div>
+        <button class="locate-btn" onclick="locateUser()" title="Use my location">
+            <i class="bi bi-crosshair fs-4"></i>
+        </button>
+    </div>
+
+    <div class="mobile-map-cards-container">
+        <div class="d-flex justify-content-between align-items-center mb-2 px-1">
+            <div class="mobile-map-title mb-0">Locations Nearby</div>
+            <small class="text-secondary">Swipe to browse</small>
+        </div>
+        <div class="map-carousel" id="mobile-carousel-list"></div>
+    </div>
+
+</div>
+
+<script>
+    // --- AUTO-ANCHOR SCRIPT (Fixes the gap/overlap issue) ---
+    function anchorTabs() {
+        if(window.innerWidth < 992) {
+            // Find your actual navbar height. 
+            // We select common navbar tags. If you have a specific class, replace 'nav' with that.
+            const nav = document.querySelector('nav') || document.querySelector('header');
+            const tabs = document.getElementById('mobile-tabs-container');
+            const sidebarHeader = document.getElementById('sidebar-header');
+            
+            if(nav && tabs) {
+                // Get the exact height of the navbar
+                const navHeight = nav.offsetHeight;
+                
+                // Set the tabs to stick exactly at the bottom of the navbar
+                tabs.style.top = navHeight + 'px';
+                
+                // Adjust the sidebar search header to stick below the tabs
+                if(sidebarHeader) {
+                    sidebarHeader.style.top = (navHeight + tabs.offsetHeight) + 'px';
+                }
+            }
+        }
+    }
+    
+    // Run anchor script on load and resize
+    window.addEventListener('load', anchorTabs);
+    window.addEventListener('resize', anchorTabs);
+    // --------------------------------------------------------
+
+    // --- DATA ---
+    const stores = [
+        { id: 1, name: "Sneakslab Podium", address: "2/F The Podium, 12 ADB Ave, Mandaluyong", city: "Metro Manila", lat: 14.5852, lng: 121.0592, phone: "+63 2 8123 4567", opens: "11:00", closes: "21:00" },
+        { id: 2, name: "Sneakslab BGC", address: "B3 Bonifacio High St, BGC, Taguig", city: "Metro Manila", lat: 14.5502, lng: 121.0509, phone: "+63 2 8765 4321", opens: "10:00", closes: "22:00" },
+        { id: 3, name: "Sneakslab Greenbelt", address: "Level 3, Greenbelt 5, Makati", city: "Metro Manila", lat: 14.5520, lng: 121.0223, phone: "+63 2 8888 9999", opens: "11:00", closes: "21:00" },
+        { id: 4, name: "Sneakslab SM Baguio", address: "UGF, SM City Baguio, Luneta Hill", city: "Baguio", lat: 16.4088, lng: 120.5986, phone: "+63 74 442 0001", opens: "10:00", closes: "21:00" },
+        { id: 5, name: "Sneakslab Session", address: "104 Session Road, Baguio City", city: "Baguio", lat: 16.4124, lng: 120.5963, phone: "+63 74 444 9999", opens: "09:00", closes: "20:00" },
+        { id: 6, name: "Sneakslab CJH", address: "Technohub, Camp John Hay, Baguio", city: "Baguio", lat: 16.3938, lng: 120.6165, phone: "+63 74 422 5555", opens: "10:00", closes: "19:00" },
+        { id: 7, name: "Sneakslab Ayala Cebu", address: "Level 1, Ayala Center Cebu", city: "Cebu", lat: 10.3173, lng: 123.9057, phone: "+63 32 234 5678", opens: "10:00", closes: "21:00" },
+        { id: 8, name: "Sneakslab SM Seaside", address: "2nd Level, SM Seaside City Cebu", city: "Cebu", lat: 10.2820, lng: 123.8810, phone: "+63 32 345 6789", opens: "10:00", closes: "21:00" },
+        { id: 9, name: "Sneakslab IT Park", address: "Central Bloc, Cebu IT Park", city: "Cebu", lat: 10.3296, lng: 123.9059, phone: "+63 32 456 7890", opens: "10:00", closes: "22:00" },
+        { id: 10, name: "Sneakslab SM Lanang", address: "2nd Floor, SM Lanang Premier", city: "Davao", lat: 7.0992, lng: 125.6265, phone: "+63 82 221 1111", opens: "10:00", closes: "21:00" },
+        { id: 11, name: "Sneakslab Abreeza", address: "G/F Abreeza Mall, J.P. Laurel Ave", city: "Davao", lat: 7.0915, lng: 125.6106, phone: "+63 82 222 2222", opens: "10:00", closes: "21:00" },
+        { id: 12, name: "Sneakslab G-Mall", address: "3rd Level, Gaisano Mall of Davao", city: "Davao", lat: 7.0794, lng: 125.6129, phone: "+63 82 333 3333", opens: "10:00", closes: "20:00" }
+    ];
+
+    let activeStores = [...stores];
+    let map = null;
+    const markers = {};
+    let pinIcon = null;
+    let userLocation = null;
+
+    // --- HELPER FUNCTIONS ---
+    function getDistanceFromLatLonInKm(lat1, lon1, lat2, lon2) {
+        const R = 6371; 
+        const dLat = deg2rad(lat2 - lat1);
+        const dLon = deg2rad(lon2 - lon1);
+        const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                  Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) * Math.sin(dLon/2) * Math.sin(dLon/2); 
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
+        return R * c;
+    }
+
+    function deg2rad(deg) { return deg * (Math.PI/180); }
+
+    window.getStatusHtml = function(opens, closes) {
+        const now = new Date();
+        const mins = now.getHours() * 60 + now.getMinutes();
+        const [oh, om] = opens.split(':').map(Number);
+        const [ch, cm] = closes.split(':').map(Number);
+        const start = oh * 60 + om;
+        const end = ch * 60 + cm;
+        
+        if (mins >= start && mins < end) {
+            return `<span class="status-open"><span class="status-dot"></span> Open</span> <span class="text-secondary small">· Closes ${closes}</span>`;
+        }
+        return `<span class="status-closed"><span class="status-dot"></span> Closed</span> <span class="text-secondary small">· Opens ${opens}</span>`;
+    };
+
+    window.setMobileView = function(view) {
+        const root = document.getElementById('finder-root');
+        const btnList = document.getElementById('btn-list');
+        const btnMap = document.getElementById('btn-map');
+
+        if(view === 'list') {
+            root.classList.remove('mode-map');
+            root.classList.add('mode-list');
+            btnList.classList.add('active');
+            btnMap.classList.remove('active');
+        } else {
+            root.classList.remove('mode-list');
+            root.classList.add('mode-map');
+            btnList.classList.remove('active');
+            btnMap.classList.add('active');
+            
+            if(map) {
+                setTimeout(() => {
+                    map.invalidateSize();
+                    if(activeStores.length > 0 && typeof L !== 'undefined') {
+                        const bounds = L.latLngBounds(activeStores.map(s => [s.lat, s.lng]));
+                        if(userLocation) bounds.extend(userLocation);
+                        map.fitBounds(bounds, { padding: [50, 50] });
+                    }
+                }, 200);
+            }
+        }
+    };
+
+    window.render = function() {
+        const list = document.getElementById('store-list-container');
+        const carousel = document.getElementById('mobile-carousel-list');
+        const count = document.getElementById('result-count');
+        if(!list) return;
+
+        list.innerHTML = '';
+        if(carousel) carousel.innerHTML = ''; 
+        
+        if(map) Object.values(markers).forEach(m => map.removeLayer(m));
+        
+        if(count) count.innerText = `${activeStores.length} Stores`;
+
+        if(activeStores.length === 0) {
+            list.innerHTML = `<div class="p-5 text-center text-secondary"><p>No stores found matching your criteria.</p></div>`;
+            if(carousel) carousel.innerHTML = `<div class="p-3 w-100 text-center text-secondary small">No stores found.</div>`;
+            return;
+        }
+
+        const bounds = (typeof L !== 'undefined') ? L.latLngBounds() : null;
+
+        activeStores.forEach(store => {
+            if(map && pinIcon && bounds) {
+                const marker = L.marker([store.lat, store.lng], { icon: pinIcon }).addTo(map);
+                const popup = `
+                    <div class="popup-header">${store.name}</div>
+                    <div class="popup-body">
+                        <p class="text-secondary small mb-2">${store.address}</p>
+                        <div class="d-grid mt-2">
+                            <a href="https://www.google.com/maps/dir/?api=1&destination=${store.lat},${store.lng}" 
+                               target="_blank" class="btn btn-dark btn-sm rounded-pill">Get Directions</a>
+                        </div>
+                    </div>
+                `;
+                marker.bindPopup(popup);
+                markers[store.id] = marker;
+                bounds.extend(marker.getLatLng());
+            }
+
+            const card = document.createElement('div');
+            card.className = 'store-card';
+            card.id = `card-${store.id}`;
+            const distHtml = store.distance ? `<span class="distance-tag"><i class="bi bi-geo-alt-fill"></i> ${store.distance.toFixed(1)} km</span>` : '';
+
+            card.innerHTML = `
+                <div class="d-flex justify-content-between align-items-start mb-1">
+                    <h6 class="store-title">${store.name} ${distHtml}</h6>
+                    <span class="badge bg-light text-dark border rounded-pill fw-normal">${store.city}</span>
+                </div>
+                <p class="store-address">${store.address}</p>
+                <div class="mb-3">${window.getStatusHtml(store.opens, store.closes)}</div>
+                <div class="d-flex gap-3 border-top border-light pt-3">
+                    <button class="btn btn-link p-0 text-dark text-decoration-none small fw-bold" onclick="flyTo(${store.id}, ${store.lat}, ${store.lng})">View on Map</button>
+                    <a href="tel:${store.phone}" class="text-secondary text-decoration-none small fw-medium">Call Store</a>
+                </div>
+            `;
+            
+            card.addEventListener('click', (e) => {
+                if(e.target.tagName !== 'BUTTON' && e.target.tagName !== 'A') {
+                    document.querySelectorAll('.store-card').forEach(c => c.classList.remove('active'));
+                    card.classList.add('active');
+                    if(window.innerWidth >= 992) {
+                        flyTo(store.id, store.lat, store.lng);
+                    }
+                }
+            });
+            list.appendChild(card);
+
+            if(carousel) {
+                const cCard = document.createElement('div');
+                cCard.className = 'carousel-card';
+                cCard.innerHTML = `
+                    <h6 class="fw-bold mb-1" style="font-size:0.95rem">${store.name}</h6>
+                    <p class="small text-secondary mb-2 text-truncate">${store.address}</p>
+                    <div class="mb-2">${window.getStatusHtml(store.opens, store.closes)}</div>
+                    <div class="d-grid">
+                        <button class="btn btn-outline-dark btn-sm rounded-pill" style="font-size:0.8rem">Show on Map</button>
+                    </div>
+                `;
+                cCard.onclick = () => {
+                    document.querySelectorAll('.carousel-card').forEach(cc => cc.style.borderColor = '#e5e5e5');
+                    cCard.style.borderColor = '#111';
+                    if(map) {
+                        map.flyTo([store.lat, store.lng], 16, { duration: 1 });
+                        const m = markers[store.id];
+                        if(m) setTimeout(() => m.openPopup(), 1000);
+                        document.querySelector('.finder-map-container').scrollIntoView({ behavior: 'smooth' });
+                    }
+                };
+                carousel.appendChild(cCard);
+            }
+        });
+
+        if(map && bounds && activeStores.length > 0) {
+            if(userLocation) bounds.extend(userLocation);
+            map.fitBounds(bounds, { padding: [50, 50], maxZoom: 15 });
+        }
+    };
+
+    window.flyTo = function(id, lat, lng) {
+        document.querySelectorAll('.store-card').forEach(c => c.classList.remove('active'));
+        const card = document.getElementById(`card-${id}`);
+        if(card) {
+            card.classList.add('active');
+            if(window.innerWidth >= 992) {
+                card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }
+
+        if(window.innerWidth < 992) {
+            window.setMobileView('map');
+            const mapContainer = document.querySelector('.finder-map-container');
+            if(mapContainer) mapContainer.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        if(map) {
+            map.flyTo([lat, lng], 16, { duration: 1.2 });
+            const m = markers[id];
+            if(m) setTimeout(() => m.openPopup(), 1200);
+        }
+    };
+
+    window.filterCity = function(city, btn) {
+        document.querySelectorAll('.filter-pill').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        if(city === 'All') activeStores = [...stores];
+        else activeStores = stores.filter(s => s.city === city);
+        if(userLocation) activeStores.sort((a, b) => (a.distance || 9999) - (b.distance || 9999));
+        window.render();
+    };
+
+    window.resetFilters = function() {
+        document.getElementById('store-search').value = '';
+        const allBtn = document.querySelector('.filter-pill');
+        window.filterCity('All', allBtn);
+    };
+
+    window.locateUser = function() {
+        if(!map) return;
+        map.locate({ setView: true, maxZoom: 14 })
+           .on('locationfound', function(e) {
+                userLocation = e.latlng;
+                L.circleMarker(e.latlng, { radius: 8, fillColor: "#007bff", color: "#fff", weight: 2, opacity: 1, fillOpacity: 0.8 }).addTo(map).bindPopup("You are here").openPopup();
+                stores.forEach(store => {
+                    store.distance = getDistanceFromLatLonInKm(e.latitude, e.longitude, store.lat, store.lng);
+                });
+                activeStores.sort((a, b) => a.distance - b.distance);
+                window.render();
+           })
+           .on('locationerror', function(e) {
+               alert("Could not access your location. Please check browser permissions.");
+           });
+    };
+
+    // --- INITIALIZATION ---
+    document.addEventListener('DOMContentLoaded', () => {
+        const searchInput = document.getElementById('store-search');
+        if(searchInput) {
+            searchInput.addEventListener('input', (e) => {
+                const val = e.target.value.toLowerCase();
+                activeStores = stores.filter(s => 
+                    s.name.toLowerCase().includes(val) || 
+                    s.address.toLowerCase().includes(val) || 
+                    s.city.toLowerCase().includes(val)
+                );
+                window.render();
+            });
+        }
+
+        setTimeout(() => {
+            if(typeof L !== 'undefined') {
+                const mapEl = document.getElementById('map');
+                if(mapEl) {
+                    map = L.map('map', { 
+                        zoomControl: false, 
+                        attributionControl: false,
+                        gestureHandling: true 
+                    }).setView([12.8797, 121.7740], 6);
+                    
+                    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { maxZoom: 20 }).addTo(map);
+                    L.control.zoom({ position: 'bottomright' }).addTo(map);
+
+                    pinIcon = L.icon({
+                        iconUrl: '/icons/sneakslab_pin.png', 
+                        iconSize: [42, 42],
+                        className: 'custom-pin'
+                    });
+
+                    window.render();
+                    map.invalidateSize();
+                }
+            } else {
+                window.render();
+            }
+        }, 100);
+    });
+</script>

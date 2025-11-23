@@ -25,63 +25,65 @@
     </div>
 
     <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
-        <div class="list-group list-group-flush" id="tickets-list">
-            <% if (tickets && tickets.length > 0) { %>
-                <% tickets.forEach(ticket => { %>
-                    <a href="/account/admin/tickets/<%= ticket.ticketId %>" class="list-group-item list-group-item-action p-4 d-flex align-items-center gap-3 border-0 border-bottom ticket-item" data-status="<%= ticket.status %>">
-                        <div class="flex-shrink-0">
-                            <% if (ticket.status === 'Open') { %>
-                                <div class="rounded-circle bg-primary-subtle text-primary d-flex align-items-center justify-content-center" style="width: 48px; height: 48px;">
-                                    <i class="bi bi-exclamation-circle-fill fs-5"></i>
-                                </div>
-                            <% } else if (ticket.status === 'Answered') { %>
-                                <div class="rounded-circle bg-success-subtle text-success d-flex align-items-center justify-content-center" style="width: 48px; height: 48px;">
-                                    <i class="bi bi-check-circle-fill fs-5"></i>
-                                </div>
-                            <% } else { %>
-                                <div class="rounded-circle bg-secondary-subtle text-secondary d-flex align-items-center justify-content-center" style="width: 48px; height: 48px;">
-                                    <i class="bi bi-archive-fill fs-5"></i>
-                                </div>
-                            <% } %>
-                        </div>
-
-                        <div class="flex-grow-1 min-w-0">
-                            <div class="d-flex justify-content-between align-items-baseline mb-1">
-                                <h6 class="fw-bold mb-0 text-truncate me-2 ticket-subject"><%= ticket.subject %></h6>
-                                <small class="text-body-tertiary text-nowrap" style="font-size: 0.75rem;">
-                                    <%= new Date(ticket.updatedAt).toLocaleDateString() %>
-                                </small>
-                            </div>
-                            <div class="d-flex justify-content-between align-items-center">
-                                <p class="text-secondary small mb-0 text-truncate ticket-meta" style="max-width: 80%;">
-                                    <%= ticket.userEmail %> • #<%= ticket.ticketId %>
-                                </p>
+        <div id="tickets-list-scrollable" style="max-height: 70vh; overflow-y: auto;">
+            <div class="list-group list-group-flush" id="tickets-list">
+                <% if (tickets && tickets.length > 0) { %>
+                    <% tickets.forEach(ticket => { %>
+                        <a href="/account/admin/tickets/<%= ticket.ticketId %>" class="list-group-item list-group-item-action p-4 d-flex align-items-center gap-3 border-0 border-bottom ticket-item" data-status="<%= ticket.status %>">
+                            <div class="flex-shrink-0">
                                 <% if (ticket.status === 'Open') { %>
-                                    <span class="badge bg-primary rounded-pill" style="font-size: 0.6rem;">New</span>
+                                    <div class="rounded-circle bg-primary-subtle text-primary d-flex align-items-center justify-content-center" style="width: 48px; height: 48px;">
+                                        <i class="bi bi-exclamation-circle-fill fs-5"></i>
+                                    </div>
+                                <% } else if (ticket.status === 'Answered') { %>
+                                    <div class="rounded-circle bg-success-subtle text-success d-flex align-items-center justify-content-center" style="width: 48px; height: 48px;">
+                                        <i class="bi bi-check-circle-fill fs-5"></i>
+                                    </div>
+                                <% } else { %>
+                                    <div class="rounded-circle bg-secondary-subtle text-secondary d-flex align-items-center justify-content-center" style="width: 48px; height: 48px;">
+                                        <i class="bi bi-archive-fill fs-5"></i>
+                                    </div>
                                 <% } %>
                             </div>
+
+                            <div class="flex-grow-1 min-w-0">
+                                <div class="d-flex justify-content-between align-items-baseline mb-1">
+                                    <h6 class="fw-bold mb-0 text-truncate me-2 ticket-subject"><%= ticket.subject %></h6>
+                                    <small class="text-body-tertiary text-nowrap" style="font-size: 0.75rem;">
+                                        <%= new Date(ticket.updatedAt).toLocaleDateString() %>
+                                    </small>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <p class="text-secondary small mb-0 text-truncate ticket-meta" style="max-width: 80%;">
+                                        <%= ticket.userEmail %> • #<%= ticket.ticketId %>
+                                    </p>
+                                    <% if (ticket.status === 'Open') { %>
+                                        <span class="badge bg-primary rounded-pill" style="font-size: 0.6rem;">New</span>
+                                    <% } %>
+                                </div>
+                            </div>
+                            
+                            <i class="bi bi-chevron-right text-body-tertiary"></i>
+                        </a>
+                    <% }) %>
+                <% } else { %>
+                    <div class="text-center p-5" id="empty-state">
+                        <div class="bg-light rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px;">
+                            <i class="bi bi-chat-square-text text-secondary fs-4"></i>
                         </div>
-                        
-                        <i class="bi bi-chevron-right text-body-tertiary"></i>
-                    </a>
-                <% }) %>
-            <% } else { %>
-                <div class="text-center p-5" id="empty-state">
-                    <div class="bg-light rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px;">
-                        <i class="bi bi-chat-square-text text-secondary fs-4"></i>
+                        <p class="text-secondary mb-0">Your inbox is empty.</p>
                     </div>
-                    <p class="text-secondary mb-0">Your inbox is empty.</p>
+                <% } %>
+                
+                <div id="no-results" class="text-center p-5 d-none">
+                    <div class="bg-light rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px;">
+                        <i class="bi bi-search text-secondary fs-4"></i>
+                    </div>
+                    <p class="text-secondary mb-0">No tickets found matching your search.</p>
                 </div>
-            <% } %>
-            
-            <div id="no-results" class="text-center p-5 d-none">
-                <div class="bg-light rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px;">
-                    <i class="bi bi-search text-secondary fs-4"></i>
-                </div>
-                <p class="text-secondary mb-0">No tickets found matching your search.</p>
             </div>
         </div>
-    </div>
+        </div>
 </div>
 
 <style>
@@ -114,16 +116,19 @@
     document.addEventListener('DOMContentLoaded', function() {
         const searchInput = document.getElementById('inbox-search');
         const filterButtons = document.querySelectorAll('#inbox-filters button');
-        const ticketItems = document.querySelectorAll('.ticket-item');
+        const ticketsListScrollable = document.getElementById('tickets-list-scrollable');
+        
+        // Use querySelectorAll on the specific scrollable container
+        const ticketItems = ticketsListScrollable.querySelectorAll('.ticket-item');
+        
         const noResults = document.getElementById('no-results');
         const emptyState = document.getElementById('empty-state');
 
         let currentFilter = 'all';
         let currentSearch = '';
-
+        
         function filterTickets() {
             let visibleCount = 0;
-
             ticketItems.forEach(item => {
                 const status = item.dataset.status;
                 const subject = item.querySelector('.ticket-subject').textContent.toLowerCase();
@@ -133,7 +138,7 @@
                 const statusMatch = currentFilter === 'all' || status === currentFilter;
 
                 if (searchMatch && statusMatch) {
-                    item.style.display = ''; // Reset to default flex
+                    item.style.display = 'flex'; // Reset to default flex (since these are <a> tags with d-flex)
                     visibleCount++;
                 } else {
                     item.style.display = 'none';

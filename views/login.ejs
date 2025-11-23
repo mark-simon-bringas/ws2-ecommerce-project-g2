@@ -1,31 +1,46 @@
 <div class="auth-container">
     <div class="auth-card">
-        <div class="text-center">
-            <h1 class="h2 mb-4">Sign in to sneakslab</h1>
+        <div class="text-start mb-4">
+            <img src="/icons/favbutton.png" alt="Sneakslab" style="height: 32px; width: auto; margin-bottom: 1.5rem;">
+            <h1 class="h2 fw-bold mb-2">Sign In</h1>
+            <p class="text-body-secondary small">Your account for everything Sneakslab.</p>
         </div>
 
         <% if (typeof message !== 'undefined' && message) { %>
-            <div class="alert alert-info text-center" role="alert">
+            <div class="alert alert-info text-start" role="alert">
               <%= message %>
             </div>
         <% } %>
         
         <% if (typeof error !== 'undefined' && error) { %>
-            <div class="alert alert-danger text-center" role="alert">
+            <div class="alert alert-danger text-start" role="alert">
               <%= error %>
             </div>
         <% } %>
          
         <form action="/users/login" method="POST">
             <input type="hidden" name="redirect" value="<%= typeof redirect !== 'undefined' ? redirect : '' %>">
+            
             <div class="mb-3">
-              <label for="email" class="form-label">Email address</label>
-              <input type="email" class="form-control form-control-lg" id="email" name="email" required>
+              <input type="email" class="form-control form-control-lg bg-light border border-secondary-subtle" id="email" name="email" placeholder="Email address" required>
             </div>
      
             <div class="mb-3">
-               <label for="password" class="form-label">Password</label>
-              <input type="password" class="form-control form-control-lg" id="password" name="password" required>
+              <input type="password" class="form-control form-control-lg bg-light border border-secondary-subtle" id="password" name="password" placeholder="Password" required>
+            </div>
+
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="keepSignedIn" name="keepSignedIn">
+                    <label class="form-check-label small text-secondary" for="keepSignedIn">Keep me signed in</label>
+                </div>
+                <a href="/password/forgot" class="small text-secondary text-decoration-none">Forgot password?</a>
+            </div>
+
+            <div class="text-start mb-4">
+                <p class="small text-secondary m-0" style="font-size: 0.8rem;">
+                    By logging in, you agree to Sneakslab's <a href="/legal#privacy" class="text-decoration-underline text-secondary">Privacy Policy</a> and <a href="/legal#terms" class="text-decoration-underline text-secondary">Terms of Use</a>.
+                </p>
             </div>
             
             <div class="d-flex justify-content-center my-3">
@@ -33,23 +48,18 @@
                     id="turnstile-widget" 
                     class="cf-turnstile" 
                     data-sitekey="<%= turnstileSiteKey %>" 
-                    data-theme="dark"
+                    data-theme="light"
                     data-callback="onTurnstileSuccess">
                 </div>
             </div>
             
             <div class="d-grid">
-                <button type="submit" class="btn btn-primary btn-lg">Sign In</button>
-            </div>
-
-            <div class="text-center mt-3">
-                <a href="/password/forgot">Forgot Password?</a>
+                <button type="submit" class="btn btn-primary btn-lg rounded-pill">Sign In</button>
             </div>
         </form>
 
-        <p class="text-center text-body-secondary mt-5">
-            Don't have an account?
-            <a href="/users/register">Register here</a>
+        <p class="text-start text-body-secondary mt-4 small">
+            Not a member? <a href="/users/register" class="text-dark fw-bold text-decoration-underline">Join Us.</a>
         </p>
     </div>
 </div>

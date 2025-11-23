@@ -233,4 +233,10 @@ router.get('/legal', (req, res) => {
     });
 });
 
+router.get('/stores', (req, res) => {
+    res.render('store-finder', {
+        title: 'Find a Store'
+    });
+});
+
 module.exports = router;
