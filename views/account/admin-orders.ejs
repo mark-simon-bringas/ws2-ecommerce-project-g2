@@ -1,11 +1,11 @@
 <div class="settings-page-wrapper" style="max-width: 1000px;">
     <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4">
         <div class="d-flex align-items-center mb-3 mb-md-0">
-            <a href="/account/settings" class="btn btn-icon btn-light rounded-circle me-3">
+            <a href="javascript:history.back()" class="btn btn-icon btn-light rounded-circle me-3">
                 <i class="bi bi-arrow-left"></i>
             </a>
             <div>
-                <h1 class="h3 fw-bold mb-0">Orders</h1>
+                <h1 class="h3 fw-bold mb-0">Order Management</h1>
                 <p class="text-body-secondary small mb-0">Manage customer shipments</p>
             </div>
         </div>
@@ -36,34 +36,35 @@
     <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
         <div class="card-body p-0">
             <% if (orders && orders.length > 0) { %>
-                <div class="table-responsive d-none d-md-block">
+                
+                <div class="table-responsive d-none d-md-block" style="max-height: 70vh; overflow-y: auto;">
                     <table class="table table-hover align-middle mb-0" id="orders-table">
-                        <thead class="bg-light">
+                        <thead class="bg-light" style="position: sticky; top: 0; z-index: 10;">
                             <tr>
                                 <th class="ps-4 py-3 text-secondary small text-uppercase border-0">Order ID</th>
                                 <th class="py-3 text-secondary small text-uppercase border-0">Date</th>
                                 <th class="py-3 text-secondary small text-uppercase border-0">Customer</th>
                                 <th class="py-3 text-secondary small text-uppercase border-0">Total</th>
                                 <th class="py-3 text-secondary small text-uppercase border-0">Status</th>
-                                <th class="pe-4 py-3 text-end text-secondary small text-uppercase border-0">Action</th>
+                                <th class="pe-4 py-3 text-end text-secondary small text-uppercase border-0">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                             <% orders.forEach(order => { %>
                                 <tr class="order-item" data-status="<%= order.status %>">
                                     <td class="ps-4">
-                                        <span class="fw-medium text-dark order-id">#<%= order._id.toString().slice(-6).toUpperCase() %></span>
+                                        <a href="/account/admin/orders/<%= order._id %>" class="fw-bold text-dark text-decoration-none font-monospace order-id">
+                                            #<%= order._id.toString().slice(-6).toUpperCase() %>
+                                        </a>
                                     </td>
-                                    <td class="text-secondary"><%= new Date(order.orderDate).toLocaleDateString() %></td>
+                                    <td class="text-secondary small"><%= new Date(order.orderDate).toLocaleDateString() %></td>
                                     <td>
-                                        <div class="d-flex align-items-center">
-                                            <div class="rounded-circle bg-body-secondary d-flex align-items-center justify-content-center me-2" style="width: 32px; height: 32px; font-size: 0.8rem;">
-                                                <%= order.customer.firstName.charAt(0) %>
-                                            </div>
-                                            <span class="fw-medium customer-name"><%= order.customer.firstName %> <%= order.customer.lastName %></span>
-                                        </div>
+                                        <div class="fw-medium customer-name"><%= order.customer.firstName %> <%= order.customer.lastName %></div>
+                                        <small class="text-body-secondary"><%= order.customer.email %></small>
                                     </td>
-                                    <td class="fw-bold">$<%= order.total.toLocaleString(undefined, { minimumFractionDigits: 2 }) %></td>
+                                    <td class="fw-bold">
+                                        <%= locationData.symbol %><%= order.total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %>
+                                    </td>
                                     <td>
                                         <% if (order.status === 'Processing') { %>
                                             <span class="badge bg-info-subtle text-info-emphasis rounded-pill px-3 py-2"><i class="bi bi-hourglass-split me-1"></i> Processing</span>
@@ -76,7 +77,7 @@
                                         <% } %>
                                     </td>
                                     <td class="text-end pe-4">
-                                        <a href="/account/admin/orders/<%= order._id %>" class="btn btn-sm btn-light rounded-circle border">
+                                        <a href="/account/admin/orders/<%= order._id %>" class="btn btn-sm btn-light border rounded-circle">
                                             <i class="bi bi-chevron-right"></i>
                                         </a>
                                     </td>
@@ -86,7 +87,7 @@
                     </table>
                 </div>
 
-                <div class="d-md-none" id="orders-list-mobile">
+                <div class="d-md-none" id="orders-list-mobile" style="max-height: 80vh; overflow-y: auto;">
                     <% orders.forEach(order => { %>
                         <div class="p-4 border-bottom order-item" data-status="<%= order.status %>">
                             <div class="d-flex justify-content-between align-items-start mb-3">
@@ -114,7 +115,7 @@
                                 </div>
                             </div>
                             <div class="d-flex justify-content-between align-items-center">
-                                <span class="fw-bold fs-5">$<%= order.total.toLocaleString(undefined, { minimumFractionDigits: 2 }) %></span>
+                                <span class="fw-bold fs-5"><%= locationData.symbol %><%= order.total.toLocaleString(undefined, { minimumFractionDigits: 2 }) %></span>
                                 <a href="/account/admin/orders/<%= order._id %>" class="btn btn-outline-secondary btn-sm rounded-pill px-3">
                                     View Details
                                 </a>
@@ -143,6 +144,7 @@
 </div>
 
 <style>
+    /* ... (CSS and Script remain the same, relying on the new HTML structure for scrolling) ... */
     .settings-page-wrapper {
         margin: 0 auto;
         padding: 1rem;
@@ -169,34 +171,47 @@
     document.addEventListener('DOMContentLoaded', function() {
         const searchInput = document.getElementById('order-search');
         const filterButtons = document.querySelectorAll('#order-filters button');
-        const orderItems = document.querySelectorAll('.order-item');
+        // Select both table rows and mobile list items
+        const orderItemsTable = document.querySelectorAll('#orders-table tbody tr');
+        const orderItemsMobile = document.querySelectorAll('#orders-list-mobile .order-item');
+        const orderItems = [...orderItemsTable, ...orderItemsMobile];
         const noResults = document.getElementById('no-results');
 
         let currentFilter = 'all';
         let currentSearch = '';
-
+        
         function filterOrders() {
             let visibleCount = 0;
+            const isDesktop = window.innerWidth >= 768;
 
             orderItems.forEach(item => {
                 const status = item.dataset.status;
-                const id = item.querySelector('.order-id').textContent.toLowerCase();
-                const name = item.querySelector('.customer-name').textContent.toLowerCase();
+                
+                // Determine elements based on TR vs DIV (desktop vs mobile)
+                const idElement = item.querySelector('.order-id');
+                const nameElement = item.querySelector('.customer-name');
+                
+                const id = idElement ? idElement.textContent.toLowerCase() : '';
+                const name = nameElement ? nameElement.textContent.toLowerCase() : '';
+                
                 const searchMatch = id.includes(currentSearch) || name.includes(currentSearch);
                 const statusMatch = currentFilter === 'all' || status === currentFilter;
 
                 if (searchMatch && statusMatch) {
-                    item.style.display = ''; // Reset to default (table-row or block)
-                    // For table rows, we need to ensure they display as table-row
-                    if (item.tagName === 'TR') item.style.display = 'table-row';
-                    else item.style.display = 'block';
+                    // Show only items relevant to the current view size
+                    if (item.tagName === 'TR' && isDesktop) {
+                        item.style.display = 'table-row';
+                    } else if (item.tagName === 'DIV' && !isDesktop) {
+                        item.style.display = 'block';
+                    } else {
+                        item.style.display = 'none';
+                    }
                     visibleCount++;
                 } else {
                     item.style.display = 'none';
                 }
             });
 
-            // Toggle No Results message
             if (noResults) {
                 noResults.classList.toggle('d-none', visibleCount > 0);
             }
@@ -214,7 +229,6 @@
         filterButtons.forEach(btn => {
             btn.addEventListener('click', (e) => {
                 e.preventDefault();
-                // Update active state visually
                 filterButtons.forEach(b => {
                     b.classList.remove('active', 'bg-dark');
                     b.classList.add('text-secondary', 'bg-light');
@@ -226,5 +240,9 @@
                 filterOrders();
             });
         });
+
+        // Initial filter and resize listener
+        filterOrders();
+        window.addEventListener('resize', filterOrders);
     });
 </script>

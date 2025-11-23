@@ -137,7 +137,7 @@ router.get('/', async (req, res) => {
     }
 });
 
-// ADDED: Route for dedicated sale page
+// Route for dedicated sale page
 router.get('/sale/:saleId', async (req, res) => {
     try {
         const db = req.app.locals.client.db(req.app.locals.dbName);
@@ -183,7 +183,6 @@ router.get('/sale/:saleId', async (req, res) => {
         res.status(500).send("Error loading sale page.");
     }
 });
-
 
 // GET /products/search - Handle search queries
 router.get('/search', async (req, res) => {
@@ -250,11 +249,12 @@ router.get('/search', async (req, res) => {
 });
 
 
-// Route to display the admin product management page
+// --- ADMIN PRODUCT MANAGEMENT ROUTE ---
 router.get('/manage', isAdmin, async (req, res) => {
     try {
         const db = req.app.locals.client.db(req.app.locals.dbName);
         const productsCollection = db.collection('products');
+        const currency = res.locals.locationData.currency;
         
         const { q, brand, sort } = req.query;
         let query = {};
@@ -272,6 +272,7 @@ router.get('/manage', isAdmin, async (req, res) => {
 
         if (sort) {
             switch (sort) {
+                case 'date-desc': sortQuery = { importedAt: -1 }; break;
                 case 'date-asc': sortQuery = { importedAt: 1 }; break;
                 case 'name-asc': sortQuery = { name: 1 }; break;
                 case 'name-desc': sortQuery = { name: -1 }; break;
@@ -281,23 +282,55 @@ router.get('/manage', isAdmin, async (req, res) => {
             }
         }
 
-        // Fetch only local products, no API call here
-        const localProducts = await productsCollection.find(query).sort(sortQuery).toArray();
+        let localProducts = await productsCollection.find(query).sort(sortQuery).toArray();
 
-        // Pass empty apiProducts initially
-        res.render('admin-products', {
+        // Convert Currency for Admin View
+        localProducts = await Promise.all(localProducts.map(async (product) => {
+            product.convertedPrice = await convertCurrency(product.retailPrice, currency);
+            return product;
+        }));
+
+        const apiOptions = {
+            method: 'GET',
+            url: 'https://the-sneaker-database.p.rapidapi.com/search',
+            params: { limit: '20', query: 'Popular' },
+            headers: {
+                'X-RapidAPI-Key': process.env.SNEAKER_DB_API_KEY,
+                'X-RapidAPI-Host': 'the-sneaker-database.p.rapidapi.com'
+            }
+        };
+        
+        let apiProducts = [];
+        try {
+             const apiResponse = await axios.request(apiOptions);
+             apiProducts = apiResponse.data.results;
+        } catch(e) {
+            console.warn("API Fetch failed in manage, showing local only");
+        }
+
+        // RENDER THE VIEW
+        res.render('account/admin-products', {
             title: "Manage Products",
             view: 'admin-products',
             user: req.session.user,
             currentUser: req.session.user,
             localProducts: localProducts, 
-            apiProducts: [], 
+            apiProducts: apiProducts,
             filters: req.query
         });
 
     } catch (error) {
         console.error("Data fetching for manage page failed:", error);
-        res.status(500).send("Error loading product management.");
+        // Fallback render if something fails
+        res.render('account/admin-products', {
+            title: "Manage Products",
+            view: 'admin-products',
+            user: req.session.user,
+            currentUser: req.session.user,
+            localProducts: [],
+            apiProducts: [],
+            filters: {}
+        });
     }
 });
 
@@ -699,10 +732,8 @@ router.get('/:sku', async (req, res) => {
             req.session.user ? usersCollection.findOne({ userId: req.session.user.userId }) : null,
         ]);
         
-        // Apply sales logic after fetching the main product
         [product] = await applySalesToProducts([product], db);
 
-        // Fetch related products after we know the brand of the main product
         relatedProducts = await productsCollection.find({
             brand: product.brand,
             _id: { $ne: product._id }

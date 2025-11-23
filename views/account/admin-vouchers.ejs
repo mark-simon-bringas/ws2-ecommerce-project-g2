@@ -48,7 +48,10 @@
                                 <tr>
                                     <td class="ps-4 fw-bold text-dark font-monospace"><%= voucher.code %></td>
                                     <td class="fw-bold text-success">
-                                        <%= voucher.discountType === 'percentage' ? voucher.discountValue + '%' : '$' + voucher.discountValue %> OFF
+                                        <%= voucher.discountType === 'percentage' ? voucher.discountValue + '%' : locationData.symbol + voucher.discountValue.toLocaleString() %> OFF
+                                        <% if (voucher.minOrderAmount > 0) { %>
+                                            <br><small class="text-secondary" style="font-size: 0.7rem;">Min: <%= locationData.symbol %><%= voucher.minOrderAmount.toLocaleString() %></small>
+                                        <% } %>
                                     </td>
                                     <td>
                                         <% if (voucher.isNewUser) { %>
@@ -120,8 +123,9 @@
                          <input type="date" class="form-control bg-light border-0" name="expiryDate" required>
                     </div>
                     <div class="mb-3">
-                         <label class="form-label small fw-bold text-secondary text-uppercase">Min. Order Amount ($)</label>
+                         <label class="form-label small fw-bold text-secondary text-uppercase">Min. Order Amount (USD)</label>
                          <input type="number" class="form-control bg-light border-0" name="minOrderAmount" value="0" min="0">
+                         <div class="form-text small">Enter minimum spend in USD base currency.</div>
                     </div>
                     <div class="form-check mb-4">
                         <input class="form-check-input" type="checkbox" name="isNewUser" id="isNewUser">

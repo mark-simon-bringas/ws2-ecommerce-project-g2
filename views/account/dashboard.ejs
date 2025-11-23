@@ -29,7 +29,7 @@
                         </div>
                         <span class="badge bg-success-subtle text-success rounded-pill small">+12%</span>
                     </div>
-                    <h3 class="fw-bold mb-1"><%= data.totalRevenue.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }) %></h3>
+                    <h3 class="fw-bold mb-1"><%= locationData.symbol %><%= data.totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 }) %></h3>
                     <p class="text-secondary small mb-0">Total Revenue</p>
                 </div>
             </div>
@@ -81,45 +81,64 @@
     <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
         <div class="list-group list-group-flush">
             <% if (data.recentActivity && data.recentActivity.length > 0) { %>
-                <% data.recentActivity.forEach(activity => { %>
-                    <div class="list-group-item p-3 d-flex align-items-start gap-3 border-0 border-bottom">
-                        <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 mt-1" style="width: 36px; height: 36px; background-color: var(--bg-color);">
-                            <% if (activity.type === 'ORDER') { %>
-                                <i class="bi bi-bag-check-fill text-success"></i>
-                            <% } else if (activity.type === 'PRODUCT_IMPORT') { %>
-                                <i class="bi bi-cloud-download-fill text-primary"></i>
-                            <% } else if (activity.type === 'PRICE_UPDATE') { %>
-                                <i class="bi bi-tag-fill text-warning"></i>
-                            <% } else { %>
-                                <i class="bi bi-info-circle-fill text-secondary"></i>
-                            <% } %>
-                        </div>
-                        <div class="flex-grow-1">
-                            <div class="d-flex justify-content-between align-items-center">
+                <% data.recentActivity.forEach(activity => { 
+                    let linkUrl = '#';
+                    if (activity.type === 'ORDER') {
+                        linkUrl = `/account/admin/orders/${activity.data._id}`;
+                    } else if (activity.type === 'PRICE_UPDATE') {
+                        if (activity.data.details && activity.data.details.productId) {
+                             linkUrl = `/products/stock/${activity.data.details.productId}`;
+                        } else {
+                             linkUrl = '/products/manage';
+                        }
+                    } else {
+                        linkUrl = '/products/manage';
+                    }
+                %>
+                    <div class="list-group-item p-3 d-flex align-items-center justify-content-between gap-3 border-0 border-bottom">
+                        <div class="d-flex align-items-start gap-3 flex-grow-1">
+                            <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 mt-1" style="width: 36px; height: 36px; background-color: var(--bg-color);">
                                 <% if (activity.type === 'ORDER') { %>
-                                    <span class="fw-medium text-dark">New Order Received</span>
+                                    <i class="bi bi-bag-check-fill text-success"></i>
                                 <% } else if (activity.type === 'PRODUCT_IMPORT') { %>
-                                    <span class="fw-medium text-dark">Inventory Imported</span>
+                                    <i class="bi bi-cloud-download-fill text-primary"></i>
                                 <% } else if (activity.type === 'PRICE_UPDATE') { %>
-                                    <span class="fw-medium text-dark">Price Update</span>
+                                    <i class="bi bi-tag-fill text-warning"></i>
                                 <% } else { %>
-                                    <span class="fw-medium text-dark">System Update</span>
+                                    <i class="bi bi-info-circle-fill text-secondary"></i>
                                 <% } %>
-                                <small class="text-body-tertiary" style="font-size: 0.75rem;"><%= new Date(activity.timestamp).toLocaleDateString() %></small>
                             </div>
-                            
-                            <p class="text-secondary small mb-0 mt-1">
-                                <% if (activity.type === 'ORDER') { %>
-                                    <%= activity.data.customer.firstName %> placed order #<%= activity.data._id.toString().slice(-4).toUpperCase() %> (<%= activity.data.total.toLocaleString('en-US', { style: 'currency', currency: 'USD' }) %>)
-                                <% } else if (activity.type === 'PRODUCT_IMPORT') { %>
-                                    Admin <%= activity.data.userFirstName %> imported <%= activity.data.details.productCount %> new items.
-                                <% } else if (activity.type === 'PRICE_UPDATE') { %>
-                                    <%= activity.data.details.productName %> updated to $<%= activity.data.details.newPrice %>
-                                <% } else { %>
-                                    <%= activity.type.replace(/_/g, ' ') %>
-                                <% } %>
-                            </p>
+                            <div>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <% if (activity.type === 'ORDER') { %>
+                                        <span class="fw-medium text-dark">New Order Received</span>
+                                    <% } else if (activity.type === 'PRODUCT_IMPORT') { %>
+                                        <span class="fw-medium text-dark">Inventory Imported</span>
+                                    <% } else if (activity.type === 'PRICE_UPDATE') { %>
+                                        <span class="fw-medium text-dark">Price Update</span>
+                                    <% } else { %>
+                                        <span class="fw-medium text-dark">System Update</span>
+                                    <% } %>
+                                </div>
+                                
+                                <p class="text-secondary small mb-0 mt-1">
+                                    <% if (activity.type === 'ORDER') { %>
+                                        <%= activity.data.customer.firstName %> placed order #<%= activity.data._id.toString().slice(-4).toUpperCase() %> (<%= locationData.symbol %><%= activity.data.total.toLocaleString(undefined, { minimumFractionDigits: 2 }) %>)
+                                    <% } else if (activity.type === 'PRODUCT_IMPORT') { %>
+                                        Admin <%= activity.data.userFirstName %> imported <%= activity.data.details.productCount %> new items.
+                                    <% } else if (activity.type === 'PRICE_UPDATE') { %>
+                                        <%= activity.data.details.productName %> updated to <%= locationData.symbol %><%= activity.data.details.newPrice %>
+                                    <% } else { %>
+                                        <%= activity.type.replace(/_/g, ' ') %>
+                                    <% } %>
+                                    <span class="text-body-tertiary ms-1">&bull; <%= new Date(activity.timestamp).toLocaleDateString() %></span>
+                                </p>
+                            </div>
                         </div>
+                        
+                        <a href="<%= linkUrl %>" class="btn btn-sm btn-outline-secondary rounded-pill px-3 flex-shrink-0">
+                            View
+                        </a>
                     </div>
                 <% }) %>
             <% } else { %>
@@ -135,7 +154,6 @@
 </div>
 
 <style>
-    /* Specific override for this page since it's wider */
     .settings-page-wrapper {
         margin: 0 auto;
         padding: 1rem;

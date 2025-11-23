@@ -1,62 +1,67 @@
 <div class="settings-page-wrapper" style="max-width: 1000px;">
-    <div class="d-flex align-items-center mb-4">
-        <a href="/account/admin/orders" class="btn btn-icon btn-light rounded-circle me-3">
-            <i class="bi bi-arrow-left"></i>
-        </a>
+    <div class="page-header d-flex justify-content-between align-items-center mb-4">
         <div>
-            <h1 class="h3 fw-bold mb-0">Order Details</h1>
-            <p class="text-body-secondary small mb-0">
-                #<%= order._id.toString().slice(-6).toUpperCase() %> • <%= new Date(order.orderDate).toLocaleString() %>
+            <h1>Order Details</h1>
+            <p class="text-body-secondary">
+                Order <span class="text-monospace fw-bold">#<%= order._id.toString().slice(-7).toUpperCase() %></span>
             </p>
         </div>
-        <div class="ms-auto">
-            <% if (order.status === 'Processing') { %>
-                <span class="badge bg-info-subtle text-info-emphasis rounded-pill px-3 py-2">Processing</span>
-            <% } else if (order.status === 'Shipped') { %>
-                <span class="badge bg-primary-subtle text-primary-emphasis rounded-pill px-3 py-2">Shipped</span>
-            <% } else if (order.status === 'Delivered') { %>
-                <span class="badge bg-success-subtle text-success-emphasis rounded-pill px-3 py-2">Delivered</span>
-            <% } else if (order.status === 'Cancelled') { %>
-                <span class="badge bg-secondary-subtle text-secondary-emphasis rounded-pill px-3 py-2">Cancelled</span>
-            <% } %>
-        </div>
+        <a href="javascript:history.back()" class="btn btn-outline-secondary rounded-pill px-4">
+            <i class="bi bi-arrow-left me-2"></i> Back
+        </a>
     </div>
 
     <div class="row g-4">
         <div class="col-lg-8">
-            <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4">
+            <div class="card border-0 shadow-sm rounded-4 mb-4 overflow-hidden">
                 <div class="card-header bg-white border-bottom p-4">
-                    <h6 class="fw-bold mb-0">Order Items (<%= order.items.length %>)</h6>
+                    <h5 class="fw-bold mb-0">Items in Order (<%= order.items.length %>)</h5>
                 </div>
                 <div class="card-body p-0">
                     <div class="list-group list-group-flush">
                         <% order.items.forEach(item => { %>
-                            <div class="list-group-item p-4 d-flex align-items-center gap-3 border-0 border-bottom">
-                                <img src="<%= item.thumbnailUrl %>" alt="<%= item.name %>" class="rounded-3 border" style="width: 64px; height: 64px; object-fit: contain; background: #f8f9fa;">
+                            <div class="list-group-item p-3 d-flex align-items-center gap-3 border-0 border-bottom">
+                                <img src="<%= item.thumbnailUrl %>" alt="<%= item.name %>" style="width: 64px; height: 64px; object-fit: contain;" class="rounded-3 border bg-light">
                                 <div class="flex-grow-1">
-                                    <h6 class="fw-bold mb-1"><%= item.name %></h6>
-                                    <div class="text-secondary small">Size: <%= item.size %> <span class="mx-2">•</span> Qty: <%= item.qty %></div>
+                                    <div class="fw-bold text-dark"><%= item.name %></div>
+                                    <small class="text-secondary">Size: <%= item.size %> &bull; Qty: <%= item.qty %></small>
                                 </div>
                                 <div class="text-end">
-                                    <div class="fw-bold">$<%= item.price.toLocaleString(undefined, { minimumFractionDigits: 2 }) %></div>
-                                    <small class="text-secondary">$<%= item.unitPrice %> ea</small>
+                                    <div class="fw-bold"><%= locationData.symbol %><%= item.price.toLocaleString(undefined, { minimumFractionDigits: 2 }) %></div>
+                                    <small class="text-body-tertiary"><%= locationData.symbol %><%= item.unitPrice.toLocaleString(undefined, { minimumFractionDigits: 2 }) %> ea</small>
                                 </div>
                             </div>
                         <% }) %>
                     </div>
                 </div>
-                <div class="card-footer bg-light border-0 p-4">
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <span class="text-secondary">Subtotal</span>
-                        <span class="fw-medium">$<%= order.subtotal.toLocaleString(undefined, { minimumFractionDigits: 2 }) %></span>
-                    </div>
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <span class="text-secondary">Shipping</span>
-                        <span class="fw-medium"><%= order.shippingCost > 0 ? '$' + order.shippingCost.toFixed(2) : 'Free' %></span>
-                    </div>
-                    <div class="d-flex justify-content-between align-items-center pt-3 border-top">
-                        <span class="fw-bold fs-5">Total</span>
-                        <span class="fw-bold fs-5">$<%= order.total.toLocaleString(undefined, { minimumFractionDigits: 2 }) %></span>
+                
+                <div class="card-footer bg-light p-4">
+                    <div class="row justify-content-end">
+                        <div class="col-md-6">
+                            <ul class="list-unstyled mb-0 d-flex flex-column gap-2">
+                                <li class="d-flex justify-content-between small text-secondary">
+                                    <span>Subtotal</span>
+                                    <span><%= locationData.symbol %><%= order.subtotal.toLocaleString(undefined, { minimumFractionDigits: 2 }) %></span>
+                                </li>
+                                
+                                <% if (order.discount && order.discount > 0) { %>
+                                    <li class="d-flex justify-content-between small text-success">
+                                        <span>Discount (<%= order.voucherCode || 'Applied' %>)</span>
+                                        <span>-<%= locationData.symbol %><%= order.discount.toLocaleString(undefined, { minimumFractionDigits: 2 }) %></span>
+                                    </li>
+                                <% } %>
+
+                                <li class="d-flex justify-content-between small text-secondary">
+                                    <span>Shipping</span>
+                                    <span><%= order.shippingCost > 0 ? locationData.symbol + order.shippingCost.toLocaleString(undefined, { minimumFractionDigits: 2 }) : 'Free' %></span>
+                                </li>
+                                
+                                <li class="d-flex justify-content-between align-items-center pt-3 border-top border-secondary-subtle mt-2">
+                                    <span class="fw-bold fs-5 text-dark">Total</span>
+                                    <span class="fw-bold fs-4 text-dark"><%= locationData.symbol %><%= order.total.toLocaleString(undefined, { minimumFractionDigits: 2 }) %></span>
+                                </li>
+                            </ul>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -65,49 +70,53 @@
         <div class="col-lg-4">
             <div class="card border-0 shadow-sm rounded-4 mb-4">
                 <div class="card-body p-4">
-                    <h6 class="fw-bold mb-3">Manage Order</h6>
+                    <h5 class="fw-bold mb-3">Manage Order</h5>
                     
                     <form action="/account/admin/orders/update-status/<%= order._id %>" method="POST" class="mb-3">
-                        <label class="form-label small text-secondary fw-bold text-uppercase">Update Status</label>
-                        <div class="input-group">
-                            <select name="newStatus" class="form-select" <%= order.status === 'Cancelled' ? 'disabled' : '' %>>
-                                <option value="Processing" <%= order.status === 'Processing' ? 'selected' : '' %>>Processing</option>
-                                <option value="Shipped" <%= order.status === 'Shipped' ? 'selected' : '' %>>Shipped</option>
-                                <option value="Delivered" <%= order.status === 'Delivered' ? 'selected' : '' %>>Delivered</option>
-                                <option value="Cancelled" <%= order.status === 'Cancelled' ? 'selected' : '' %> disabled>Cancelled</option>
-                            </select>
-                            <button type="submit" class="btn btn-dark" <%= order.status === 'Cancelled' ? 'disabled' : '' %>>Save</button>
-                        </div>
+                        <label for="newStatus" class="form-label small fw-bold text-secondary text-uppercase">Order Status</label>
+                        <fieldset <%= (order.status === 'Cancelled') ? 'disabled' : '' %>>
+                            <div class="input-group">
+                                <select id="newStatus" name="newStatus" class="form-select bg-light border-0">
+                                    <option value="Processing" <%= order.status === 'Processing' ? 'selected' : '' %>>Processing</option>
+                                    <option value="Shipped" <%= order.status === 'Shipped' ? 'selected' : '' %>>Shipped</option>
+                                    <option value="Delivered" <%= order.status === 'Delivered' ? 'selected' : '' %>>Delivered</option>
+                                    <option value="Cancelled" <%= order.status === 'Cancelled' ? 'selected' : '' %> disabled>Cancelled</option>
+                                </select>
+                                <button type="submit" class="btn btn-dark">Update</button>
+                            </div>
+                        </fieldset>
                     </form>
-
+                    
                     <% if (order.status !== 'Cancelled') { %>
-                        <hr class="my-4">
-                        <form action="/account/admin/orders/cancel/<%= order._id %>" method="POST" onsubmit="return confirm('Are you sure? This cannot be undone.');">
-                            <button type="submit" class="btn btn-outline-danger w-100 rounded-pill">
+                    <hr class="my-4">
+                    <form action="/account/admin/orders/cancel/<%= order._id %>" method="POST">
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-outline-danger rounded-pill" onclick="return confirm('Are you sure you want to cancel this order? This action cannot be undone.');">
                                 <i class="bi bi-x-circle me-2"></i> Cancel Order
                             </button>
-                        </form>
+                        </div>
+                    </form>
+                    <% } else { %>
+                        <div class="alert alert-secondary text-center small mb-0 rounded-pill">
+                            <i class="bi bi-info-circle me-1"></i> This order has been cancelled.
+                        </div>
                     <% } %>
                 </div>
             </div>
 
             <div class="card border-0 shadow-sm rounded-4">
                 <div class="card-body p-4">
-                    <h6 class="fw-bold mb-4">Customer Details</h6>
+                    <h5 class="fw-bold mb-4">Customer Details</h5>
                     
-                    <div class="d-flex align-items-center mb-4">
-                        <div class="rounded-circle bg-body-secondary d-flex align-items-center justify-content-center me-3" style="width: 48px; height: 48px; font-size: 1.2rem;">
-                            <%= order.customer.firstName.charAt(0) %>
-                        </div>
-                        <div>
-                            <div class="fw-bold"><%= order.customer.firstName %> <%= order.customer.lastName %></div>
-                            <a href="mailto:<%= order.customer.email %>" class="text-decoration-none small text-primary"><%= order.customer.email %></a>
-                        </div>
+                    <div class="mb-4">
+                        <h6 class="small fw-bold text-secondary text-uppercase mb-1">Contact</h6>
+                        <p class="mb-0 fw-medium"><%= order.customer.firstName %> <%= order.customer.lastName %></p>
+                        <a href="mailto:<%= order.customer.email %>" class="text-decoration-none small"><%= order.customer.email %></a>
                     </div>
 
                     <div class="mb-4">
-                        <label class="small text-secondary fw-bold text-uppercase mb-2">Shipping Address</label>
-                        <p class="mb-0 text-dark small">
+                        <h6 class="small fw-bold text-secondary text-uppercase mb-1">Shipping Address</h6>
+                        <p class="text-body-secondary small mb-0">
                             <%= order.shippingAddress.address %><br>
                             <%= order.shippingAddress.state %>, <%= order.shippingAddress.zip %><br>
                             <%= order.shippingAddress.country %>
@@ -115,10 +124,13 @@
                     </div>
 
                     <div>
-                        <label class="small text-secondary fw-bold text-uppercase mb-2">Payment Method</label>
-                        <div class="d-flex align-items-center gap-2">
-                            <i class="bi bi-credit-card text-secondary"></i>
-                            <span class="small text-dark"><%= order.paymentDetails.method %> <%= order.paymentDetails.last4 ? '•••• ' + order.paymentDetails.last4 : '' %></span>
+                        <h6 class="small fw-bold text-secondary text-uppercase mb-1">Payment</h6>
+                        <div class="d-flex align-items-center gap-2 text-body-secondary small">
+                            <% if (order.paymentDetails.method === 'Credit Card') { %>
+                                <i class="bi bi-credit-card-fill"></i> Credit Card •••• <%= order.paymentDetails.last4 %>
+                            <% } else { %>
+                                <i class="bi bi-cash-stack"></i> <%= order.paymentDetails.method %>
+                            <% } %>
                         </div>
                     </div>
                 </div>

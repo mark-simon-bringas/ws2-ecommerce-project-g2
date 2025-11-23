@@ -1,6 +1,6 @@
 <div class="settings-page-wrapper" style="max-width: 1000px;">
     <div class="d-flex align-items-center mb-4">
-        <a href="/account/admin/users" class="btn btn-icon btn-light rounded-circle me-3">
+        <a href="javascript:history.back()" class="btn btn-icon btn-light rounded-circle me-3">
             <i class="bi bi-arrow-left"></i>
         </a>
         <div>
@@ -64,11 +64,19 @@
                                         <a href="/account/admin/orders/<%= order._id %>" class="list-group-item list-group-item-action p-3 border-0 border-bottom">
                                             <div class="d-flex justify-content-between align-items-center mb-1">
                                                 <span class="fw-bold text-dark">#<%= order._id.toString().slice(-6).toUpperCase() %></span>
-                                                <span class="badge bg-light text-dark border"><%= order.status %></span>
+                                                <% if (order.status === 'Processing') { %>
+                                                    <span class="badge bg-info-subtle text-info-emphasis rounded-pill"><%= order.status %></span>
+                                                <% } else if (order.status === 'Shipped') { %>
+                                                    <span class="badge bg-primary-subtle text-primary-emphasis rounded-pill"><%= order.status %></span>
+                                                <% } else if (order.status === 'Delivered') { %>
+                                                    <span class="badge bg-success-subtle text-success-emphasis rounded-pill"><%= order.status %></span>
+                                                <% } else { %>
+                                                    <span class="badge bg-secondary-subtle text-secondary-emphasis rounded-pill"><%= order.status %></span>
+                                                <% } %>
                                             </div>
                                             <div class="d-flex justify-content-between align-items-center">
                                                 <small class="text-secondary"><%= new Date(order.orderDate).toLocaleDateString() %></small>
-                                                <span class="fw-medium"><%= locationData.symbol %><%= order.total.toLocaleString() %></span>
+                                                <span class="fw-medium"><%= locationData.symbol %><%= order.total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></span>
                                             </div>
                                         </a>
                                     <% }) %>

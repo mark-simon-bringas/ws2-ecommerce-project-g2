@@ -30,7 +30,7 @@ const storage = multer.diskStorage({
 
 const upload = multer({ 
     storage: storage,
-    limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+    limits: { fileSize: 5 * 1024 * 1024 },
     fileFilter: function (req, file, cb) {
         const filetypes = /jpeg|jpg|png|gif|webp/;
         const mimetype = filetypes.test(file.mimetype);
@@ -42,7 +42,8 @@ const upload = multer({
     }
 });
 
-// Helper function for status emails
+// --- Helper Functions ---
+
 const createStatusEmailHtml = (order) => {
     const itemsHtml = order.items.map(item => `
         <tr>
@@ -70,55 +71,30 @@ const createStatusEmailHtml = (order) => {
         headerMessage = 'Your order has been delivered.';
     } else if (order.status === 'Cancelled') {
         headerMessage = 'Your order has been cancelled.';
-        subMessage = `Your order #${order._id.toString().slice(-7).toUpperCase()} has been successfully cancelled. You have not been charged.`;
+        subMessage = `Your order #${order._id.toString().slice(-7).toUpperCase()} has been successfully cancelled.`;
     }
 
     return `
         <!DOCTYPE html>
         <html>
         <head>
-            <style>
-                body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 20px; background-color: #f5f5f7; color: #1d1d1f; }
-                .container { max-width: 680px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; padding: 40px; }
-                .header { text-align: center; border-bottom: 1px solid #d2d2d7; padding-bottom: 20px; margin-bottom: 20px;}
-                .header h1 { font-size: 24px; }
-                .items-table { width: 100%; border-collapse: separate; border-spacing: 0 10px; margin-top: 20px; }
-                .info-grid { display: table; width: 100%; margin-top: 30px; border-collapse: separate; border-spacing: 20px 0;}
-                .info-column { display: table-cell; width: 50%; vertical-align: top; }
-                .info-column h3 { font-size: 1em; margin-bottom: 10px;}
-                .footer { text-align: center; margin-top: 30px; font-size: 0.8em; color: #86868b; }
-            </style>
+            <style>body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 20px; background-color: #f5f5f7; color: #1d1d1f; } .container { max-width: 680px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; padding: 40px; } .header { text-align: center; border-bottom: 1px solid #d2d2d7; padding-bottom: 20px; margin-bottom: 20px;} .header h1 { font-size: 24px; } .items-table { width: 100%; border-collapse: separate; border-spacing: 0 10px; margin-top: 20px; } .info-grid { display: table; width: 100%; margin-top: 30px; border-collapse: separate; border-spacing: 20px 0;} .info-column { display: table-cell; width: 50%; vertical-align: top; } .info-column h3 { font-size: 1em; margin-bottom: 10px;} .footer { text-align: center; margin-top: 30px; font-size: 0.8em; color: #86868b; }</style>
         </head>
         <body>
             <div class="container">
-                <div class="header">
-                    <h1>${headerMessage}</h1>
-                    <p>${subMessage}</p>
-                </div>
-                <table class="items-table">
-                    ${itemsHtml}
-                </table>
+                <div class="header"><h1>${headerMessage}</h1><p>${subMessage}</p></div>
+                <table class="items-table">${itemsHtml}</table>
                 <div class="info-grid">
-                    <div class="info-column">
-                        <h3>Shipping to</h3>
-                        <p style="color: #6e6e73; margin:0;">${order.customer.firstName} ${order.customer.lastName}<br>${order.shippingAddress.address}<br>${order.shippingAddress.state}, ${order.shippingAddress.zip}</p>
-                    </div>
-                    <div class="info-column">
-                        <h3>Payment</h3>
-                        <p style="color: #6e6e73; margin:0;">${order.paymentDetails.method} ${order.paymentDetails.last4 ? `ending in ${order.paymentDetails.last4}` : ''}</p>
-                    </div>
+                    <div class="info-column"><h3>Shipping to</h3><p style="color: #6e6e73; margin:0;">${order.customer.firstName} ${order.customer.lastName}<br>${order.shippingAddress.address}<br>${order.shippingAddress.state}, ${order.shippingAddress.zip}</p></div>
+                    <div class="info-column"><h3>Payment</h3><p style="color: #6e6e73; margin:0;">${order.paymentDetails.method} ${order.paymentDetails.last4 ? `ending in ${order.paymentDetails.last4}` : ''}</p></div>
                 </div>
-                <div class="footer">
-                    <p>Need help? <a href="#">Contact our support team.</a></p>
-                    <p>&copy; ${new Date().getFullYear()} Sneakslab. All rights reserved.</p>
-                </div>
+                <div class="footer"><p>Need help? <a href="#">Contact our support team.</a></p><p>&copy; ${new Date().getFullYear()} Sneakslab. All rights reserved.</p></div>
             </div>
         </body>
         </html>
     `;
 };
 
-// Device parsing helper
 const parseDevice = (uaString) => {
     if (!uaString) return { name: 'Unknown Device', icon: 'bi-question-circle' };
     let name = 'Web Browser';
@@ -135,6 +111,7 @@ const parseDevice = (uaString) => {
     return { name, icon };
 };
 
+// --- Middleware ---
 const isLoggedIn = (req, res, next) => {
     if (!req.session.user) {
         return res.redirect('/users/login');
@@ -153,6 +130,7 @@ const isAdmin = (req, res, next) => {
 
 router.use(isLoggedIn);
 
+// --- Main Route Redirect ---
 router.get('/', (req, res) => {
     if (req.session.user.role === 'admin') {
         res.redirect('/account/admin/dashboard');
@@ -161,26 +139,23 @@ router.get('/', (req, res) => {
     }
 });
 
-// --- SETTINGS HUB & SUB-PAGES ---
-router.get('/settings', async (req, res) => {
-    const db = req.app.locals.client.db(req.app.locals.dbName);
-    const user = await db.collection('users').findOne({ userId: req.session.user.userId });
-    res.render('account/settings', {
-        title: "Settings",
-        view: 'settings',
-        user: user
-    });
+// --- USER SETTINGS ROUTES ---
+router.get('/settings', (req, res) => { 
+    res.render('account/settings', { 
+        title: "Settings", 
+        view: 'settings' 
+    }); 
 });
 
 router.get('/identity', async (req, res) => {
     const db = req.app.locals.client.db(req.app.locals.dbName);
     const user = await db.collection('users').findOne({ userId: req.session.user.userId });
-    res.render('account/settings-identity', {
-        title: "Identity",
-        view: 'settings',
-        user: user,
-        message: req.query.message,
-        error: req.query.error
+    res.render('account/settings-identity', { 
+        title: "Identity", 
+        view: 'settings', 
+        user: user, 
+        message: req.query.message, 
+        error: req.query.error 
     });
 });
 
@@ -191,55 +166,50 @@ router.get('/security', async (req, res) => {
         const details = parseDevice(entry.userAgent);
         return { ...entry, displayName: details.name, icon: details.icon };
     }) : [];
-
-    res.render('account/settings-security', {
-        title: "Security",
-        view: 'settings',
-        message: req.query.message,
-        error: req.query.error,
-        loginHistory: loginHistory
+    res.render('account/settings-security', { 
+        title: "Security", 
+        view: 'settings', 
+        message: req.query.message, 
+        error: req.query.error, 
+        loginHistory: loginHistory 
     });
 });
 
 router.get('/addresses', async (req, res) => {
     const db = req.app.locals.client.db(req.app.locals.dbName);
     const user = await db.collection('users').findOne({ userId: req.session.user.userId });
-    res.render('account/settings-addresses', {
-        title: "Addresses",
-        view: 'settings',
-        user: user,
-        message: req.query.message,
-        error: req.query.error
+    res.render('account/settings-addresses', { 
+        title: "Addresses", 
+        view: 'settings', 
+        user: user, 
+        message: req.query.message, 
+        error: req.query.error 
     });
 });
 
-// --- NEW: USER VOUCHER WALLET ---
+// --- USER VOUCHERS ---
 router.get('/vouchers', async (req, res) => {
     try {
         const db = req.app.locals.client.db(req.app.locals.dbName);
         const user = await db.collection('users').findOne({ userId: req.session.user.userId });
-        
         let userVouchers = [];
         if (user.vouchers && user.vouchers.length > 0) {
             const voucherIds = user.vouchers.map(v => v.voucherId);
             const voucherDetails = await db.collection('vouchers').find({ _id: { $in: voucherIds } }).toArray();
-            
             userVouchers = user.vouchers.map(uv => {
                 const detail = voucherDetails.find(d => d._id.equals(uv.voucherId));
                 return detail ? { ...uv, details: detail } : null;
             }).filter(v => v !== null);
         }
-
         res.render('account/settings-vouchers', { 
             title: "My Vouchers", 
             view: 'settings', 
-            userVouchers: userVouchers,
+            userVouchers: userVouchers, 
             message: req.query.message, 
             error: req.query.error 
         });
-    } catch (err) {
-        console.error("Error fetching vouchers:", err);
-        res.status(500).send("Error loading vouchers.");
+    } catch (err) { 
+        res.status(500).send("Error loading vouchers."); 
     }
 });
 
@@ -248,97 +218,54 @@ router.post('/vouchers/redeem', async (req, res) => {
         const { code } = req.body;
         const db = req.app.locals.client.db(req.app.locals.dbName);
         const voucher = await db.collection('vouchers').findOne({ code: code.toUpperCase(), isActive: true });
-
-        if (!voucher) {
-            return res.redirect('/account/vouchers?error=' + encodeURIComponent('Invalid or expired voucher code.'));
-        }
-        if (new Date(voucher.expiryDate) < new Date()) {
-            return res.redirect('/account/vouchers?error=' + encodeURIComponent('This voucher has expired.'));
-        }
-
+        if (!voucher || new Date(voucher.expiryDate) < new Date()) return res.redirect('/account/vouchers?error=' + encodeURIComponent('Invalid or expired code.'));
         const user = await db.collection('users').findOne({ userId: req.session.user.userId });
-        if (user.vouchers && user.vouchers.some(v => v.voucherId.equals(voucher._id))) {
-            return res.redirect('/account/vouchers?error=' + encodeURIComponent('You have already redeemed this voucher.'));
-        }
-
-        await db.collection('users').updateOne(
-            { userId: req.session.user.userId },
-            { $push: { vouchers: { voucherId: voucher._id, isUsed: false, redeemedAt: new Date() } } }
-        );
-
-        res.redirect('/account/vouchers?message=' + encodeURIComponent('Voucher redeemed successfully!'));
-
-    } catch (err) {
-        console.error("Error redeeming voucher:", err);
-        res.redirect('/account/vouchers?error=' + encodeURIComponent('An error occurred.'));
+        if (user.vouchers && user.vouchers.some(v => v.voucherId.equals(voucher._id))) return res.redirect('/account/vouchers?error=' + encodeURIComponent('Already redeemed.'));
+        
+        await db.collection('users').updateOne({ userId: req.session.user.userId }, { $push: { vouchers: { voucherId: voucher._id, isUsed: false, redeemedAt: new Date() } } });
+        res.redirect('/account/vouchers?message=' + encodeURIComponent('Voucher redeemed!'));
+    } catch (err) { 
+        res.redirect('/account/vouchers?error=' + encodeURIComponent('Error.')); 
     }
 });
 
-// --- SHOPPING ROUTES ---
+// --- USER SHOPPING ROUTES ---
 router.post('/wishlist/toggle', async (req, res) => {
     try {
         const { productId } = req.body;
-        const userId = req.session.user.userId;
-        const productObjectId = new ObjectId(productId);
-
-        if (!productId) {
-            return res.status(400).json({ success: false, message: 'Product ID is required.' });
-        }
-
         const db = req.app.locals.client.db(req.app.locals.dbName);
-        const usersCollection = db.collection('users');
-
-        const user = await usersCollection.findOne({ userId: userId });
+        const productObjectId = new ObjectId(productId);
+        const user = await db.collection('users').findOne({ userId: req.session.user.userId });
         const isWishlisted = user && user.wishlist && user.wishlist.some(id => id.equals(productObjectId));
-
-        let updateOperation;
-        let newStatus;
-
-        if (isWishlisted) {
-            updateOperation = { $pull: { wishlist: productObjectId } };
-            newStatus = 'removed';
-        } else {
-            updateOperation = { $addToSet: { wishlist: productObjectId } };
-            newStatus = 'added';
+        
+        if (isWishlisted) { 
+            await db.collection('users').updateOne({ userId: req.session.user.userId }, { $pull: { wishlist: productObjectId } }); 
+        } else { 
+            await db.collection('users').updateOne({ userId: req.session.user.userId }, { $addToSet: { wishlist: productObjectId } }); 
         }
-
-        await usersCollection.updateOne({ userId: userId }, updateOperation);
-
-        res.json({ success: true, newStatus: newStatus });
-
-    } catch (err) {
-        console.error("Error toggling wishlist item:", err);
-        res.status(500).json({ success: false, message: 'An error occurred.' });
+        
+        res.json({ success: true, newStatus: isWishlisted ? 'removed' : 'added' });
+    } catch (err) { 
+        res.status(500).json({ success: false }); 
     }
 });
 
 router.get('/wishlist', async (req, res) => {
     try {
         const db = req.app.locals.client.db(req.app.locals.dbName);
-        const usersCollection = db.collection('users');
-        const productsCollection = db.collection('products');
-        
-        const user = await usersCollection.findOne({ userId: req.session.user.userId });
-        
-        let wishlistedProducts = [];
-        let userWishlist = [];
+        const user = await db.collection('users').findOne({ userId: req.session.user.userId });
+        let products = [];
         if (user && user.wishlist && user.wishlist.length > 0) {
-            userWishlist = user.wishlist;
-            wishlistedProducts = await productsCollection.find({
-                _id: { $in: user.wishlist }
-            }).toArray();
+            products = await db.collection('products').find({ _id: { $in: user.wishlist } }).toArray();
         }
-
-        res.render('account/wishlist', {
-            title: "My Wishlist",
-            view: 'wishlist',
-            products: wishlistedProducts,
-            wishlist: userWishlist
+        res.render('account/wishlist', { 
+            title: "My Wishlist", 
+            view: 'wishlist', 
+            products: products, 
+            wishlist: user.wishlist || [] 
         });
-
-    } catch (err) {
-        console.error("Error fetching wishlist:", err);
-        res.status(500).send("Could not load your wishlist.");
+    } catch (err) { 
+        res.status(500).send("Error loading wishlist."); 
     }
 });
 
@@ -346,356 +273,319 @@ router.get('/orders', async (req, res) => {
     try {
         const db = req.app.locals.client.db(req.app.locals.dbName);
         const userOrders = await db.collection('orders').find({ userId: req.session.user.userId }).sort({ orderDate: -1 }).toArray();
+        
+        const currency = res.locals.locationData.currency;
+        const convertedOrders = await Promise.all(userOrders.map(async (o) => {
+             o.total = await convertCurrency(o.total, currency);
+             return o;
+        }));
+
         res.render('account/order-history', { 
             title: "Order History", 
-            orders: userOrders, 
-            view: 'orders',
+            orders: convertedOrders, 
+            view: 'orders', 
             pageStyle: 'order-success' 
         });
-    } catch (err) {
-        console.error("Error fetching order history:", err);
-        res.status(500).send("Could not load your order history.");
+    } catch (err) { 
+        res.status(500).send("Error loading orders."); 
     }
 });
 
 router.get('/orders/:id', async (req, res) => {
     try {
         const db = req.app.locals.client.db(req.app.locals.dbName);
-        const ordersCollection = db.collection('orders');
-        const orderId = req.params.id;
-        const currency = res.locals.locationData.currency;
-
-        const order = await ordersCollection.findOne({ 
-            _id: new ObjectId(orderId),
-            userId: req.session.user.userId 
-        });
-
-        if (!order) {
-            return res.status(404).send("Order not found.");
-        }
+        const order = await db.collection('orders').findOne({ _id: new ObjectId(req.params.id), userId: req.session.user.userId });
         
+        if (!order) return res.status(404).send("Order not found.");
+        
+        const currency = res.locals.locationData.currency;
         if (typeof convertCurrency === 'function') {
-            order.subtotal = await convertCurrency(order.subtotal, currency);
-            order.shippingCost = await convertCurrency(order.shippingCost, currency);
-            order.total = await convertCurrency(order.total, currency);
-            order.items = await Promise.all(order.items.map(async (item) => {
+             order.total = await convertCurrency(order.total, currency);
+             order.subtotal = await convertCurrency(order.subtotal, currency);
+             order.shippingCost = await convertCurrency(order.shippingCost, currency);
+             if(order.discount) order.discount = await convertCurrency(order.discount, currency);
+
+             order.items = await Promise.all(order.items.map(async (item) => {
                 item.price = await convertCurrency(item.price, currency);
                 return item;
-            }));
+             }));
         }
 
-        res.render('support/order-status', {
-            title: `Order #${order._id.toString().slice(-7).toUpperCase()}`,
-            order: order,
-            error: null,
-            pageStyle: 'order-success'
+        res.render('support/order-status', { 
+            title: `Order #${order._id.toString().slice(-7).toUpperCase()}`, 
+            order: order, 
+            error: null, 
+            pageStyle: 'order-success' 
         });
-
-    } catch (err) {
-        console.error("Error fetching order details:", err);
-        res.status(500).send("An error occurred.");
+    } catch (err) { 
+        res.status(500).send("Error loading details."); 
     }
 });
 
-// --- FORM ACTIONS ---
+// --- USER FORM ACTIONS ---
 router.post('/settings/update-profile', upload.single('profilePhoto'), async (req, res) => {
     try {
         const { firstName, lastName, phone, bio } = req.body;
-        const userId = req.session.user.userId;
-        if (!firstName || !lastName) { return res.redirect('/account/identity?error=' + encodeURIComponent('First and last name cannot be empty.')); }
-        const db = req.app.locals.client.db(req.app.locals.dbName);
+        let updateFields = { firstName, lastName, phone: phone || "", bio: bio || "", updatedAt: new Date() };
+        if (req.file) updateFields.profilePictureUrl = '/uploads/avatars/' + req.file.filename;
         
-        let updateFields = {
-            firstName: firstName,
-            lastName: lastName,
-            phone: phone || "",
-            bio: bio || "",
-            updatedAt: new Date()
-        };
-
-        if (req.file) {
-            updateFields.profilePictureUrl = '/uploads/avatars/' + req.file.filename;
-        }
-
-        await db.collection('users').updateOne(
-            { userId: userId },
-            { $set: updateFields }
-        );
+        await req.app.locals.client.db(req.app.locals.dbName).collection('users').updateOne({ userId: req.session.user.userId }, { $set: updateFields });
         
         req.session.user.firstName = firstName;
         req.session.user.lastName = lastName;
-        if (req.file) {
-            req.session.user.profilePictureUrl = updateFields.profilePictureUrl;
-        }
-        res.redirect('/account/identity?message=' + encodeURIComponent('Profile updated successfully!'));
-    } catch (err) {
-        console.error("Error updating profile:", err);
-        res.redirect('/account/identity?error=' + encodeURIComponent('An error occurred while updating your profile.'));
+        if (req.file) req.session.user.profilePictureUrl = updateFields.profilePictureUrl;
+        
+        res.redirect('/account/identity?message=' + encodeURIComponent('Profile updated!'));
+    } catch (err) { 
+        res.redirect('/account/identity?error=' + encodeURIComponent('Update failed.')); 
     }
 });
 
 router.post('/settings/update-password', async (req, res) => {
     try {
         const { currentPassword, newPassword, confirmPassword } = req.body;
-        const userId = req.session.user.userId;
-        if (newPassword !== confirmPassword) { return res.redirect('/account/security?error=' + encodeURIComponent('New passwords do not match.')); }
+        if (newPassword !== confirmPassword) return res.redirect('/account/security?error=' + encodeURIComponent('Passwords mismatch.'));
+        
         const db = req.app.locals.client.db(req.app.locals.dbName);
-        const user = await db.collection('users').findOne({ userId: userId });
-        const isPasswordValid = await bcrypt.compare(currentPassword, user.passwordHash);
-        if (!isPasswordValid) { return res.redirect('/account/security?error=' + encodeURIComponent('Incorrect current password.')); }
+        const user = await db.collection('users').findOne({ userId: req.session.user.userId });
+        if (!(await bcrypt.compare(currentPassword, user.passwordHash))) return res.redirect('/account/security?error=' + encodeURIComponent('Incorrect password.'));
+        
         const hashedPassword = await bcrypt.hash(newPassword, saltRounds);
-        await db.collection('users').updateOne(
-            { userId: userId },
-            { $set: { passwordHash: hashedPassword, updatedAt: new Date() } }
-        );
-        res.redirect('/account/security?message=' + encodeURIComponent('Password updated successfully!'));
-    } catch (err) {
-        console.error("Error updating password:", err);
-        res.redirect('/account/security?error=' + encodeURIComponent('An error occurred while updating your password.'));
+        await db.collection('users').updateOne({ userId: req.session.user.userId }, { $set: { passwordHash: hashedPassword, updatedAt: new Date() } });
+        res.redirect('/account/security?message=' + encodeURIComponent('Password changed.'));
+    } catch (err) { 
+        res.redirect('/account/security?error=' + encodeURIComponent('Update failed.')); 
     }
 });
 
 router.post('/settings/add-address', async (req, res) => {
     try {
         const { v4: uuidv4 } = await import('uuid');
-        const db = req.app.locals.client.db(req.app.locals.dbName);
-        const userId = req.session.user.userId;
-        const newAddress = {
-            addressId: uuidv4(), firstName: req.body.firstName, lastName: req.body.lastName,
-            address: req.body.address, country: req.body.country, state: req.body.state,
-            zip: req.body.zip, phone: req.body.phone, isDefault: req.body.isDefault === 'on'
+        const newAddr = { 
+            addressId: uuidv4(), firstName: req.body.firstName, lastName: req.body.lastName, 
+            address: req.body.address, country: req.body.country, state: req.body.state, 
+            zip: req.body.zip, phone: req.body.phone, isDefault: req.body.isDefault === 'on' 
         };
-        if (newAddress.isDefault) { await db.collection('users').updateOne({ userId: userId }, { $set: { "addresses.$[].isDefault": false } }); }
-        await db.collection('users').updateOne({ userId: userId }, { $push: { addresses: newAddress } });
+        const db = req.app.locals.client.db(req.app.locals.dbName);
+        if (newAddr.isDefault) await db.collection('users').updateOne({ userId: req.session.user.userId }, { $set: { "addresses.$[].isDefault": false } });
+        await db.collection('users').updateOne({ userId: req.session.user.userId }, { $push: { addresses: newAddr } });
         res.redirect('/account/addresses?message=' + encodeURIComponent('Address added successfully!'));
-    } catch (err) {
-        console.error("Error adding address:", err);
-        res.redirect('/account/addresses?error=' + encodeURIComponent('Could not add address.'));
+    } catch (err) { 
+        res.redirect('/account/addresses?error=' + encodeURIComponent('Failed to add.')); 
     }
 });
 
 router.post('/settings/edit-address/:addressId', async (req, res) => {
     try {
-        const db = req.app.locals.client.db(req.app.locals.dbName);
-        const userId = req.session.user.userId;
-        const { addressId } = req.params;
-        const updatedAddress = {
-            addressId: addressId, firstName: req.body.firstName, lastName: req.body.lastName,
-            address: req.body.address, country: req.body.country, state: req.body.state,
-            zip: req.body.zip, phone: req.body.phone, isDefault: req.body.isDefault === 'on'
+        const updAddr = { 
+            addressId: req.params.addressId, firstName: req.body.firstName, lastName: req.body.lastName, 
+            address: req.body.address, country: req.body.country, state: req.body.state, 
+            zip: req.body.zip, phone: req.body.phone, isDefault: req.body.isDefault === 'on' 
         };
-        if (updatedAddress.isDefault) { await db.collection('users').updateOne({ userId: userId }, { $set: { "addresses.$[].isDefault": false } }); }
-        await db.collection('users').updateOne({ userId: userId, "addresses.addressId": addressId }, { $set: { "addresses.$": updatedAddress } });
+        const db = req.app.locals.client.db(req.app.locals.dbName);
+        if (updAddr.isDefault) await db.collection('users').updateOne({ userId: req.session.user.userId }, { $set: { "addresses.$[].isDefault": false } });
+        await db.collection('users').updateOne({ userId: req.session.user.userId, "addresses.addressId": req.params.addressId }, { $set: { "addresses.$": updAddr } });
         res.redirect('/account/addresses?message=' + encodeURIComponent('Address updated successfully!'));
-    } catch (err) {
-        console.error("Error updating address:", err);
-        res.redirect('/account/addresses?error=' + encodeURIComponent('Could not update address.'));
+    } catch (err) { 
+        res.redirect('/account/addresses?error=' + encodeURIComponent('Failed to update.')); 
     }
 });
 
 router.post('/settings/delete-address/:addressId', async (req, res) => {
     try {
-        const db = req.app.locals.client.db(req.app.locals.dbName);
-        const userId = req.session.user.userId;
-        const { addressId } = req.params;
-        await db.collection('users').updateOne({ userId: userId }, { $pull: { addresses: { addressId: addressId } } });
+        await db.collection('users').updateOne({ userId: req.session.user.userId }, { $pull: { addresses: { addressId: req.params.addressId } } });
         res.redirect('/account/addresses?message=' + encodeURIComponent('Address removed successfully!'));
-    } catch (err) {
-        console.error("Error deleting address:", err);
-        res.redirect('/account/addresses?error=' + encodeURIComponent('Could not remove address.'));
+    } catch (err) { 
+        res.redirect('/account/addresses?error=' + encodeURIComponent('Failed to delete.')); 
     }
 });
 
-// --- ADMIN ROUTES ---
+// ==========================================
+// =========== ADMIN ROUTES =================
+// ==========================================
+
+// 1. Dashboard
 router.get('/admin/dashboard', isAdmin, async (req, res) => {
     try {
         const db = req.app.locals.client.db(req.app.locals.dbName);
-        const usersCollection = db.collection('users');
-        const productsCollection = db.collection('products');
-        const ordersCollection = db.collection('orders');
+        const currency = res.locals.locationData.currency;
 
-        const recentActivityPipeline = [
-            { $sort: { orderDate: -1 } },
-            { $limit: 10 },
-            { $project: { type: 'ORDER', timestamp: '$orderDate', data: '$$ROOT' } },
-            { $unionWith: { 
-                coll: 'activity_log', 
-                pipeline: [
-                    { $sort: { timestamp: -1 } },
-                    { $limit: 10 },
-                    { $project: { type: '$actionType', timestamp: '$timestamp', data: '$$ROOT' } }
-                ]
-            }},
-            { $sort: { timestamp: -1 } },
-            { $limit: 5 }
-        ];
-
-        const [
-            userCount, 
-            productCount, 
-            orderCount, 
-            revenueResult,
-            recentActivity
-        ] = await Promise.all([
-            usersCollection.countDocuments(),
-            productsCollection.countDocuments(),
-            ordersCollection.countDocuments(),
-            ordersCollection.aggregate([
-                { $group: { _id: null, totalRevenue: { $sum: "$total" } } }
-            ]).toArray(),
-            ordersCollection.aggregate(recentActivityPipeline).toArray()
+        const [userCount, productCount, orderCount, revenueResult, recentActivityOrders] = await Promise.all([
+            db.collection('users').countDocuments(),
+            db.collection('products').countDocuments(),
+            db.collection('orders').countDocuments(),
+            db.collection('orders').aggregate([{ $group: { _id: null, total: { $sum: "$total" } } }]).toArray(),
+            db.collection('orders').aggregate([
+                { $sort: { orderDate: -1 } },
+                { $limit: 10 },
+                { $project: { type: 'ORDER', timestamp: '$orderDate', data: '$$ROOT' } },
+                { $unionWith: { 
+                    coll: 'activity_log', 
+                    pipeline: [{ $sort: { timestamp: -1 } }, { $limit: 10 }, { $project: { type: '$actionType', timestamp: '$timestamp', data: '$$ROOT' } }] 
+                }},
+                { $sort: { timestamp: -1 } },
+                { $limit: 10 }
+            ]).toArray()
         ]);
         
-        const totalRevenue = revenueResult.length > 0 ? revenueResult[0].totalRevenue : 0;
-
-        res.render('account/dashboard', {
-            title: "Admin Dashboard",
-            view: 'admin-dashboard',
-            data: { 
-                userCount,
-                productCount,
-                orderCount,
-                totalRevenue,
-                recentActivity: recentActivity
+        // UPDATED: Convert Total Revenue
+        const totalRevenue = await convertCurrency(revenueResult[0]?.total || 0, currency);
+        
+        // UPDATED: Convert Activity Log Prices
+        const convertedActivity = await Promise.all(recentActivityOrders.map(async (act) => {
+            if (act.type === 'ORDER') {
+                act.data.total = await convertCurrency(act.data.total, currency);
+            } else if (act.type === 'PRICE_UPDATE') {
+                act.data.details.oldPrice = await convertCurrency(act.data.details.oldPrice, currency);
+                act.data.details.newPrice = await convertCurrency(act.data.details.newPrice, currency);
             }
-        });
+            return act;
+        }));
 
-    } catch (err) {
-        console.error("Error fetching admin dashboard data:", err);
-        res.status(500).send("Could not load the admin dashboard.");
+        res.render('account/dashboard', { 
+            title: "Admin Dashboard", 
+            view: 'admin-dashboard', 
+            data: { 
+                userCount, 
+                productCount, 
+                orderCount, 
+                totalRevenue, 
+                recentActivity: convertedActivity 
+            } 
+        });
+    } catch (err) { 
+        console.error("Admin Dashboard Error:", err);
+        res.status(500).send("Error loading dashboard."); 
     }
 });
 
+// 2. Orders List
 router.get('/admin/orders', isAdmin, async (req, res) => {
     try {
         const db = req.app.locals.client.db(req.app.locals.dbName);
-        const ordersCollection = db.collection('orders');
+        const currency = res.locals.locationData.currency;
+        const orders = await db.collection('orders').find().sort({ orderDate: -1 }).toArray();
         
-        const allOrders = await ordersCollection.find().sort({ orderDate: -1 }).toArray();
+        // UPDATED: Convert Order Totals
+        const convertedOrders = await Promise.all(orders.map(async (o) => {
+            o.total = await convertCurrency(o.total, currency);
+            return o;
+        }));
 
-        await ordersCollection.updateMany({ isNew: true }, { $set: { isNew: false } });
-
-        res.render('account/admin-orders', {
-            title: "Order Management",
-            view: 'admin-orders',
-            orders: allOrders,
-            message: req.query.message
+        await db.collection('orders').updateMany({ isNew: true }, { $set: { isNew: false } });
+        res.render('account/admin-orders', { 
+            title: "Orders", 
+            view: 'admin-orders', 
+            orders: convertedOrders, 
+            message: req.query.message 
         });
-    } catch (err) {
-        console.error("Error fetching all orders:", err);
-        res.status(500).send("Could not load order management page.");
+    } catch (err) { 
+        res.status(500).send("Error."); 
     }
 });
 
+// 3. Order Details
 router.get('/admin/orders/:id', isAdmin, async (req, res) => {
     try {
         const db = req.app.locals.client.db(req.app.locals.dbName);
-        const ordersCollection = db.collection('orders');
-        const orderId = req.params.id;
+        const currency = res.locals.locationData.currency;
+        const order = await db.collection('orders').findOne({ _id: new ObjectId(req.params.id) });
+        if (!order) return res.status(404).send("Not found");
 
-        const order = await ordersCollection.findOne({ _id: new ObjectId(orderId) });
-        if (!order) {
-            return res.status(404).send("Order not found.");
-        }
+        // UPDATED: Convert Order Details
+        order.total = await convertCurrency(order.total, currency);
+        order.subtotal = await convertCurrency(order.subtotal, currency);
+        order.shippingCost = await convertCurrency(order.shippingCost, currency);
+        if(order.discount) order.discount = await convertCurrency(order.discount, currency);
 
-        res.render('account/admin-order-detail', {
-            title: `Order #${order._id.toString().slice(-6)}`,
-            view: 'admin-orders',
-            order: order
+        order.items = await Promise.all(order.items.map(async (item) => {
+            item.price = await convertCurrency(item.price, currency);
+            item.unitPrice = await convertCurrency(item.unitPrice || (item.price/item.qty), currency);
+            return item;
+        }));
+
+        res.render('account/admin-order-detail', { 
+            title: "Order Detail", 
+            view: 'admin-orders', 
+            order: order 
         });
-    } catch (err) {
-        console.error("Error fetching order details:", err);
-        res.status(500).send("Could not load order details.");
+    } catch (err) { 
+        res.status(500).send("Error."); 
     }
 });
 
-router.post('/admin/orders/update-status/:id', isAdmin, async (req, res) => {
+// 4. Vouchers
+router.get('/admin/vouchers', isAdmin, async (req, res) => {
     try {
         const db = req.app.locals.client.db(req.app.locals.dbName);
-        const ordersCollection = db.collection('orders');
-        const orderId = req.params.id;
-        const { newStatus } = req.body;
+        const currency = res.locals.locationData.currency;
+        const vouchers = await db.collection('vouchers').find().sort({ createdAt: -1 }).toArray();
 
-        const result = await ordersCollection.findOneAndUpdate(
-            { _id: new ObjectId(orderId) },
-            { $set: { status: newStatus } },
-            { returnDocument: 'after' }
-        );
-
-        const updatedOrder = result;
-
-        if (updatedOrder) {
-            let emailTitle = '';
-            if (newStatus === 'Shipped') emailTitle = 'Your Order Has Shipped!';
-            if (newStatus === 'Delivered') emailTitle = 'Your Order Has Been Delivered';
-
-            if (emailTitle) {
-                const emailHtml = createStatusEmailHtml(updatedOrder);
-                await resend.emails.send({
-                    from: process.env.RESEND_FROM_EMAIL,
-                    to: updatedOrder.customer.email,
-                    subject: emailTitle,
-                    html: emailHtml,
-                });
+        // UPDATED: Convert Voucher Values
+        const convertedVouchers = await Promise.all(vouchers.map(async (v) => {
+            if (v.discountType === 'flat') {
+                v.discountValue = await convertCurrency(v.discountValue, currency);
             }
-        }
-        res.redirect(`/account/admin/orders?message=${encodeURIComponent('Order status updated successfully!')}`);
-    } catch (err) {
-        console.error("Error updating order status:", err);
-        res.status(500).send("Failed to update order status.");
+            v.minOrderAmount = await convertCurrency(v.minOrderAmount, currency);
+            return v;
+        }));
+
+        res.render('account/admin-vouchers', {
+            title: "Manage Vouchers",
+            view: 'admin-vouchers',
+            vouchers: convertedVouchers,
+            message: req.query.message,
+            error: req.query.error
+        });
+    } catch (err) { 
+        res.status(500).send("Error loading vouchers."); 
     }
 });
 
-router.post('/admin/orders/cancel/:id', isAdmin, async (req, res) => {
+router.post('/admin/vouchers/create', isAdmin, async (req, res) => {
     try {
-        const db = req.app.locals.client.db(req.app.locals.dbName);
-        const ordersCollection = db.collection('orders');
-        const activityLogCollection = db.collection('activity_log');
-        const orderId = req.params.id;
-        
-        await ordersCollection.updateOne({ _id: new ObjectId(orderId) }, { $set: { status: 'Cancelled' } });
-        const updatedOrderForEmail = await ordersCollection.findOne({ _id: new ObjectId(orderId) });
-
-        if (updatedOrderForEmail) {
-            await activityLogCollection.insertOne({
-                userId: req.session.user.userId, userFirstName: req.session.user.firstName, userRole: req.session.user.role,
-                actionType: 'ORDER_CANCEL',
-                details: { orderId: updatedOrderForEmail._id, customerName: `${updatedOrderForEmail.customer.firstName} ${updatedOrderForEmail.customer.lastName}` },
-                timestamp: new Date()
-            });
-            const emailHtml = createStatusEmailHtml(updatedOrderForEmail);
-            await resend.emails.send({
-                from: process.env.RESEND_FROM_EMAIL, to: updatedOrderForEmail.customer.email,
-                subject: 'Your Order Has Been Cancelled', html: emailHtml,
-            });
-        }
-        res.redirect(`/account/admin/orders?message=${encodeURIComponent('Order has been cancelled.')}`);
-    } catch (err) {
-        console.error("Error cancelling order:", err);
-        res.status(500).send("Failed to cancel order.");
-    }
+        const { code, discountType, discountValue, expiryDate, minOrderAmount, isNewUser } = req.body;
+        await req.app.locals.client.db(req.app.locals.dbName).collection('vouchers').insertOne({
+            code: code.toUpperCase(), discountType, discountValue: parseFloat(discountValue), expiryDate: new Date(expiryDate), 
+            minOrderAmount: parseFloat(minOrderAmount) || 0, isNewUser: isNewUser === 'on', isActive: true, createdAt: new Date()
+        });
+        res.redirect('/account/admin/vouchers?message=Created');
+    } catch (err) { res.redirect('/account/admin/vouchers?error=Failed'); }
 });
 
+router.post('/admin/vouchers/delete/:id', isAdmin, async (req, res) => {
+    try {
+        await req.app.locals.client.db(req.app.locals.dbName).collection('vouchers').deleteOne({ _id: new ObjectId(req.params.id) });
+        res.redirect('/account/admin/vouchers?message=Deleted');
+    } catch (err) { res.redirect('/account/admin/vouchers?error=Failed'); }
+});
+
+// 5. Users (List)
 router.get('/admin/users', isAdmin, async (req, res) => {
     try {
         const db = req.app.locals.client.db(req.app.locals.dbName);
-        const allUsers = await db.collection('users').find().toArray();
-        res.render('account/user-management', { title: "User Management", users: allUsers, view: 'admin-users' });
-    } catch (err) {
-        console.error("Error fetching users for admin:", err);
-        res.status(500).send("Could not load user management.");
-    }
+        const allUsers = await db.collection('users').find().sort({ createdAt: -1 }).toArray();
+        res.render('account/user-management', { title: "User Management", users: allUsers, view: 'admin-users', message: req.query.message, error: req.query.error });
+    } catch (err) { res.status(500).send("Error."); }
 });
 
+// 6. User Detail (with Converted Orders)
 router.get('/admin/users/:id', isAdmin, async (req, res) => {
     try {
         const db = req.app.locals.client.db(req.app.locals.dbName);
+        const currency = res.locals.locationData.currency;
         const user = await db.collection('users').findOne({ _id: new ObjectId(req.params.id) });
         
-        if (!user) { return res.redirect('/account/admin/users?error=' + encodeURIComponent('User not found.')); }
+        if (!user) return res.redirect('/account/admin/users?error=Not found');
 
-        const orders = await db.collection('orders').find({ userId: user.userId }).sort({ orderDate: -1 }).toArray();
-        const tickets = await db.collection('support_tickets').find({ userEmail: user.email }).sort({ createdAt: -1 }).toArray();
+        let orders = await db.collection('orders').find({ userId: user.userId }).sort({ orderDate: -1 }).toArray();
+        const tickets = await db.collection('support_tickets').find({ userEmail: user.email }).toArray();
+
+        // UPDATED: Convert Order Totals in User History
+        orders = await Promise.all(orders.map(async (o) => {
+            o.total = await convertCurrency(o.total, currency);
+            return o;
+        }));
 
         res.render('account/admin-user-detail', {
             title: `User: ${user.firstName} ${user.lastName}`,
@@ -704,212 +594,96 @@ router.get('/admin/users/:id', isAdmin, async (req, res) => {
             orders: orders,
             tickets: tickets
         });
-    } catch (err) {
-        console.error("Error fetching user details:", err);
-        res.status(500).send("An error occurred.");
-    }
+    } catch (err) { res.status(500).send("Error."); }
 });
 
 router.post('/admin/users/delete/:id', isAdmin, async (req, res) => {
     try {
-        const db = req.app.locals.client.db(req.app.locals.dbName);
-        const result = await db.collection('users').deleteOne({ _id: new ObjectId(req.params.id) });
-        
-        if (result.deletedCount === 1) {
-             res.redirect('/account/admin/users?message=' + encodeURIComponent('User deleted successfully.'));
-        } else {
-             res.redirect('/account/admin/users?error=' + encodeURIComponent('Failed to delete user.'));
-        }
-    } catch (err) {
-        console.error("Error deleting user:", err);
-        res.redirect('/account/admin/users?error=' + encodeURIComponent('An error occurred.'));
-    }
+        const result = await req.app.locals.client.db(req.app.locals.dbName).collection('users').deleteOne({ _id: new ObjectId(req.params.id) });
+        if (result.deletedCount === 1) res.redirect('/account/admin/users?message=Deleted');
+        else res.redirect('/account/admin/users?error=Failed');
+    } catch (err) { res.redirect('/account/admin/users?error=Error'); }
 });
 
 router.post('/admin/users/delete-multiple', isAdmin, async (req, res) => {
     try {
-        const db = req.app.locals.client.db(req.app.locals.dbName);
         let { userIds } = req.body;
         if (!userIds) return res.redirect('/account/admin/users');
         if (!Array.isArray(userIds)) userIds = [userIds];
-
-        const objectIds = userIds.map(id => new ObjectId(id));
-        const result = await db.collection('users').deleteMany({ _id: { $in: objectIds } });
-
-        res.redirect('/account/admin/users?message=' + encodeURIComponent(`${result.deletedCount} users deleted successfully.`));
-    } catch (err) {
-        console.error("Error bulk deleting users:", err);
-        res.redirect('/account/admin/users?error=' + encodeURIComponent('An error occurred during bulk deletion.'));
-    }
+        const result = await req.app.locals.client.db(req.app.locals.dbName).collection('users').deleteMany({ _id: { $in: userIds.map(id => new ObjectId(id)) } });
+        res.redirect('/account/admin/users?message=' + encodeURIComponent(`${result.deletedCount} users deleted.`));
+    } catch (err) { res.redirect('/account/admin/users?error=Error'); }
 });
 
+// 7. Inbox & Tickets
 router.get('/admin/inbox', isAdmin, async (req, res) => {
     try {
-        const db = req.app.locals.client.db(req.app.locals.dbName);
-        const tickets = await db.collection('support_tickets').find().sort({ updatedAt: -1 }).toArray();
-        res.render('account/admin-inbox', {
-            title: "Support Inbox",
-            view: 'admin-inbox',
-            tickets: tickets
-        });
-    } catch (err) {
-        console.error("Error fetching support tickets:", err);
-        res.status(500).send("Could not load support inbox.");
-    }
+        const tickets = await req.app.locals.client.db(req.app.locals.dbName).collection('support_tickets').find().sort({ updatedAt: -1 }).toArray();
+        res.render('account/admin-inbox', { title: "Support Inbox", view: 'admin-inbox', tickets });
+    } catch (err) { res.status(500).send("Error."); }
 });
 
 router.get('/admin/tickets/:ticketId', isAdmin, async (req, res) => {
     try {
-        const { ticketId } = req.params;
-        const db = req.app.locals.client.db(req.app.locals.dbName);
-        const ticket = await db.collection('support_tickets').findOne({ ticketId: ticketId.toUpperCase() });
-
-        if (!ticket) {
-            return res.status(404).send("Ticket not found.");
-        }
-        res.render('account/admin-ticket-detail', {
-            title: `Ticket #${ticket.ticketId}`,
-            view: 'admin-inbox',
-            ticket: ticket
-        });
-    } catch (err) {
-        console.error("Error fetching ticket details:", err);
-        res.status(500).send("Could not load ticket details.");
-    }
+        const ticket = await req.app.locals.client.db(req.app.locals.dbName).collection('support_tickets').findOne({ ticketId: req.params.ticketId.toUpperCase() });
+        if (!ticket) return res.status(404).send("Not found");
+        res.render('account/admin-ticket-detail', { title: `Ticket #${ticket.ticketId}`, view: 'admin-inbox', ticket });
+    } catch (err) { res.status(500).send("Error."); }
 });
 
 router.post('/admin/tickets/:ticketId/update-status', isAdmin, async (req, res) => {
-    const { ticketId } = req.params;
-    const { status } = req.body;
     try {
-        const db = req.app.locals.client.db(req.app.locals.dbName);
-        const ticketsCollection = db.collection('support_tickets');
-        
-        const result = await ticketsCollection.findOneAndUpdate(
-            { ticketId: ticketId.toUpperCase() },
-            { $set: { status: status, updatedAt: new Date() } },
-            { returnDocument: 'after' }
+        const result = await req.app.locals.client.db(req.app.locals.dbName).collection('support_tickets').findOneAndUpdate(
+            { ticketId: req.params.ticketId.toUpperCase() }, { $set: { status: req.body.status, updatedAt: new Date() } }, { returnDocument: 'after' }
         );
-        const ticket = result;
-
-        if (ticket) {
-             const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
-             const ticketUrl = `${baseUrl}/support/tickets/${ticket.ticketId}?email=${encodeURIComponent(ticket.userEmail)}`;
-            await resend.emails.send({
-                from: process.env.RESEND_FROM_EMAIL,
-                to: ticket.userEmail,
-                subject: `Your Support Ticket [${ticket.ticketId}] has been updated`,
-                html: `<p>An agent has updated the status of your ticket to: <strong>${status}</strong>.</p><p>You can view the full conversation and reply by clicking the link below:</p><a href="${ticketUrl}">View Your Ticket</a>`
-            });
+        if (result) {
+             const ticketUrl = `${process.env.BASE_URL || 'http://localhost:3000'}/support/tickets/${result.ticketId}?email=${encodeURIComponent(result.userEmail)}`;
+            await resend.emails.send({ from: process.env.RESEND_FROM_EMAIL, to: result.userEmail, subject: `Ticket Updated`, html: `<p>Status: ${req.body.status}</p><p><a href="${ticketUrl}">View</a></p>` });
         }
-        
-        res.redirect(`/account/admin/tickets/${ticketId}`);
-    } catch (err) {
-        console.error("Error updating ticket status:", err);
-        res.redirect(`/account/admin/tickets/${ticketId}?error=` + encodeURIComponent('Failed to update status.'));
-    }
+        res.redirect(`/account/admin/tickets/${req.params.ticketId}`);
+    } catch (err) { res.redirect(`/account/admin/tickets/${req.params.ticketId}?error=Failed`); }
 });
 
+// 8. Sales (No currency conversion needed on management side usually, just percentage)
 router.get('/admin/sales', isAdmin, async (req, res) => {
     try {
         const db = req.app.locals.client.db(req.app.locals.dbName);
         const products = await db.collection('products').find().sort({ name: 1 }).toArray();
         const sales = await db.collection('sales').find().sort({ startDate: -1 }).toArray();
-
-        res.render('account/admin-sales', {
-            title: "Sales Management",
-            view: 'admin-sales',
-            products: products,
-            sales: sales,
-            message: req.query.message,
-            error: req.query.error
-        });
-    } catch (err) {
-        console.error("Error fetching sales data:", err);
-        res.status(500).send("Could not load sales management page.");
-    }
+        res.render('account/admin-sales', { title: "Sales Management", view: 'admin-sales', products, sales, message: req.query.message, error: req.query.error });
+    } catch (err) { res.status(500).send("Error."); }
 });
 
 router.post('/admin/sales/create', isAdmin, async (req, res) => {
     try {
-        const db = req.app.locals.client.db(req.app.locals.dbName);
         const { saleName, discountPercentage, startDate, endDate, productIds } = req.body;
-
-        if (!saleName || !discountPercentage || !startDate || !endDate || !productIds) {
-            return res.redirect('/account/admin/sales?error=' + encodeURIComponent('All fields are required.'));
-        }
-
-        const productObjectIds = Array.isArray(productIds) ? productIds.map(id => new ObjectId(id)) : [new ObjectId(productIds)];
-
-        const newSale = {
-            name: saleName,
-            discountPercentage: parseInt(discountPercentage, 10),
-            startDate: new Date(startDate),
-            endDate: new Date(new Date(endDate).setHours(23, 59, 59, 999)),
-            productIds: productObjectIds,
-            createdAt: new Date()
-        };
-
-        await db.collection('sales').insertOne(newSale);
-        res.redirect('/account/admin/sales?message=' + encodeURIComponent('Sale created successfully!'));
-
-    } catch (err) {
-        console.error("Error creating sale:", err);
-        res.redirect('/account/admin/sales?error=' + encodeURIComponent('An error occurred.'));
-    }
-});
-
-// --- NEW: ADMIN VOUCHERS ---
-router.get('/admin/vouchers', isAdmin, async (req, res) => {
-    try {
-        const db = req.app.locals.client.db(req.app.locals.dbName);
-        const vouchers = await db.collection('vouchers').find().sort({ createdAt: -1 }).toArray();
-        res.render('account/admin-vouchers', {
-            title: "Manage Vouchers",
-            view: 'admin-vouchers',
-            vouchers: vouchers,
-            message: req.query.message,
-            error: req.query.error
+        if (!saleName || !discountPercentage || !startDate || !endDate || !productIds) return res.redirect('/account/admin/sales?error=Missing fields');
+        const pIds = Array.isArray(productIds) ? productIds : [productIds];
+        await req.app.locals.client.db(req.app.locals.dbName).collection('sales').insertOne({
+            name: saleName, discountPercentage: parseInt(discountPercentage), startDate: new Date(startDate), endDate: new Date(endDate), productIds: pIds.map(id => new ObjectId(id)), createdAt: new Date()
         });
-    } catch (err) {
-        console.error("Error fetching vouchers:", err);
-        res.status(500).send("Error loading vouchers.");
-    }
+        res.redirect('/account/admin/sales?message=Created');
+    } catch (err) { res.redirect('/account/admin/sales?error=Error'); }
 });
 
-router.post('/admin/vouchers/create', isAdmin, async (req, res) => {
+// Order Status Updates
+router.post('/admin/orders/update-status/:id', isAdmin, async (req, res) => {
     try {
-        const db = req.app.locals.client.db(req.app.locals.dbName);
-        const { code, discountType, discountValue, expiryDate, minOrderAmount, isNewUser } = req.body;
-
-        const newVoucher = {
-            code: code.toUpperCase(),
-            discountType,
-            discountValue: parseFloat(discountValue),
-            expiryDate: new Date(expiryDate),
-            minOrderAmount: parseFloat(minOrderAmount) || 0,
-            isNewUser: isNewUser === 'on',
-            isActive: true,
-            createdAt: new Date()
-        };
-
-        await db.collection('vouchers').insertOne(newVoucher);
-        res.redirect('/account/admin/vouchers?message=' + encodeURIComponent('Voucher created successfully.'));
-    } catch (err) {
-        console.error("Error creating voucher:", err);
-        res.redirect('/account/admin/vouchers?error=' + encodeURIComponent('Error creating voucher.'));
-    }
+        const result = await req.app.locals.client.db(req.app.locals.dbName).collection('orders').findOneAndUpdate(
+            { _id: new ObjectId(req.params.id) }, { $set: { status: req.body.newStatus } }, { returnDocument: 'after' }
+        );
+        if(result) {
+             await resend.emails.send({ from: process.env.RESEND_FROM_EMAIL, to: result.customer.email, subject: 'Order Status Update', html: createStatusEmailHtml(result) });
+        }
+        res.redirect('/account/admin/orders?message=Updated');
+    } catch (err) { res.status(500).send("Error."); }
 });
 
-router.post('/admin/vouchers/delete/:id', isAdmin, async (req, res) => {
+router.post('/admin/orders/cancel/:id', isAdmin, async (req, res) => {
     try {
-        const db = req.app.locals.client.db(req.app.locals.dbName);
-        await db.collection('vouchers').deleteOne({ _id: new ObjectId(req.params.id) });
-        res.redirect('/account/admin/vouchers?message=' + encodeURIComponent('Voucher deleted.'));
-    } catch (err) {
-        console.error("Error deleting voucher:", err);
-        res.redirect('/account/admin/vouchers?error=' + encodeURIComponent('Error deleting voucher.'));
-    }
+        await req.app.locals.client.db(req.app.locals.dbName).collection('orders').updateOne({ _id: new ObjectId(req.params.id) }, { $set: { status: 'Cancelled' } });
+        res.redirect('/account/admin/orders?message=Cancelled');
+    } catch (err) { res.status(500).send("Error."); }
 });
 
 module.exports = router;
