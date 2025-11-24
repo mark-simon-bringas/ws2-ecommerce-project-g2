@@ -21,6 +21,7 @@ router.get('/register', (req, res) => {
 // Handle registration form submission
 router.post('/register', async (req, res) => {
     try {
+        // --- Turnstile Verification ---
         const token = req.body['cf-turnstile-response']; 
         const ip = req.ip;
         const result = await verifyTurnstile(token, ip);
@@ -81,7 +82,7 @@ router.post('/register', async (req, res) => {
         const currentDate = new Date();
         const verificationToken = uuidv4();
 
-        // --- AUTO-ASSIGN NEW USER VOUCHERS ---
+        // --- AUTO-ASSIGN WELCOME VOUCHERS ---
         const vouchersCollection = db.collection('vouchers');
         const welcomeVouchers = await vouchersCollection.find({ isNewUser: true, isActive: true }).toArray();
         
@@ -90,7 +91,6 @@ router.post('/register', async (req, res) => {
             isUsed: false,
             redeemedAt: new Date()
         }));
-        // -------------------------------------
 
         const newUser = {
             userId: uuidv4(),
@@ -105,7 +105,7 @@ router.post('/register', async (req, res) => {
             tokenExpiry: new Date(Date.now() + 3600000),
             wishlist: [],
             loginHistory: [],
-            vouchers: userVouchers, // Assigned here
+            vouchers: userVouchers,
             profilePictureUrl: null,
             createdAt: currentDate,
             updatedAt: currentDate
@@ -209,6 +209,15 @@ router.post('/login', async (req, res) => {
             isEmailVerified: user.isEmailVerified,
             profilePictureUrl: user.profilePictureUrl
         };
+
+        // --- IMPLEMENT "KEEP ME SIGNED IN" ---
+        if (req.body.keepSignedIn === 'on') {
+            // Set session maxAge to 30 days (in milliseconds)
+            req.session.cookie.maxAge = 30 * 24 * 60 * 60 * 1000;
+        } else {
+            // Revert to default session length (15 mins) if not checked
+            req.session.cookie.maxAge = 15 * 60 * 1000;
+        }
 
         // Track Login History
         try {

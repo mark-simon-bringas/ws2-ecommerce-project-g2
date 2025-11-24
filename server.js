@@ -49,7 +49,9 @@ app.use(session({
 app.use(async (req, res, next) => {
     res.locals.currentUser = req.session.user;
     res.locals.cart = req.session.cart;
-    res.locals.path = req.originalUrl;
+    
+    // *** CRITICAL: Ensure path is available for the returnTo logic ***
+    res.locals.path = req.originalUrl; 
 
     // Use a default IP for localhost testing, otherwise use the request IP
     const ip = ['::1', '127.0.0.1', '::ffff:127.0.0.1'].includes(req.ip) ? '122.54.69.1' : req.ip; // Added ::ffff:127.0.0.1 for some Node versions
@@ -238,7 +240,7 @@ app.get('/sitemap.xml', async (req, res, next) => {
 
              const lastModDate = product.updatedAt || product.importedAt || new Date();
              const lastMod = lastModDate.toISOString().split('T')[0];
-             // Escape special characters in SKU if necessary (basic URL encoding)
+             // Escape special characters in SKU if necessary
              const safeSku = encodeURIComponent(product.sku);
 
              xml += `
@@ -261,10 +263,6 @@ app.get('/sitemap.xml', async (req, res, next) => {
         next(err);
     }
 });
-// =================================== //
-// === END DYNAMIC SITEMAP ROUTE === //
-// =================================== //
-
 
 // --- Main Application Start Function ---
 async function main() {
@@ -273,7 +271,7 @@ async function main() {
         await client.connect();
         console.log("Successfully connected to MongoDB Atlas");
 
-        // Test DB Connection (Optional but recommended)
+        // Test DB Connection
         await client.db(app.locals.dbName).command({ ping: 1 });
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
 
@@ -290,9 +288,10 @@ async function main() {
 
         // --- Mount Routes ---
 
-        // Currency Change Route
+        // Currency Change Route - UPDATED to assume 'returnTo' is passed
         app.post('/currency/change', (req, res) => {
-            const { country } = req.body;
+            const { country, returnTo } = req.body;
+            
             if (country && countryData[country]) {
                 req.session.country_override = country; // Store override in session
                 console.log(`Currency override set to: ${country}`);
@@ -300,12 +299,10 @@ async function main() {
                  delete req.session.country_override; // Clear override if invalid
                  console.log(`Currency override cleared or invalid country received: ${country}`);
             }
-            // Redirect back safely
-            const referrer = req.header('Referer');
-            // Basic validation to prevent open redirect vulnerabilities if Referer is manipulated
-            // Use BASE_URL_LIVE for comparison as Referer will use the live domain
-            const safeReferrer = (referrer && (referrer.startsWith(process.env.BASE_URL_LIVE || 'https://www.sneakslab.shop') || referrer.startsWith(process.env.BASE_URL || 'http://localhost:5000'))) ? referrer : '/';
-            res.redirect(safeReferrer);
+            
+            // Redirect back using the returnTo parameter, defaulting to home if missing
+            const safeRedirect = returnTo || '/';
+            res.redirect(safeRedirect);
         });
 
         // Application Feature Routes (AFTER sitemap.xml)
@@ -322,13 +319,12 @@ async function main() {
 
         // 404 Handler for unmatched routes
         app.use((req, res, next) => {
-             console.log(`404 Not Found triggered for route: ${req.method} ${req.originalUrl}`);
              // Check if headers already sent
              if (!res.headersSent) {
                 res.status(404).render("404", { title: "Page Not Found" });
              } else {
                  console.warn(`Headers already sent for 404 on ${req.originalUrl}, cannot render 404 page.`);
-                next(); // If headers sent, maybe another handler will deal with it
+                next();
              }
         });
 
@@ -340,69 +336,55 @@ async function main() {
             const errorStatus = err.status || 500;
             console.error(`Error Status: ${errorStatus}`);
             console.error(`Error Message: ${err.message}`);
-            // Log stack trace only if not a simple 404 that somehow fell through (less likely now)
+            
             if (errorStatus !== 404) {
-                 console.error(err.stack); // Log the full stack trace for non-404 errors
+                 console.error(err.stack);
             }
 
-            // Avoid sending response if headers were already sent
             if (res.headersSent) {
                 console.error("Headers already sent, cannot render 500 page. Passing error to default handler.");
-                return next(err); // Pass to default Express error handler
+                return next(err);
             }
 
-            // Render the 500 error page
             res.status(errorStatus).render('500', {
                  title: 'Server Error',
-                 // Only show detailed error in development environment for security
                  error: process.env.NODE_ENV === 'development' ? err : { message: "An unexpected error occurred." }
             });
         });
 
 
-        // Start the HTTP server (listening through the 'server' object for Socket.IO)
+        // Start the HTTP server
         server.listen(port, () => {
             console.log(`Server running and listening on http://localhost:${port}`);
-            if (process.env.NODE_ENV !== 'production') {
-                console.log(`Access sitemap locally at: http://localhost:${port}/sitemap.xml`);
-            } else {
-                 console.log(`Access sitemap live at: ${process.env.BASE_URL_LIVE || 'https://www.sneakslab.shop'}/sitemap.xml`);
-            }
         });
 
     } catch (err) {
         console.error("FATAL ERROR during application startup:", err);
-        process.exit(1); // Exit the process with an error code
+        process.exit(1);
     }
 }
 
 // --- Graceful Shutdown Logic ---
-// Function to handle shutdown logic
 async function gracefulShutdown(signal) {
     console.log(`\n${signal} signal received: Closing server and MongoDB connection...`);
-    // Stop accepting new connections
     server.close(async () => {
         console.log('HTTP server closed.');
-        // Close MongoDB connection
         if (client && client.topology && client.topology.isConnected()) {
             await client.close();
             console.log('MongoDB connection closed.');
         } else {
             console.log('MongoDB connection already closed or not established.');
         }
-        process.exit(0); // Exit cleanly
+        process.exit(0);
     });
 
-    // If server doesn't close gracefully after a timeout, force exit
     setTimeout(() => {
         console.error('Could not close connections gracefully, forcing shutdown.');
         process.exit(1);
-    }, 10000); // 10 seconds timeout
+    }, 10000);
 }
 
-// Listen for termination signals
-process.on('SIGINT', () => gracefulShutdown('SIGINT')); // Ctrl+C
-process.on('SIGTERM', () => gracefulShutdown('SIGTERM')); // Render stop/restart
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
 
-// --- Execute the main function to start the application ---
 main();

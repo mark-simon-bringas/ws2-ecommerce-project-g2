@@ -228,6 +228,7 @@
                     <div class="footer-country">
                         <i class="bi bi-globe"></i>
                         <form action="/currency/change" method="POST" id="currency-form">
+                            <input type="hidden" name="returnTo" value="<%= typeof path !== 'undefined' ? path : '/' %>">
                             <select name="country" onchange="this.form.submit()" class="form-select-sm" aria-label="Country selector">
                                 <% for (const countryCode in countryData) { %>
                                     <option value="<%= countryCode %>" <%= currentCountryCode === countryCode ? 'selected' : '' %>>
