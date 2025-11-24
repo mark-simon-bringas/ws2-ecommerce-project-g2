@@ -11,13 +11,13 @@
                 <div class="product-carousel-wrapper">
                     <div class="product-carousel">
                         <% for (let i = 0; i < 4; i++) { %>
-                        <div class="skeleton-card" style="flex: 0 0 calc(33.333% - 1rem);">
-                            <div class="skeleton skeleton-image"></div>
-                            <div class="skeleton-body">
-                                <div class="skeleton skeleton-line"></div>
-                                <div class="skeleton skeleton-line short"></div>
+                            <div class="skeleton-card" style="flex: 0 0 calc(33.333% - 1rem);">
+                                <div class="skeleton skeleton-image"></div>
+                                <div class="skeleton-body">
+                                    <div class="skeleton skeleton-line"></div>
+                                    <div class="skeleton skeleton-line short"></div>
+                                </div>
                             </div>
-                        </div>
                         <% } %>
                     </div>
                 </div>
@@ -185,7 +185,17 @@
                                 <a href="/products/<%= product.sku %>" class="product-card-img-link"></a>
                                 <img src="<%= product.thumbnailUrl %>" class="product-card-img" alt="<%= product.name %>" loading="lazy" width="300" height="300">
                                 <div class="product-card-actions">
-                                    <button type="button" class="btn-action title="Add to Cart" data-bs-toggle="modal" data-bs-target="#productModal-<%= product.sku %>"><i class="bi bi-bag-plus"></i></button>
+                                    <% if (currentUser) { %>
+                                        <button type="button" class="btn-action wishlist-toggle-btn" title="Toggle Wishlist" data-product-id="<%= product._id %>">
+                                            <% const isWishlisted = wishlist.some(id => id.equals(product._id)); %>
+                                            <i class="bi <%= isWishlisted ? 'bi-heart-fill' : 'bi-heart' %>"></i>
+                                        </button>
+                                    <% } else { %>
+                                        <a href="/users/login?redirect=<%= path %>" class="btn-action" title="Login to Add to Wishlist">
+                                            <i class="bi bi-heart"></i>
+                                        </a>
+                                    <% } %>
+                                    <button type="button" class="btn-action" title="Add to Cart" data-bs-toggle="modal" data-bs-target="#productModal-<%= product.sku %>"><i class="bi bi-bag-plus"></i></button>
                                 </div>
                                 <span class="position-absolute top-0 start-0 m-2 badge bg-danger">
                                     -<%= product.discountPercentage %>%
@@ -284,6 +294,16 @@
                                 <a href="/products/<%= product.sku %>" class="product-card-img-link"></a>
                                 <img src="<%= product.thumbnailUrl %>" class="product-card-img" alt="<%= product.name %>" loading="lazy" width="300" height="300">
                                 <div class="product-card-actions">
+                                    <% if (currentUser) { %>
+                                        <button type="button" class="btn-action wishlist-toggle-btn" title="Toggle Wishlist" data-product-id="<%= product._id %>">
+                                            <% const isWishlisted = wishlist.some(id => id.equals(product._id)); %>
+                                            <i class="bi <%= isWishlisted ? 'bi-heart-fill' : 'bi-heart' %>"></i>
+                                        </button>
+                                    <% } else { %>
+                                        <a href="/users/login?redirect=<%= path %>" class="btn-action" title="Login to Add to Wishlist">
+                                            <i class="bi bi-heart"></i>
+                                        </a>
+                                    <% } %>
                                      <button type="button" class="btn-action" title="Add to Cart" data-bs-toggle="modal" data-bs-target="#productModal-<%= product.sku %>"><i class="bi bi-bag-plus"></i></button>
                                 </div>
                             </div>
@@ -324,7 +344,17 @@
                                 <a href="/products/<%= product.sku %>" class="product-card-img-link"></a>
                                 <img src="<%= product.thumbnailUrl %>" class="product-card-img" alt="<%= product.name %>" loading="lazy" width="300" height="300">
                                 <div class="product-card-actions">
-                                    <button type="button" class="btn-action title="Add to Cart" data-bs-toggle="modal" data-bs-target="#productModal-<%= product.sku %>"><i class="bi bi-bag-plus"></i></button>
+                                    <% if (currentUser) { %>
+                                        <button type="button" class="btn-action wishlist-toggle-btn" title="Toggle Wishlist" data-product-id="<%= product._id %>">
+                                            <% const isWishlisted = wishlist.some(id => id.equals(product._id)); %>
+                                            <i class="bi <%= isWishlisted ? 'bi-heart-fill' : 'bi-heart' %>"></i>
+                                        </button>
+                                    <% } else { %>
+                                        <a href="/users/login?redirect=<%= path %>" class="btn-action" title="Login to Add to Wishlist">
+                                            <i class="bi bi-heart"></i>
+                                        </a>
+                                    <% } %>
+                                    <button type="button" class="btn-action" title="Add to Cart" data-bs-toggle="modal" data-bs-target="#productModal-<%= product.sku %>"><i class="bi bi-bag-plus"></i></button>
                                 </div>
                             </div>
                             <div class="product-card-body">
@@ -435,7 +465,7 @@
 <style>
     /* Hero Styling */
     .hero-carousel {
-        height: 75vh; 
+        height: 75vh;
         min-height: 550px;
         border-radius: 0 0 24px 24px;
     }
@@ -519,7 +549,8 @@
         transform: scale(1.05);
     }
     
-    .tracking-widest { letter-spacing: 3px; }
+    .tracking-widest { letter-spacing: 3px;
+    }
     
     /* Animations */
     .carousel-item.active .hero-text-content > * {
@@ -527,13 +558,18 @@
         transform: translateY(30px);
         animation: fadeUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
     }
-    .carousel-item.active .hero-text-content > *:nth-child(1) { animation-delay: 0.1s; }
-    .carousel-item.active .hero-text-content > *:nth-child(2) { animation-delay: 0.2s; }
-    .carousel-item.active .hero-text-content > *:nth-child(3) { animation-delay: 0.3s; }
-    
-    @keyframes fadeUp {
-        to { opacity: 1; transform: translateY(0); }
+    .carousel-item.active .hero-text-content > *:nth-child(1) { animation-delay: 0.1s;
+    }
+    .carousel-item.active .hero-text-content > *:nth-child(2) { animation-delay: 0.2s;
+    }
+    .carousel-item.active .hero-text-content > *:nth-child(3) { animation-delay: 0.3s;
     }
     
-    .hover-scale:hover { transform: scale(1.02); transition: transform 0.2s ease; }
+    @keyframes fadeUp {
+        to { opacity: 1;
+        transform: translateY(0); }
+    }
+    
+    .hover-scale:hover { transform: scale(1.02);
+    transition: transform 0.2s ease; }
 </style>
