@@ -46,7 +46,6 @@ async function applySalesToProducts(products, db) {
     });
 }
 
-
 // Middleware to check if the user is logged in
 const isLoggedIn = (req, res, next) => {
     if (!req.session.user) {
@@ -62,6 +61,10 @@ const isAdmin = (req, res, next) => {
     }
     res.status(403).send("Access Denied.");
 };
+
+// ==========================================
+// ============ SHOP ROUTES =================
+// ==========================================
 
 // GET /products - The main shop page with filtering
 router.get('/', async (req, res) => {
@@ -170,7 +173,6 @@ router.get('/sale/:saleId', async (req, res) => {
             return product;
         }));
         
-        // Use the shop.ejs template to display the sale products
         res.render('shop', {
             title: sale.name,
             pageTitle: sale.name,
@@ -183,6 +185,7 @@ router.get('/sale/:saleId', async (req, res) => {
         res.status(500).send("Error loading sale page.");
     }
 });
+
 
 // GET /products/search - Handle search queries
 router.get('/search', async (req, res) => {
@@ -249,7 +252,11 @@ router.get('/search', async (req, res) => {
 });
 
 
-// --- ADMIN PRODUCT MANAGEMENT ROUTE ---
+// ==========================================
+// =========== ADMIN MANAGEMENT =============
+// ==========================================
+
+// GET /manage - Admin Product Management Dashboard
 router.get('/manage', isAdmin, async (req, res) => {
     try {
         const db = req.app.locals.client.db(req.app.locals.dbName);
@@ -286,7 +293,7 @@ router.get('/manage', isAdmin, async (req, res) => {
 
         // Convert Currency for Admin View
         localProducts = await Promise.all(localProducts.map(async (product) => {
-            product.convertedPrice = await convertCurrency(product.retailPrice, currency);
+            product.convertedPrice = await convertCurrency(Number(product.retailPrice), currency);
             return product;
         }));
 
@@ -308,7 +315,6 @@ router.get('/manage', isAdmin, async (req, res) => {
             console.warn("API Fetch failed in manage, showing local only");
         }
 
-        // RENDER THE VIEW
         res.render('account/admin-products', {
             title: "Manage Products",
             view: 'admin-products',
@@ -316,12 +322,13 @@ router.get('/manage', isAdmin, async (req, res) => {
             currentUser: req.session.user,
             localProducts: localProducts, 
             apiProducts: apiProducts,
-            filters: req.query
+            filters: req.query,
+            message: req.query.message,
+            error: req.query.error
         });
 
     } catch (error) {
         console.error("Data fetching for manage page failed:", error);
-        // Fallback render if something fails
         res.render('account/admin-products', {
             title: "Manage Products",
             view: 'admin-products',
@@ -329,11 +336,14 @@ router.get('/manage', isAdmin, async (req, res) => {
             currentUser: req.session.user,
             localProducts: [],
             apiProducts: [],
-            filters: {}
+            filters: {},
+            message: null,
+            error: "Error loading products."
         });
     }
 });
 
+// POST /search - Admin API Search
 router.post('/search', isAdmin, async (req, res) => {
     const { query, brand, gender, hasDescription } = req.body;
 
@@ -399,14 +409,16 @@ router.post('/search', isAdmin, async (req, res) => {
     }
 });
 
+// POST /import-multiple - Bulk Import
 router.post('/import-multiple', isAdmin, async (req, res) => {
     try {
         const db = req.app.locals.client.db(req.app.locals.dbName);
         const productsCollection = db.collection('products');
         const activityLogCollection = db.collection('activity_log');
         let { selectedProducts: selectedIds } = req.body;
-        if (!selectedIds) { return res.redirect('/products/manage'); }
-        if (!Array.isArray(selectedIds)) { selectedIds = [selectedIds]; }
+
+        if (!selectedIds) return res.redirect('/products/manage?error=' + encodeURIComponent('No products selected.'));
+        if (!Array.isArray(selectedIds)) selectedIds = [selectedIds];
 
         const productsToInsert = [];
         const standardSizes = ['8', '8.5', '9', '9.5', '10', '10.5', '11', '12'];
@@ -427,8 +439,7 @@ router.post('/import-multiple', isAdmin, async (req, res) => {
                 if (!product) continue;
 
                 const initialStock = standardSizes.reduce((acc, size) => {
-                    const safeSizeKey = size.replace('.', '_');
-                    acc[safeSizeKey] = 10;
+                    acc[size.replace('.', '_')] = 10;
                     return acc;
                 }, {});
 
@@ -447,7 +458,7 @@ router.post('/import-multiple', isAdmin, async (req, res) => {
                     releaseDate: product.releaseDate
                 });
             } catch (err) {
-                console.warn(`Could not fetch details for ID ${id}. Skipping import. Error: ${err.message}`);
+                console.warn(`Could not fetch details for ID ${id}. Skipping import.`);
                 continue;
             }
         }
@@ -466,23 +477,36 @@ router.post('/import-multiple', isAdmin, async (req, res) => {
                 timestamp: new Date()
             };
             await activityLogCollection.insertOne(logEntry);
+            res.redirect('/products/manage?message=' + encodeURIComponent(`${productsToInsert.length} products imported successfully.`));
+        } else {
+            res.redirect('/products/manage?error=' + encodeURIComponent('No products were imported.'));
         }
-        res.redirect('/products/manage');
     } catch (err) {
-        console.error("Error during the final stage of import:", err);
-        res.status(500).send("An error occurred during the bulk import.");
+        console.error("Error during import:", err);
+        res.redirect('/products/manage?error=' + encodeURIComponent('Import failed.'));
     }
 });
 
+// --- UPDATED: Delete Single Product with Active Order Check ---
 router.post('/delete', isAdmin, async (req, res) => {
     try {
         const db = req.app.locals.client.db(req.app.locals.dbName);
         const productsCollection = db.collection('products');
+        const ordersCollection = db.collection('orders');
         const activityLogCollection = db.collection('activity_log');
         const { productId } = req.body;
 
-        const productToDelete = await productsCollection.findOne({ _id: new ObjectId(productId) });
+        // Check for active orders containing this product (Supports both ObjectId and String format)
+        const activeOrderCount = await ordersCollection.countDocuments({
+            "items.productId": { $in: [new ObjectId(productId), productId] },
+            "status": { $in: ['Processing', 'Shipped'] }
+        });
 
+        if (activeOrderCount > 0) {
+            return res.redirect('/products/manage?error=' + encodeURIComponent('Cannot delete: Product is in a pending order.'));
+        }
+
+        const productToDelete = await productsCollection.findOne({ _id: new ObjectId(productId) });
         if (productToDelete) {
             await productsCollection.deleteOne({ _id: new ObjectId(productId) });
 
@@ -498,58 +522,79 @@ router.post('/delete', isAdmin, async (req, res) => {
                 timestamp: new Date()
             };
             await activityLogCollection.insertOne(logEntry);
+            res.redirect('/products/manage?message=' + encodeURIComponent('Product deleted successfully.'));
+        } else {
+            res.redirect('/products/manage?error=' + encodeURIComponent('Product not found.'));
         }
-
-        res.redirect('/products/manage');
     } catch (err) {
         console.error("Error deleting product:", err);
-        res.status(500).send("An error occurred while deleting the product.");
+        res.redirect('/products/manage?error=' + encodeURIComponent('Delete failed.'));
     }
 });
 
+// --- UPDATED: Bulk Delete with Active Order Check ---
 router.post('/delete-multiple', isAdmin, async (req, res) => {
     try {
         const db = req.app.locals.client.db(req.app.locals.dbName);
         const productsCollection = db.collection('products');
+        const ordersCollection = db.collection('orders');
         const activityLogCollection = db.collection('activity_log');
         let { productIds } = req.body;
 
-        if (!productIds) {
-            return res.redirect('/products/manage');
-        }
-        if (!Array.isArray(productIds)) {
-            productIds = [productIds];
-        }
+        if (!productIds) return res.redirect('/products/manage?error=' + encodeURIComponent('No items selected.'));
+        if (!Array.isArray(productIds)) productIds = [productIds];
 
         const objectIdsToDelete = productIds.map(id => new ObjectId(id));
-        
-        const productsToDelete = await productsCollection.find({ _id: { $in: objectIdsToDelete } }).toArray();
 
-        if (productsToDelete.length > 0) {
-            await productsCollection.deleteMany({ _id: { $in: objectIdsToDelete } });
+        // Find blocked IDs (Active Orders)
+        const activeOrders = await ordersCollection.find({
+            "items.productId": { $in: [...objectIdsToDelete, ...productIds] },
+            "status": { $in: ['Processing', 'Shipped'] }
+        }).toArray();
 
-            const logEntry = {
+        // Collect IDs that are in active orders
+        const blockedProductIds = new Set();
+        activeOrders.forEach(order => {
+            order.items.forEach(item => {
+                if (item.productId) blockedProductIds.add(item.productId.toString());
+            });
+        });
+
+        // Filter safe IDs
+        const safeToDeleteIds = objectIdsToDelete.filter(id => !blockedProductIds.has(id.toString()));
+
+        if (safeToDeleteIds.length > 0) {
+            const productsToDelete = await productsCollection.find({ _id: { $in: safeToDeleteIds } }).toArray();
+            await productsCollection.deleteMany({ _id: { $in: safeToDeleteIds } });
+
+            await activityLogCollection.insertOne({
                 userId: req.session.user.userId,
                 userFirstName: req.session.user.firstName,
                 userRole: req.session.user.role,
                 actionType: 'PRODUCT_DELETE_MULTIPLE',
                 details: {
-                    productCount: productsToDelete.length,
-                    deletedProducts: productsToDelete.map(p => ({ name: p.name, sku: p.sku }))
+                    productCount: safeToDeleteIds.length
                 },
                 timestamp: new Date()
-            };
-            await activityLogCollection.insertOne(logEntry);
-        }
+            });
 
-        res.redirect('/products/manage');
+            const skippedCount = objectIdsToDelete.length - safeToDeleteIds.length;
+            let msg = `Deleted ${safeToDeleteIds.length} products.`;
+            if (skippedCount > 0) {
+                msg += ` Skipped ${skippedCount} active items.`;
+            }
+            res.redirect('/products/manage?message=' + encodeURIComponent(msg));
+        } else {
+            res.redirect('/products/manage?error=' + encodeURIComponent('All selected products are in active orders.'));
+        }
 
     } catch (err) {
         console.error("Error deleting multiple products:", err);
-        res.status(500).send("An error occurred during the bulk delete.");
+        res.redirect('/products/manage?error=' + encodeURIComponent('Bulk delete failed.'));
     }
 });
 
+// Stock Edit & Search
 router.get('/stock/:id', isAdmin, async (req, res) => {
     try {
         const db = req.app.locals.client.db(req.app.locals.dbName);
@@ -597,10 +642,8 @@ router.post('/stock/:id', isAdmin, async (req, res) => {
             updateQuery.retailPrice = newRetailPrice;
 
             if (productBeforeUpdate && productBeforeUpdate.retailPrice !== newRetailPrice) {
-                const logEntry = {
-                    userId: req.session.user.userId,
-                    userFirstName: req.session.user.firstName,
-                    userRole: req.session.user.role,
+                await activityLogCollection.insertOne({
+                    userId: req.session.user.userId, userFirstName: req.session.user.firstName, userRole: req.session.user.role,
                     actionType: 'PRICE_UPDATE',
                     details: {
                         productId: productBeforeUpdate._id,
@@ -609,8 +652,7 @@ router.post('/stock/:id', isAdmin, async (req, res) => {
                         newPrice: newRetailPrice
                     },
                     timestamp: new Date()
-                };
-                await activityLogCollection.insertOne(logEntry);
+                });
             }
         }
 
@@ -621,86 +663,15 @@ router.post('/stock/:id', isAdmin, async (req, res) => {
             );
         }
 
-        res.redirect('/products/manage');
+        res.redirect('/products/manage?message=' + encodeURIComponent('Stock updated successfully.'));
 
     } catch (err) {
-        console.error("--- STOCK/PRICE UPDATE FAILED ---");
-        console.error("Timestamp:", new Date().toISOString());
-        console.error("Product ID:", productId);
-        console.error("Attempted Update Data:", updateQuery);
-        console.error("Full Error:", err);
-        res.status(500).send("Failed to update stock/price.");
+        console.error("Update failed:", err);
+        res.redirect('/products/manage?error=' + encodeURIComponent('Update failed.'));
     }
 });
 
-router.get('/:sku/review', isLoggedIn, async (req, res) => {
-    try {
-        const db = req.app.locals.client.db(req.app.locals.dbName);
-        const productsCollection = db.collection('products');
-        const ordersCollection = db.collection('orders');
-        const { sku } = req.params;
-
-        const product = await productsCollection.findOne({ sku: sku });
-        if (!product) {
-            return res.status(404).render('404', { title: "Product Not Found" });
-        }
-
-        const hasPurchased = await ordersCollection.findOne({
-            "userId": req.session.user.userId,
-            "items.sku": sku,
-            "status": "Delivered"
-        });
-
-        if (!hasPurchased) {
-            return res.status(403).render('info-page', {
-                title: "Review Not Allowed",
-                message: "You can only write a review for products you have purchased and that have been delivered.",
-                buttonText: "Back to Product",
-                buttonLink: `/products/${sku}`,
-                page: 'auth'
-            });
-        }
-
-        res.render('add-review', {
-            title: `Review ${product.name}`,
-            product: product,
-            page: 'auth'
-        });
-
-    } catch (err) {
-        console.error("Error showing review page:", err);
-        res.status(500).send("An error occurred.");
-    }
-});
-
-router.post('/:sku/review', isLoggedIn, async (req, res) => {
-    try {
-        const db = req.app.locals.client.db(req.app.locals.dbName);
-        const reviewsCollection = db.collection('reviews');
-        const { productId, rating, comment } = req.body;
-        const { sku } = req.params;
-
-        const newReview = {
-            productId: new ObjectId(productId),
-            userId: req.session.user.userId,
-            rating: parseInt(rating),
-            comment: comment,
-            createdAt: new Date(),
-            author: {
-                firstName: req.session.user.firstName,
-            }
-        };
-
-        await reviewsCollection.insertOne(newReview);
-
-        res.redirect(`/products/${sku}`);
-
-    } catch (err) {
-        console.error("Error submitting review:", err);
-        res.status(500).send("An error occurred while submitting your review.");
-    }
-});
-
+// GET /:sku - Product Detail Page
 router.get('/:sku', async (req, res) => {
     try {
         const db = req.app.locals.client.db(req.app.locals.dbName);
@@ -728,7 +699,6 @@ router.get('/:sku', async (req, res) => {
                 { $lookup: { from: 'users', localField: 'userId', foreignField: 'userId', as: 'author' } },
                 { $unwind: '$author' }
             ]).toArray(),
-            
             req.session.user ? usersCollection.findOne({ userId: req.session.user.userId }) : null,
         ]);
         
@@ -743,7 +713,6 @@ router.get('/:sku', async (req, res) => {
         const userWishlist = user?.wishlist || [];
         const isWishlisted = userWishlist.some(id => id.equals(product._id));
 
-        // Convert currencies for all products
         product.convertedPrice = await convertCurrency(product.retailPrice, currency);
         if (product.onSale) {
             product.convertedSalePrice = await convertCurrency(product.salePrice, currency);
@@ -770,6 +739,52 @@ router.get('/:sku', async (req, res) => {
         console.error("Error fetching product details:", err);
         res.status(500).send("Error loading product page.");
     }
+});
+
+// GET & POST Reviews
+router.get('/:sku/review', isLoggedIn, async (req, res) => {
+    try {
+        const db = req.app.locals.client.db(req.app.locals.dbName);
+        const { sku } = req.params;
+        const product = await db.collection('products').findOne({ sku: sku });
+        if (!product) return res.status(404).render('404', { title: "Product Not Found" });
+
+        const hasPurchased = await db.collection('orders').findOne({
+            "userId": req.session.user.userId,
+            "items.sku": sku,
+            "status": "Delivered"
+        });
+
+        if (!hasPurchased) {
+            return res.status(403).render('info-page', {
+                title: "Review Not Allowed",
+                message: "You can only review purchased and delivered items.",
+                buttonText: "Back to Product",
+                buttonLink: `/products/${sku}`,
+                page: 'auth'
+            });
+        }
+
+        res.render('add-review', { title: `Review ${product.name}`, product, page: 'auth' });
+    } catch (err) { res.status(500).send("Error."); }
+});
+
+router.post('/:sku/review', isLoggedIn, async (req, res) => {
+    try {
+        const db = req.app.locals.client.db(req.app.locals.dbName);
+        const { productId, rating, comment } = req.body;
+        const { sku } = req.params;
+
+        await db.collection('reviews').insertOne({
+            productId: new ObjectId(productId),
+            userId: req.session.user.userId,
+            rating: parseInt(rating),
+            comment: comment,
+            createdAt: new Date(),
+            author: { firstName: req.session.user.firstName }
+        });
+        res.redirect(`/products/${sku}`);
+    } catch (err) { res.status(500).send("Error."); }
 });
 
 module.exports = router;
