@@ -10,6 +10,7 @@ const { convertCurrency } = require('./currency');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const ExcelJS = require('exceljs'); // NEW: Required for Excel exports
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -139,7 +140,10 @@ router.get('/', (req, res) => {
     }
 });
 
-// --- USER SETTINGS ROUTES ---
+// ==========================================
+// =========== USER ROUTES ==================
+// ==========================================
+
 router.get('/settings', (req, res) => { 
     res.render('account/settings', { 
         title: "Settings", 
@@ -393,6 +397,7 @@ router.post('/settings/edit-address/:addressId', async (req, res) => {
 
 router.post('/settings/delete-address/:addressId', async (req, res) => {
     try {
+        const db = req.app.locals.client.db(req.app.locals.dbName);
         await db.collection('users').updateOne({ userId: req.session.user.userId }, { $pull: { addresses: { addressId: req.params.addressId } } });
         res.redirect('/account/addresses?message=' + encodeURIComponent('Address removed successfully!'));
     } catch (err) { 
@@ -404,40 +409,136 @@ router.post('/settings/delete-address/:addressId', async (req, res) => {
 // =========== ADMIN ROUTES =================
 // ==========================================
 
-// 1. Dashboard
+// Helper to build filter query for Dashboard & Reports
+const buildDashboardQuery = (dateRange, status) => {
+    let matchQuery = {};
+    if (dateRange) {
+        const dates = dateRange.split(' to ');
+        let startDate, endDate;
+        if (dates.length >= 1) startDate = new Date(dates[0]);
+        if (dates.length === 2) endDate = new Date(dates[1]);
+        else if (startDate) endDate = new Date(startDate);
+
+        if (startDate && endDate) {
+            startDate.setHours(0, 0, 0, 0);
+            endDate.setHours(23, 59, 59, 999);
+            matchQuery.orderDate = { $gte: startDate, $lte: endDate };
+        }
+    }
+    if (status && status !== 'All') {
+        matchQuery.status = status;
+    }
+    return matchQuery;
+};
+
+// 1. Dashboard (Enhanced with Analytics & Shared Query Logic)
 router.get('/admin/dashboard', isAdmin, async (req, res) => {
     try {
         const db = req.app.locals.client.db(req.app.locals.dbName);
         const currency = res.locals.locationData.currency;
+        const { dateRange, status } = req.query;
+        
+        // Use helper to build query
+        const matchQuery = buildDashboardQuery(dateRange, status);
 
-        const [userCount, productCount, orderCount, revenueResult, recentActivityOrders] = await Promise.all([
+        // --- Parallel Aggregation ---
+        const [
+            userCount, 
+            productCount, 
+            filteredStats,
+            dailySalesRaw,
+            topProductsRaw,
+            salesByBrandRaw,
+            orderStatusRaw
+        ] = await Promise.all([
             db.collection('users').countDocuments(),
             db.collection('products').countDocuments(),
-            db.collection('orders').countDocuments(),
-            db.collection('orders').aggregate([{ $group: { _id: null, total: { $sum: "$total" } } }]).toArray(),
+            
+            // 1. Total Revenue & Count (Filtered)
             db.collection('orders').aggregate([
-                { $sort: { orderDate: -1 } },
-                { $limit: 10 },
-                { $project: { type: 'ORDER', timestamp: '$orderDate', data: '$$ROOT' } },
-                { $unionWith: { 
-                    coll: 'activity_log', 
-                    pipeline: [{ $sort: { timestamp: -1 } }, { $limit: 10 }, { $project: { type: '$actionType', timestamp: '$timestamp', data: '$$ROOT' } }] 
+                { $match: matchQuery },
+                { $group: { _id: null, totalRevenue: { $sum: "$total" }, orderCount: { $sum: 1 } } }
+            ]).toArray(),
+
+            // 2. Daily Sales Trend (Filtered)
+            db.collection('orders').aggregate([
+                { $match: matchQuery },
+                { 
+                    $group: { 
+                        _id: { $dateToString: { format: "%Y-%m-%d", date: "$orderDate" } },
+                        revenue: { $sum: "$total" },
+                        orders: { $sum: 1 }
+                    } 
+                },
+                { $sort: { _id: 1 } }
+            ]).toArray(),
+
+            // 3. Top 5 Selling Products (Filtered)
+            db.collection('orders').aggregate([
+                { $match: matchQuery },
+                { $unwind: "$items" },
+                { $group: { 
+                    _id: "$items.productId",
+                    name: { $first: "$items.name" },
+                    thumbnailUrl: { $first: "$items.thumbnailUrl" },
+                    brand: { $first: "$items.brand" },
+                    qty: { $sum: "$items.qty" },
+                    revenue: { $sum: "$items.price" }
                 }},
-                { $sort: { timestamp: -1 } },
-                { $limit: 10 }
+                { $sort: { qty: -1 } },
+                { $limit: 5 }
+            ]).toArray(),
+
+            // 4. Sales by Brand (Filtered)
+            db.collection('orders').aggregate([
+                { $match: matchQuery },
+                { $unwind: "$items" },
+                { $group: { _id: "$items.brand", revenue: { $sum: "$items.price" } } },
+                { $sort: { revenue: -1 } }
+            ]).toArray(),
+
+            // 5. Order Status Distribution (Filtered)
+            db.collection('orders').aggregate([
+                { $match: matchQuery },
+                { $group: { _id: "$status", count: { $sum: 1 } } }
             ]).toArray()
         ]);
         
-        // UPDATED: Convert Total Revenue
-        const totalRevenue = await convertCurrency(revenueResult[0]?.total || 0, currency);
+        // Recent Activity (Unfiltered Log + Orders)
+        const recentActivity = await db.collection('orders').aggregate([
+            { $sort: { orderDate: -1 } }, { $limit: 10 },
+            { $project: { type: 'ORDER', timestamp: '$orderDate', data: '$$ROOT' } },
+            { $unionWith: { 
+                coll: 'activity_log', 
+                pipeline: [{ $sort: { timestamp: -1 } }, { $limit: 10 }, { $project: { type: '$actionType', timestamp: '$timestamp', data: '$$ROOT' } }] 
+            }},
+            { $sort: { timestamp: -1 } }, { $limit: 10 }
+        ]).toArray();
+
+        // --- Data Formatting & Currency Conversion ---
+        const stats = filteredStats[0] || { totalRevenue: 0, orderCount: 0 };
+        const totalRevenue = await convertCurrency(Number(stats.totalRevenue), currency);
         
-        // UPDATED: Convert Activity Log Prices
-        const convertedActivity = await Promise.all(recentActivityOrders.map(async (act) => {
+        // Daily Sales
+        const dailySales = await Promise.all(dailySalesRaw.map(async d => ({
+            date: d._id,
+            orders: d.orders,
+            revenue: await convertCurrency(Number(d.revenue), currency)
+        })));
+
+        // Top Products
+        const topProducts = await Promise.all(topProductsRaw.map(async p => ({
+            ...p,
+            revenue: await convertCurrency(Number(p.revenue), currency)
+        })));
+
+        // Activity Log
+        const convertedActivity = await Promise.all(recentActivity.map(async (act) => {
             if (act.type === 'ORDER') {
-                act.data.total = await convertCurrency(act.data.total, currency);
+                act.data.total = await convertCurrency(Number(act.data.total), currency);
             } else if (act.type === 'PRICE_UPDATE') {
-                act.data.details.oldPrice = await convertCurrency(act.data.details.oldPrice, currency);
-                act.data.details.newPrice = await convertCurrency(act.data.details.newPrice, currency);
+                act.data.details.oldPrice = await convertCurrency(Number(act.data.details.oldPrice), currency);
+                act.data.details.newPrice = await convertCurrency(Number(act.data.details.newPrice), currency);
             }
             return act;
         }));
@@ -448,14 +549,123 @@ router.get('/admin/dashboard', isAdmin, async (req, res) => {
             data: { 
                 userCount, 
                 productCount, 
-                orderCount, 
+                orderCount: stats.orderCount, 
                 totalRevenue, 
+                dailySales,
+                topProducts,
+                salesByBrand: salesByBrandRaw,
+                orderStatus: orderStatusRaw,
                 recentActivity: convertedActivity 
-            } 
+            },
+            filters: {
+                dateRange: dateRange || '',
+                status: status || 'All'
+            }
         });
+
     } catch (err) { 
         console.error("Admin Dashboard Error:", err);
         res.status(500).send("Error loading dashboard."); 
+    }
+});
+
+// --- REPORT EXPORT ROUTES (XLSX) ---
+
+// Export Daily Sales
+router.get('/admin/reports/export/daily-sales', isAdmin, async (req, res) => {
+    try {
+        const db = req.app.locals.client.db(req.app.locals.dbName);
+        const { dateRange, status } = req.query;
+        const matchQuery = buildDashboardQuery(dateRange, status);
+
+        const dailySalesRaw = await db.collection('orders').aggregate([
+            { $match: matchQuery },
+            { 
+                $group: { 
+                    _id: { $dateToString: { format: "%Y-%m-%d", date: "$orderDate" } },
+                    revenue: { $sum: "$total" },
+                    orders: { $sum: 1 }
+                } 
+            },
+            { $sort: { _id: 1 } }
+        ]).toArray();
+
+        const workbook = new ExcelJS.Workbook();
+        const worksheet = workbook.addWorksheet('Daily Sales');
+
+        worksheet.columns = [
+            { header: 'Date', key: 'date', width: 15 },
+            { header: 'Orders', key: 'orders', width: 10 },
+            { header: 'Revenue (USD)', key: 'revenue', width: 20 }
+        ];
+
+        let totalRev = 0;
+        let totalOrd = 0;
+
+        dailySalesRaw.forEach(day => {
+            worksheet.addRow({ date: day._id, orders: day.orders, revenue: day.revenue });
+            totalRev += day.revenue;
+            totalOrd += day.orders;
+        });
+
+        // Add Total Row
+        const totalRow = worksheet.addRow({ date: 'TOTAL', orders: totalOrd, revenue: totalRev });
+        totalRow.font = { bold: true };
+        totalRow.getCell('revenue').numFmt = '$#,##0.00';
+
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        res.setHeader('Content-Disposition', 'attachment; filename=daily_sales_report.xlsx');
+
+        await workbook.xlsx.write(res);
+        res.end();
+
+    } catch (err) {
+        console.error("Export Error:", err);
+        res.status(500).send("Error generating report.");
+    }
+});
+
+// Export Detailed Orders
+router.get('/admin/reports/export/detailed-orders', isAdmin, async (req, res) => {
+    try {
+        const db = req.app.locals.client.db(req.app.locals.dbName);
+        const { dateRange, status } = req.query;
+        const matchQuery = buildDashboardQuery(dateRange, status);
+
+        const orders = await db.collection('orders').find(matchQuery).sort({ orderDate: -1 }).toArray();
+
+        const workbook = new ExcelJS.Workbook();
+        const worksheet = workbook.addWorksheet('Detailed Orders');
+
+        worksheet.columns = [
+            { header: 'Order ID', key: 'id', width: 25 },
+            { header: 'Date', key: 'date', width: 20 },
+            { header: 'Customer Name', key: 'customer', width: 25 },
+            { header: 'Email', key: 'email', width: 30 },
+            { header: 'Status', key: 'status', width: 15 },
+            { header: 'Total (USD)', key: 'total', width: 15 }
+        ];
+
+        orders.forEach(order => {
+            worksheet.addRow({
+                id: order._id.toString(),
+                date: new Date(order.orderDate).toLocaleString(),
+                customer: `${order.customer.firstName} ${order.customer.lastName}`,
+                email: order.customer.email,
+                status: order.status,
+                total: order.total
+            });
+        });
+
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        res.setHeader('Content-Disposition', 'attachment; filename=detailed_orders_report.xlsx');
+
+        await workbook.xlsx.write(res);
+        res.end();
+
+    } catch (err) {
+        console.error("Export Error:", err);
+        res.status(500).send("Error generating report.");
     }
 });
 
@@ -466,9 +676,8 @@ router.get('/admin/orders', isAdmin, async (req, res) => {
         const currency = res.locals.locationData.currency;
         const orders = await db.collection('orders').find().sort({ orderDate: -1 }).toArray();
         
-        // UPDATED: Convert Order Totals
         const convertedOrders = await Promise.all(orders.map(async (o) => {
-            o.total = await convertCurrency(o.total, currency);
+            o.total = await convertCurrency(Number(o.total), currency);
             return o;
         }));
 
@@ -492,15 +701,14 @@ router.get('/admin/orders/:id', isAdmin, async (req, res) => {
         const order = await db.collection('orders').findOne({ _id: new ObjectId(req.params.id) });
         if (!order) return res.status(404).send("Not found");
 
-        // UPDATED: Convert Order Details
-        order.total = await convertCurrency(order.total, currency);
-        order.subtotal = await convertCurrency(order.subtotal, currency);
-        order.shippingCost = await convertCurrency(order.shippingCost, currency);
-        if(order.discount) order.discount = await convertCurrency(order.discount, currency);
+        order.total = await convertCurrency(Number(order.total), currency);
+        order.subtotal = await convertCurrency(Number(order.subtotal), currency);
+        order.shippingCost = await convertCurrency(Number(order.shippingCost), currency);
+        if(order.discount) order.discount = await convertCurrency(Number(order.discount), currency);
 
         order.items = await Promise.all(order.items.map(async (item) => {
-            item.price = await convertCurrency(item.price, currency);
-            item.unitPrice = await convertCurrency(item.unitPrice || (item.price/item.qty), currency);
+            item.price = await convertCurrency(Number(item.price), currency);
+            item.unitPrice = await convertCurrency(Number(item.unitPrice || (item.price/item.qty)), currency);
             return item;
         }));
 
@@ -521,12 +729,13 @@ router.get('/admin/vouchers', isAdmin, async (req, res) => {
         const currency = res.locals.locationData.currency;
         const vouchers = await db.collection('vouchers').find().sort({ createdAt: -1 }).toArray();
 
-        // UPDATED: Convert Voucher Values
         const convertedVouchers = await Promise.all(vouchers.map(async (v) => {
             if (v.discountType === 'flat') {
-                v.discountValue = await convertCurrency(v.discountValue, currency);
+                v.discountValue = await convertCurrency(Number(v.discountValue), currency);
             }
-            v.minOrderAmount = await convertCurrency(v.minOrderAmount, currency);
+            if(v.minOrderAmount) {
+                v.minOrderAmount = await convertCurrency(Number(v.minOrderAmount), currency);
+            }
             return v;
         }));
 
@@ -581,9 +790,8 @@ router.get('/admin/users/:id', isAdmin, async (req, res) => {
         let orders = await db.collection('orders').find({ userId: user.userId }).sort({ orderDate: -1 }).toArray();
         const tickets = await db.collection('support_tickets').find({ userEmail: user.email }).toArray();
 
-        // UPDATED: Convert Order Totals in User History
         orders = await Promise.all(orders.map(async (o) => {
-            o.total = await convertCurrency(o.total, currency);
+            o.total = await convertCurrency(Number(o.total), currency);
             return o;
         }));
 
@@ -644,7 +852,7 @@ router.post('/admin/tickets/:ticketId/update-status', isAdmin, async (req, res) 
     } catch (err) { res.redirect(`/account/admin/tickets/${req.params.ticketId}?error=Failed`); }
 });
 
-// 8. Sales (No currency conversion needed on management side usually, just percentage)
+// 8. Sales
 router.get('/admin/sales', isAdmin, async (req, res) => {
     try {
         const db = req.app.locals.client.db(req.app.locals.dbName);

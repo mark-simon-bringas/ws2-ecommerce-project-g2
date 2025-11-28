@@ -1,169 +1,560 @@
-<div class="settings-page-wrapper" style="max-width: 1000px;">
-    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-5">
-        <div class="d-flex align-items-center mb-3 mb-md-0">
-            <a href="/account/settings" class="btn btn-icon btn-light rounded-circle me-3">
-                <i class="bi bi-arrow-left"></i>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+<style>
+    /* --- Dashboard Specific Styles --- */
+    .dashboard-wrapper {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 1.5rem;
+    }
+
+    /* Header */
+    .dashboard-header-title {
+        font-size: 2rem;
+        font-weight: 800;
+        letter-spacing: -0.5px;
+        margin-bottom: 0.25rem;
+        color: #111;
+    }
+
+    /* Card Base */
+    .dash-card {
+        background: #fff;
+        border-radius: 20px;
+        border: 1px solid #f2f2f2;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.02);
+        height: 100%;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .dash-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 24px rgba(0,0,0,0.04);
+    }
+    
+    /* KPI Cards */
+    .kpi-card {
+        padding: 1.5rem;
+        justify-content: center;
+    }
+    .kpi-icon-wrapper {
+        width: 44px; height: 44px;
+        border-radius: 12px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.25rem;
+        margin-bottom: 0.75rem;
+    }
+    .kpi-value { 
+        font-size: 1.75rem; 
+        font-weight: 800; 
+        letter-spacing: -0.5px; 
+        color: #111; 
+        line-height: 1; 
+        margin-bottom: 0.25rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .kpi-label { font-size: 0.85rem; font-weight: 500; color: #757575; }
+
+    /* Filters */
+    .filter-container {
+        background: #fff;
+        padding: 0.5rem;
+        border-radius: 16px;
+        border: 1px solid #f0f0f0;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    /* Scrollable Chips */
+    .filter-chips-scroll {
+        display: flex;
+        gap: 0.5rem;
+        overflow-x: auto;
+        padding-bottom: 2px;
+        scrollbar-width: none;
+    }
+    .filter-chips-scroll::-webkit-scrollbar { display: none; }
+
+    .quick-filter-btn {
+        border: 1px solid #f0f0f0;
+        background: #fff;
+        color: #666;
+        padding: 8px 16px;
+        border-radius: 100px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        cursor: pointer;
+        white-space: nowrap;
+        transition: all 0.2s;
+    }
+    .quick-filter-btn:hover { background: #f9f9f9; color: #111; }
+    .quick-filter-btn.active {
+        background: #111;
+        color: #fff;
+        border-color: #111;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+
+    /* Inputs */
+    .filter-input-group {
+        background: #f9f9f9;
+        border-radius: 100px;
+        padding: 6px 16px;
+        display: flex;
+        align-items: center;
+        border: 1px solid transparent;
+        transition: all 0.2s;
+    }
+    .filter-input-group:focus-within {
+        background: #fff;
+        border-color: #e5e5e5;
+        box-shadow: 0 0 0 3px rgba(0,0,0,0.03);
+    }
+    .filter-input {
+        border: none;
+        background: transparent;
+        font-size: 0.9rem;
+        font-weight: 500;
+        color: #111;
+        outline: none;
+        width: 100%;
+    }
+
+    /* Charts */
+    .chart-header { 
+        padding: 1.5rem; 
+        border-bottom: 1px solid #f9f9f9; 
+        display: flex; 
+        justify-content: space-between; 
+        align-items: center; 
+    }
+    .chart-body { padding: 1.5rem; position: relative; flex: 1; }
+    .chart-container { height: 300px; width: 100%; }
+    .donut-container { height: 220px; display: flex; justify-content: center; }
+
+    /* List Items (Top Products & Activity) */
+    .list-item {
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid #f9f9f9;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        transition: background 0.1s;
+    }
+    .list-item:hover { background: #fafafa; }
+    .list-item:last-child { border-bottom: none; }
+    
+    .rank-badge {
+        width: 24px; height: 24px;
+        background: #111; color: #fff;
+        border-radius: 6px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 0.75rem; font-weight: 700;
+        flex-shrink: 0;
+    }
+    .product-thumb {
+        width: 48px; height: 48px;
+        border-radius: 10px;
+        background: #f5f5f5;
+        object-fit: contain;
+        padding: 4px;
+        border: 1px solid #f0f0f0;
+        flex-shrink: 0;
+    }
+    
+    .product-info {
+        flex-grow: 1;
+        min-width: 0; /* Crucial for text-truncate inside flex */
+    }
+
+    .activity-icon {
+        width: 36px; height: 36px;
+        border-radius: 10px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1rem;
+        flex-shrink: 0;
+    }
+
+    /* Mobile Adjustments */
+    @media (max-width: 768px) {
+        .dashboard-wrapper { padding: 1rem; }
+        .dashboard-header-title { font-size: 1.75rem; }
+        
+        /* Compact Filters */
+        .filter-container { flex-direction: column; align-items: stretch; padding: 1rem; gap: 1rem; }
+        
+        /* KPI Sizing */
+        .kpi-card { padding: 1.25rem; }
+        .kpi-value { font-size: 1.4rem; }
+        .kpi-icon-wrapper { margin-bottom: 0.5rem; width: 36px; height: 36px; font-size: 1rem; }
+        
+        /* List Items on Mobile */
+        .list-item { padding: 1rem; gap: 0.75rem; }
+        .product-thumb { width: 40px; height: 40px; }
+        .rank-badge { width: 20px; height: 20px; font-size: 0.7rem; }
+    }
+</style>
+
+<div class="settings-page-wrapper dashboard-wrapper">
+    
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <div class="d-flex align-items-center">
+            <a href="/account/settings" class="btn btn-light btn-icon rounded-circle me-3 shadow-sm border-0 d-flex align-items-center justify-content-center" style="width: 48px; height: 48px;">
+                <i class="bi bi-arrow-left fs-5"></i>
             </a>
             <div>
-                <h1 class="h3 fw-bold mb-0">Dashboard</h1>
-                <p class="text-body-secondary small mb-0">Store overview & analytics</p>
+                <h1 class="dashboard-header-title h2">Dashboard Overview</h1>
+                <p class="text-secondary mb-0 small fw-medium"><%= new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }) %></p>
             </div>
         </div>
-        <div class="d-flex gap-2">
-            <a href="/products/manage" class="btn btn-outline-secondary rounded-pill px-3">
-                <i class="bi bi-box-seam me-2"></i> Manage Inventory
-            </a>
-            <a href="/account/admin/sales" class="btn btn-dark rounded-pill px-3">
-                <i class="bi bi-plus-lg me-2"></i> Create Sale
-            </a>
+        <div class="d-none d-md-block">
+            <a href="/account/admin/orders" class="btn btn-dark rounded-pill px-4 fw-bold">Manage Orders</a>
         </div>
     </div>
 
-    <div class="row g-3 mb-5">
-        <div class="col-6 col-lg-3">
-            <div class="card border-0 shadow-sm rounded-4 h-100">
-                <div class="card-body p-3 p-lg-4">
-                    <div class="d-flex justify-content-between align-items-start mb-3">
-                        <div class="bg-success-subtle text-success rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
-                            <i class="bi bi-currency-dollar fs-5"></i>
-                        </div>
-                        <span class="badge bg-success-subtle text-success rounded-pill small">+12%</span>
-                    </div>
-                    <h3 class="fw-bold mb-1"><%= locationData.symbol %><%= data.totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 }) %></h3>
-                    <p class="text-secondary small mb-0">Total Revenue</p>
+    <div class="mb-4">
+        <form action="/account/admin/dashboard" method="GET" id="dashboardFilterForm">
+            <div class="filter-container">
+                <div class="filter-chips-scroll w-100 w-lg-auto">
+                    <button type="button" class="quick-filter-btn" id="btn-today" onclick="setQuickDate('today')">Today</button>
+                    <button type="button" class="quick-filter-btn" id="btn-week" onclick="setQuickDate('week')">Last 7 Days</button>
+                    <button type="button" class="quick-filter-btn" id="btn-month" onclick="setQuickDate('month')">Last 30 Days</button>
+                    <button type="button" class="quick-filter-btn" id="btn-year" onclick="setQuickDate('year')">This Year</button>
                 </div>
+
+                <div class="vr mx-2 d-none d-lg-block text-secondary opacity-25"></div>
+                
+                <div class="d-flex flex-column flex-md-row gap-2 flex-fill">
+                    <div class="filter-input-group flex-grow-1">
+                        <i class="bi bi-calendar-range text-secondary me-2"></i>
+                        <input type="text" id="dateRange" name="dateRange" class="filter-input" value="<%= filters.dateRange || '' %>" placeholder="Custom Range">
+                    </div>
+
+                    <div class="filter-input-group" style="width: 100%; max-width: 100%; md-max-width: 200px;">
+                        <select name="status" id="statusFilter" class="filter-input" onchange="this.form.submit()" style="cursor: pointer;">
+                            <option value="All" <%= filters.status === 'All' ? 'selected' : '' %>>All Status</option>
+                            <option value="Processing" <%= filters.status === 'Processing' ? 'selected' : '' %>>Processing</option>
+                            <option value="Shipped" <%= filters.status === 'Shipped' ? 'selected' : '' %>>Shipped</option>
+                            <option value="Delivered" <%= filters.status === 'Delivered' ? 'selected' : '' %>>Delivered</option>
+                            <option value="Cancelled" <%= filters.status === 'Cancelled' ? 'selected' : '' %>>Cancelled</option>
+                        </select>
+                    </div>
+                </div>
+
+                <% if (filters.dateRange || (filters.status && filters.status !== 'All')) { %>
+                    <a href="/account/admin/dashboard" class="btn btn-secondary rounded-pill btn-sm px-3 ms-auto fw-bold w-100 w-md-auto mt-2 mt-md-0">Reset</a>
+                <% } %>
+            </div>
+        </form>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-xl-3">
+            <div class="dash-card kpi-card">
+                <div class="kpi-icon-wrapper bg-success-subtle text-success"><i class="bi bi-currency-dollar"></i></div>
+                <div class="kpi-value"><%= locationData.symbol %><%= data.totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 }) %></div>
+                <div class="kpi-label">Revenue</div>
             </div>
         </div>
-        <div class="col-6 col-lg-3">
-            <div class="card border-0 shadow-sm rounded-4 h-100">
-                <div class="card-body p-3 p-lg-4">
-                    <div class="d-flex justify-content-between align-items-start mb-3">
-                        <div class="bg-primary-subtle text-primary rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
-                            <i class="bi bi-bag-fill fs-5"></i>
-                        </div>
-                        <span class="badge bg-primary-subtle text-primary rounded-pill small">+5%</span>
-                    </div>
-                    <h3 class="fw-bold mb-1"><%= data.orderCount %></h3>
-                    <p class="text-secondary small mb-0">Total Orders</p>
-                </div>
+        <div class="col-6 col-xl-3">
+            <div class="dash-card kpi-card">
+                <div class="kpi-icon-wrapper bg-primary-subtle text-primary"><i class="bi bi-bag-fill"></i></div>
+                <div class="kpi-value"><%= data.orderCount %></div>
+                <div class="kpi-label">Orders</div>
             </div>
         </div>
-        <div class="col-6 col-lg-3">
-            <div class="card border-0 shadow-sm rounded-4 h-100">
-                <div class="card-body p-3 p-lg-4">
-                    <div class="d-flex justify-content-between align-items-start mb-3">
-                        <div class="bg-warning-subtle text-warning rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
-                            <i class="bi bi-people-fill fs-5"></i>
-                        </div>
-                        <span class="badge bg-warning-subtle text-warning-emphasis rounded-pill small">+8%</span>
-                    </div>
-                    <h3 class="fw-bold mb-1"><%= data.userCount %></h3>
-                    <p class="text-secondary small mb-0">Active Users</p>
-                </div>
+        <div class="col-6 col-xl-3">
+            <div class="dash-card kpi-card">
+                <div class="kpi-icon-wrapper bg-warning-subtle text-warning"><i class="bi bi-people-fill"></i></div>
+                <div class="kpi-value"><%= data.userCount %></div>
+                <div class="kpi-label">Users</div>
             </div>
         </div>
-        <div class="col-6 col-lg-3">
-            <div class="card border-0 shadow-sm rounded-4 h-100">
-                <div class="card-body p-3 p-lg-4">
-                    <div class="d-flex justify-content-between align-items-start mb-3">
-                        <div class="bg-info-subtle text-info-emphasis rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
-                            <i class="bi bi-box-seam-fill fs-5"></i>
-                        </div>
-                    </div>
-                    <h3 class="fw-bold mb-1"><%= data.productCount %></h3>
-                    <p class="text-secondary small mb-0">Products Listed</p>
-                </div>
+        <div class="col-6 col-xl-3">
+            <div class="dash-card kpi-card">
+                <div class="kpi-icon-wrapper bg-info-subtle text-info"><i class="bi bi-box-seam-fill"></i></div>
+                <div class="kpi-value"><%= data.productCount %></div>
+                <div class="kpi-label">Inventory</div>
             </div>
         </div>
     </div>
 
-    <h5 class="fw-bold mb-3 px-1">Recent Activity</h5>
-    <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
-        <div class="list-group list-group-flush">
-            <% if (data.recentActivity && data.recentActivity.length > 0) { %>
-                <% data.recentActivity.forEach(activity => { 
-                    let linkUrl = '#';
-                    if (activity.type === 'ORDER') {
-                        linkUrl = `/account/admin/orders/${activity.data._id}`;
-                    } else if (activity.type === 'PRICE_UPDATE') {
-                        if (activity.data.details && activity.data.details.productId) {
-                             linkUrl = `/products/stock/${activity.data.details.productId}`;
-                        } else {
-                             linkUrl = '/products/manage';
-                        }
-                    } else {
-                        linkUrl = '/products/manage';
-                    }
-                %>
-                    <div class="list-group-item p-3 d-flex align-items-center justify-content-between gap-3 border-0 border-bottom">
-                        <div class="d-flex align-items-start gap-3 flex-grow-1">
-                            <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 mt-1" style="width: 36px; height: 36px; background-color: var(--bg-color);">
-                                <% if (activity.type === 'ORDER') { %>
-                                    <i class="bi bi-bag-check-fill text-success"></i>
-                                <% } else if (activity.type === 'PRODUCT_IMPORT') { %>
-                                    <i class="bi bi-cloud-download-fill text-primary"></i>
-                                <% } else if (activity.type === 'PRICE_UPDATE') { %>
-                                    <i class="bi bi-tag-fill text-warning"></i>
-                                <% } else { %>
-                                    <i class="bi bi-info-circle-fill text-secondary"></i>
-                                <% } %>
-                            </div>
-                            <div>
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <% if (activity.type === 'ORDER') { %>
-                                        <span class="fw-medium text-dark">New Order Received</span>
-                                    <% } else if (activity.type === 'PRODUCT_IMPORT') { %>
-                                        <span class="fw-medium text-dark">Inventory Imported</span>
-                                    <% } else if (activity.type === 'PRICE_UPDATE') { %>
-                                        <span class="fw-medium text-dark">Price Update</span>
-                                    <% } else { %>
-                                        <span class="fw-medium text-dark">System Update</span>
-                                    <% } %>
+    <div class="row g-4 mb-4">
+        <div class="col-lg-8">
+            <div class="dash-card">
+                <div class="chart-header d-flex justify-content-between align-items-center">
+                    <h5 class="fw-bold mb-0 fs-6 text-uppercase text-secondary ls-wider">Sales Trend</h5>
+                    <span class="badge bg-light text-dark border">Daily</span>
+                </div>
+                <div class="chart-body">
+                    <% if (data.dailySales && data.dailySales.length > 0) { %>
+                        <div class="chart-container">
+                            <canvas id="salesChart"></canvas>
+                        </div>
+                    <% } else { %>
+                        <div class="d-flex flex-column align-items-center justify-content-center h-100 py-5 text-secondary opacity-50">
+                            <i class="bi bi-bar-chart fs-1 mb-2"></i>
+                            <p class="small">No sales data for this period</p>
+                        </div>
+                    <% } %>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="dash-card">
+                <div class="chart-header">
+                    <h5 class="fw-bold mb-0 fs-6 text-uppercase text-secondary ls-wider">Order Status</h5>
+                </div>
+                <div class="chart-body d-flex flex-column align-items-center justify-content-center">
+                    <% if (data.orderStatus && data.orderStatus.length > 0) { %>
+                        <div class="donut-container mb-3">
+                            <canvas id="statusChart"></canvas>
+                        </div>
+                        <div class="w-100">
+                            <% data.orderStatus.forEach(stat => { %>
+                                <div class="d-flex justify-content-between align-items-center mb-2 small px-3">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <span class="rounded-circle" style="width:8px;height:8px;background-color:<%= getStatusColor(stat._id) %>"></span>
+                                        <span class="text-secondary fw-medium"><%= stat._id %></span>
+                                    </div>
+                                    <span class="fw-bold text-dark"><%= stat.count %></span>
                                 </div>
-                                
-                                <p class="text-secondary small mb-0 mt-1">
-                                    <% if (activity.type === 'ORDER') { %>
-                                        <%= activity.data.customer.firstName %> placed order #<%= activity.data._id.toString().slice(-4).toUpperCase() %> (<%= locationData.symbol %><%= activity.data.total.toLocaleString(undefined, { minimumFractionDigits: 2 }) %>)
-                                    <% } else if (activity.type === 'PRODUCT_IMPORT') { %>
-                                        Admin <%= activity.data.userFirstName %> imported <%= activity.data.details.productCount %> new items.
-                                    <% } else if (activity.type === 'PRICE_UPDATE') { %>
-                                        <%= activity.data.details.productName %> updated to <%= locationData.symbol %><%= activity.data.details.newPrice %>
-                                    <% } else { %>
-                                        <%= activity.type.replace(/_/g, ' ') %>
-                                    <% } %>
-                                    <span class="text-body-tertiary ms-1">&bull; <%= new Date(activity.timestamp).toLocaleDateString() %></span>
-                                </p>
-                            </div>
+                            <% }) %>
                         </div>
-                        
-                        <a href="<%= linkUrl %>" class="btn btn-sm btn-outline-secondary rounded-pill px-3 flex-shrink-0">
-                            View
-                        </a>
-                    </div>
-                <% }) %>
-            <% } else { %>
-                <div class="text-center p-5">
-                    <p class="text-secondary mb-0">No recent activity recorded.</p>
+                    <% } else { %>
+                        <div class="py-5 text-center text-secondary opacity-50">
+                            <i class="bi bi-pie-chart-fill fs-1 mb-2"></i>
+                            <p class="small">No orders found</p>
+                        </div>
+                    <% } %>
                 </div>
-            <% } %>
+            </div>
         </div>
-        <div class="card-footer bg-white border-0 p-3 text-center">
-            <a href="/account/admin/orders" class="small text-decoration-none fw-bold text-dark">View All Orders</a>
+    </div>
+
+    <div class="row g-4 mb-5">
+        <div class="col-lg-6">
+            <div class="dash-card h-100">
+                <div class="chart-header d-flex justify-content-between align-items-center">
+                    <h5 class="fw-bold mb-0 fs-6 text-uppercase text-secondary ls-wider">Top Sellers</h5>
+                    <a href="/products/manage" class="small fw-bold text-decoration-none text-dark">View Inventory</a>
+                </div>
+                <div style="max-height: 350px; overflow-y: auto;">
+                    <% if (data.topProducts && data.topProducts.length > 0) { %>
+                        <div class="d-flex flex-column">
+                            <% data.topProducts.forEach((p, i) => { %>
+                                <div class="list-item">
+                                    <div class="rank-badge"><%= i + 1 %></div>
+                                    <img src="<%= p.thumbnailUrl %>" class="product-thumb" alt="">
+                                    <div class="product-info">
+                                        <div class="fw-bold text-dark text-truncate small"><%= p.name %></div>
+                                        <div class="small text-secondary" style="font-size: 0.75rem;"><%= p.brand %></div>
+                                    </div>
+                                    <div class="text-end flex-shrink-0">
+                                        <div class="fw-bold text-dark small"><%= locationData.symbol %><%= p.revenue.toLocaleString(undefined, { minimumFractionDigits: 0 }) %></div>
+                                        <div class="text-secondary" style="font-size: 0.75rem;"><%= p.qty %> sold</div>
+                                    </div>
+                                </div>
+                            <% }) %>
+                        </div>
+                    <% } else { %>
+                        <div class="p-5 text-center text-secondary small">No sales data available.</div>
+                    <% } %>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6">
+            <div class="dash-card">
+                <div class="chart-header">
+                    <h5 class="fw-bold mb-0 fs-6 text-uppercase text-secondary ls-wider">Activity Log</h5>
+                </div>
+                <div style="max-height: 350px; overflow-y: auto;">
+                    <% if (data.recentActivity && data.recentActivity.length > 0) { %>
+                        <div class="d-flex flex-column">
+                            <% data.recentActivity.forEach(act => { %>
+                                <div class="list-item">
+                                    <div class="activity-icon <%= getActivityColor(act.type) %>">
+                                        <i class="bi <%= getActivityIcon(act.type) %>"></i>
+                                    </div>
+                                    <div class="product-info">
+                                        <div class="small text-dark fw-medium mb-1" style="line-height: 1.4;">
+                                            <% if (act.type === 'ORDER') { %>
+                                                New order <strong>#<%= act.data._id.toString().slice(-4).toUpperCase() %></strong>
+                                            <% } else if (act.type === 'PRICE_UPDATE') { %>
+                                                Price update for <strong><%= act.data.details.productName %></strong>
+                                            <% } else if (act.type === 'PRODUCT_IMPORT') { %>
+                                                Imported <strong><%= act.data.details.productCount %></strong> new items
+                                            <% } else { %>
+                                                <%= act.type.replace(/_/g, ' ') %>
+                                            <% } %>
+                                        </div>
+                                        <div class="text-secondary" style="font-size: 0.75rem;">
+                                            <%= new Date(act.timestamp).toLocaleString() %>
+                                        </div>
+                                    </div>
+                                </div>
+                            <% }) %>
+                        </div>
+                    <% } else { %>
+                        <div class="p-5 text-center text-secondary small">No recent activity.</div>
+                    <% } %>
+                </div>
+            </div>
         </div>
     </div>
 </div>
 
-<style>
-    .settings-page-wrapper {
-        margin: 0 auto;
-        padding: 1rem;
+<% 
+    function getStatusColor(status) {
+        switch(status) {
+            case 'Processing': return '#0dcaf0';
+            case 'Shipped': return '#0d6efd';
+            case 'Delivered': return '#198754';
+            case 'Cancelled': return '#dc3545';
+            default: return '#6c757d';
+        }
     }
-    .btn-icon {
-        width: 40px;
-        height: 40px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border: 1px solid var(--border-color);
+
+    function getActivityColor(type) {
+        if (type === 'ORDER') return 'bg-primary-subtle text-primary';
+        if (type.includes('DELETE') || type.includes('CANCEL')) return 'bg-danger-subtle text-danger';
+        if (type.includes('IMPORT') || type === 'DELIVERED') return 'bg-success-subtle text-success';
+        return 'bg-secondary-subtle text-secondary';
     }
-</style>
+
+    function getActivityIcon(type) {
+        if (type === 'ORDER') return 'bi-bag-check-fill';
+        if (type.includes('DELETE')) return 'bi-trash-fill';
+        if (type.includes('IMPORT')) return 'bi-cloud-arrow-down-fill';
+        if (type.includes('PRICE')) return 'bi-tag-fill';
+        return 'bi-info-circle-fill';
+    }
+%>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // 1. Init Flatpickr
+        const fp = flatpickr("#dateRange", {
+            mode: "range",
+            dateFormat: "Y-m-d",
+            maxDate: "today",
+            disableMobile: "true",
+            onClose: function(selectedDates, dateStr, instance) {
+                if (dateStr) document.getElementById('dashboardFilterForm').submit();
+            }
+        });
+
+        // 2. Highlight Active Filter Button
+        const currentVal = document.getElementById('dateRange').value;
+        const fmt = d => d.toISOString().split('T')[0];
+        const today = new Date();
+        
+        // Determine which button matches the current range value
+        const ranges = {
+            'today': fmt(today),
+            'week': `${fmt(new Date(today.getTime() - 7*86400000))} to ${fmt(today)}`,
+            'month': `${fmt(new Date(today.getTime() - 30*86400000))} to ${fmt(today)}`,
+            'year': `${fmt(new Date(today.getFullYear(), 0, 1))} to ${fmt(today)}`
+        };
+
+        Object.keys(ranges).forEach(key => {
+            if(currentVal === ranges[key]) {
+                const btn = document.getElementById(`btn-${key}`);
+                if(btn) btn.classList.add('active');
+            }
+        });
+
+        // 3. Quick Date Helper
+        window.setQuickDate = function(type) {
+            const end = new Date();
+            let start = new Date();
+
+            if (type === 'today') {
+                // start is today
+            } else if (type === 'week') {
+                start.setDate(end.getDate() - 7);
+            } else if (type === 'month') {
+                start.setDate(end.getDate() - 30);
+            } else if (type === 'year') {
+                start = new Date(new Date().getFullYear(), 0, 1);
+            }
+            
+            const rangeStr = type === 'today' ? fmt(start) : `${fmt(start)} to ${fmt(end)}`;
+            document.getElementById('dateRange').value = rangeStr;
+            document.getElementById('dashboardFilterForm').submit();
+        };
+
+        // 4. Charts
+        const rawSales = <%- JSON.stringify(data.dailySales || []) %>;
+        const rawStatus = <%- JSON.stringify(data.orderStatus || []) %>;
+        const currencySymbol = "<%= locationData.symbol %>";
+
+        // Sales Chart
+        const salesCtx = document.getElementById('salesChart');
+        if (salesCtx && rawSales.length > 0) {
+            new Chart(salesCtx, {
+                type: 'line',
+                data: {
+                    labels: rawSales.map(d => d.date),
+                    datasets: [{
+                        label: 'Revenue',
+                        data: rawSales.map(d => d.revenue),
+                        borderColor: '#111',
+                        backgroundColor: (ctx) => {
+                            const grad = ctx.chart.ctx.createLinearGradient(0,0,0,300);
+                            grad.addColorStop(0, 'rgba(17,17,17,0.05)');
+                            grad.addColorStop(1, 'rgba(17,17,17,0)');
+                            return grad;
+                        },
+                        borderWidth: 2,
+                        pointRadius: 0,
+                        pointHoverRadius: 6,
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false }, tooltip: { intersect: false, callbacks: { label: c => currencySymbol + c.parsed.y.toLocaleString() } } },
+                    scales: { x: { grid: { display: false }, ticks: { maxTicksLimit: 6, font: { size: 10 } } }, y: { border: { display: false }, grid: { borderDash: [4,4] }, ticks: { font: { size: 10 }, callback: v => currencySymbol + v } } },
+                    interaction: { mode: 'index', intersect: false }
+                }
+            });
+        }
+
+        // Status Chart
+        const statusCtx = document.getElementById('statusChart');
+        if (statusCtx && rawStatus.length > 0) {
+            const colors = { 'Processing': '#0dcaf0', 'Shipped': '#0d6efd', 'Delivered': '#198754', 'Cancelled': '#dc3545' };
+            new Chart(statusCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: rawStatus.map(s => s._id),
+                    datasets: [{
+                        data: rawStatus.map(s => s.count),
+                        backgroundColor: rawStatus.map(s => colors[s._id] || '#6c757d'),
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '70%',
+                    plugins: { legend: { display: false } }
+                }
+            });
+        }
+    });
+</script>
