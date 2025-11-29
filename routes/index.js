@@ -239,4 +239,10 @@ router.get('/stores', (req, res) => {
     });
 });
 
+router.get('/financing', (req, res) => {
+    res.render('financing', {
+        title: 'Financing Options'
+    });
+});
+
 module.exports = router;

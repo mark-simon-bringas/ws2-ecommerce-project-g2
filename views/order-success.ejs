@@ -60,11 +60,11 @@
                                     </p>
                                 </div>
                                 <div class="col-md-6">
-                                    <h6 class="small fw-bold text-secondary text-uppercase mb-2">Payment Method</h6>
+                                     <h6 class="small fw-bold text-secondary text-uppercase mb-2">Payment Method</h6>
                                     <p class="mb-0 small d-flex align-items-center gap-2">
                                         <% if (order.paymentDetails.last4) { %>
                                             <i class="bi bi-credit-card-fill"></i> <%= order.paymentDetails.method %> •••• <%= order.paymentDetails.last4 %>
-                                        <% } else { %>
+                                         <% } else { %>
                                             <i class="bi bi-cash-stack"></i> <%= order.paymentDetails.method %>
                                         <% } %>
                                     </p>
@@ -76,16 +76,16 @@
                             <h6 class="small fw-bold text-secondary text-uppercase mb-3">Items Ordered</h6>
                             <div class="list-group list-group-flush">
                                 <% order.items.forEach(item => { %>
-                                    <div class="list-group-item px-0 border-0 d-flex align-items-center gap-3">
-                                        <div class="position-relative">
-                                            <img src="<%= item.thumbnailUrl %>" alt="<%= item.name %>" class="rounded-3 border bg-light" style="width: 64px; height: 64px; object-fit: contain;">
+                                   <div class="list-group-item px-0 border-0 d-flex align-items-center gap-3">
+                                        <div class="position-relative flex-shrink-0">
+                                             <img src="<%= item.thumbnailUrl %>" alt="<%= item.name %>" class="rounded-3 border bg-light" style="width: 64px; height: 64px; object-fit: contain;">
                                             <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-secondary border border-light" style="font-size: 0.65rem;"><%= item.qty %></span>
                                         </div>
-                                        <div class="flex-grow-1">
-                                            <h6 class="fw-bold mb-0 small text-truncate" style="max-width: 200px;"><%= item.name %></h6>
+                                        <div class="flex-grow-1" style="min-width: 0;">
+                                            <h6 class="fw-bold mb-0 small text-truncate"><%= item.name %></h6>
                                             <small class="text-body-secondary">Size: <%= item.size %></small>
                                         </div>
-                                        <div class="text-end">
+                                         <div class="text-end flex-shrink-0">
                                             <span class="fw-medium small"><%= locationData.symbol %><%= item.price.toLocaleString(undefined, { minimumFractionDigits: 2 }) %></span>
                                         </div>
                                     </div>
@@ -99,35 +99,35 @@
                     <div class="card border-0 shadow-sm rounded-4 bg-light h-100">
                         <div class="card-body p-4">
                             <h5 class="fw-bold mb-4">Summary</h5>
-                            <ul class="list-unstyled mb-0 d-flex flex-column gap-2">
+                             <ul class="list-unstyled mb-0 d-flex flex-column gap-2">
                                 <li class="d-flex justify-content-between small">
                                     <span class="text-secondary">Subtotal</span>
-                                    <span class="fw-medium"><%= locationData.symbol %><%= order.subtotal.toLocaleString(undefined, { minimumFractionDigits: 2 }) %></span>
+                                     <span class="fw-medium"><%= locationData.symbol %><%= order.subtotal.toLocaleString(undefined, { minimumFractionDigits: 2 }) %></span>
                                 </li>
                                 <% if (order.discount && order.discount > 0) { %>
                                     <li class="d-flex justify-content-between small text-success">
                                         <span>Discount (<%= order.voucherCode || 'Applied' %>)</span>
                                         <span class="fw-medium">-<%= locationData.symbol %><%= order.discount.toLocaleString(undefined, { minimumFractionDigits: 2 }) %></span>
                                     </li>
-                                <% } %>
+                                 <% } %>
                                 <li class="d-flex justify-content-between small">
                                     <span class="text-secondary">Shipping</span>
-                                    <span class="fw-medium"><%= order.shippingCost > 0 ? locationData.symbol + order.shippingCost.toLocaleString(undefined, { minimumFractionDigits: 2 }) : 'Free' %></span>
+                                     <span class="fw-medium"><%= order.shippingCost > 0 ? locationData.symbol + order.shippingCost.toLocaleString(undefined, { minimumFractionDigits: 2 }) : 'Free' %></span>
                                 </li>
                                 <li class="d-flex justify-content-between align-items-center pt-3 mt-2 border-top border-secondary-subtle">
-                                    <span class="fw-bold fs-5">Total</span>
+                                     <span class="fw-bold fs-5">Total</span>
                                     <span class="fw-bold fs-4"><%= locationData.symbol %><%= order.total.toLocaleString(undefined, { minimumFractionDigits: 2 }) %></span>
                                 </li>
-                            </ul>
+                             </ul>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div class="text-center mt-5 d-flex justify-content-center gap-3">
-                <a href="/products" class="btn btn-dark rounded-pill px-5 py-3 fw-bold">Continue Shopping</a>
+            <div class="text-center mt-5 d-flex flex-column flex-md-row justify-content-center gap-3">
+                <a href="/products" class="btn btn-dark rounded-pill px-4 py-3 px-md-5 fw-bold w-100 w-md-auto">Continue Shopping</a>
                 <% if (currentUser) { %>
-                    <a href="/account/orders" class="btn btn-outline-secondary rounded-pill px-5 py-3 fw-bold">View Order History</a>
+                    <a href="/account/orders" class="btn btn-outline-secondary rounded-pill px-4 py-3 px-md-5 fw-bold w-100 w-md-auto">View Order History</a>
                 <% } %>
             </div>
 

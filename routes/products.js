@@ -140,6 +140,72 @@ router.get('/', async (req, res) => {
     }
 });
 
+// --- UPDATED: Clearance Route (Fixed currentCategory error) ---
+router.get('/clearance', async (req, res) => {
+    try {
+        const db = req.app.locals.client.db(req.app.locals.dbName);
+        const productsCollection = db.collection('products');
+        const usersCollection = db.collection('users');
+        const currency = res.locals.locationData.currency;
+        const { category } = req.query; // Capture category
+
+        let userWishlist = [];
+        if (req.session.user) {
+            const user = await usersCollection.findOne({ userId: req.session.user.userId });
+            userWishlist = user?.wishlist || [];
+        }
+
+        // 1. Build Query
+        let matchStage = {};
+        if (category) {
+            matchStage.gender = category.toLowerCase();
+        }
+
+        // 2. Fetch products with filter
+        let products = await productsCollection.aggregate([
+            { $match: matchStage },
+            { $sort: { retailPrice: 1 } },
+            {
+                $lookup: {
+                    from: 'reviews',
+                    localField: '_id',
+                    foreignField: 'productId',
+                    as: 'reviews'
+                }
+            },
+            {
+                $addFields: {
+                    averageRating: { $avg: '$reviews.rating' }
+                }
+            }
+        ]).toArray();
+
+        // 3. Calculate Sales
+        products = await applySalesToProducts(products, db);
+
+        // 4. Filter ONLY On-Sale Items
+        let clearanceProducts = products.filter(p => p.onSale === true);
+
+        // 5. Convert Currency
+        const productsWithConvertedPrices = await Promise.all(clearanceProducts.map(async (product) => {
+            product.convertedPrice = await convertCurrency(product.retailPrice, currency);
+            product.convertedSalePrice = await convertCurrency(product.salePrice, currency);
+            return product;
+        }));
+
+        res.render('clearance', { 
+            title: "Clearance Sale",
+            products: productsWithConvertedPrices,
+            wishlist: userWishlist,
+            currentCategory: category || 'all' // *** FIX: Passing the variable here ***
+        });
+
+    } catch (err) {
+        console.error("Error fetching clearance products:", err);
+        res.status(500).send("Error loading clearance page.");
+    }
+});
+
 // Route for dedicated sale page
 router.get('/sale/:saleId', async (req, res) => {
     try {
@@ -185,7 +251,6 @@ router.get('/sale/:saleId', async (req, res) => {
         res.status(500).send("Error loading sale page.");
     }
 });
-
 
 // GET /products/search - Handle search queries
 router.get('/search', async (req, res) => {
@@ -343,7 +408,6 @@ router.get('/manage', isAdmin, async (req, res) => {
     }
 });
 
-// POST /search - Admin API Search
 router.post('/search', isAdmin, async (req, res) => {
     const { query, brand, gender, hasDescription } = req.body;
 
@@ -409,7 +473,6 @@ router.post('/search', isAdmin, async (req, res) => {
     }
 });
 
-// POST /import-multiple - Bulk Import
 router.post('/import-multiple', isAdmin, async (req, res) => {
     try {
         const db = req.app.locals.client.db(req.app.locals.dbName);
@@ -435,7 +498,6 @@ router.post('/import-multiple', isAdmin, async (req, res) => {
                 };
                 const response = await axios.request(options);
                 const product = response.data.results[0];
-
                 if (!product) continue;
 
                 const initialStock = standardSizes.reduce((acc, size) => {
@@ -457,10 +519,7 @@ router.post('/import-multiple', isAdmin, async (req, res) => {
                     colorway: product.colorway,
                     releaseDate: product.releaseDate
                 });
-            } catch (err) {
-                console.warn(`Could not fetch details for ID ${id}. Skipping import.`);
-                continue;
-            }
+            } catch (err) { console.warn(`Import failed for ID ${id}`); }
         }
 
         if (productsToInsert.length > 0) {
@@ -482,12 +541,11 @@ router.post('/import-multiple', isAdmin, async (req, res) => {
             res.redirect('/products/manage?error=' + encodeURIComponent('No products were imported.'));
         }
     } catch (err) {
-        console.error("Error during import:", err);
+        console.error(err);
         res.redirect('/products/manage?error=' + encodeURIComponent('Import failed.'));
     }
 });
 
-// --- UPDATED: Delete Single Product with Active Order Check ---
 router.post('/delete', isAdmin, async (req, res) => {
     try {
         const db = req.app.locals.client.db(req.app.locals.dbName);
@@ -496,7 +554,6 @@ router.post('/delete', isAdmin, async (req, res) => {
         const activityLogCollection = db.collection('activity_log');
         const { productId } = req.body;
 
-        // Check for active orders containing this product (Supports both ObjectId and String format)
         const activeOrderCount = await ordersCollection.countDocuments({
             "items.productId": { $in: [new ObjectId(productId), productId] },
             "status": { $in: ['Processing', 'Shipped'] }
@@ -532,7 +589,6 @@ router.post('/delete', isAdmin, async (req, res) => {
     }
 });
 
-// --- UPDATED: Bulk Delete with Active Order Check ---
 router.post('/delete-multiple', isAdmin, async (req, res) => {
     try {
         const db = req.app.locals.client.db(req.app.locals.dbName);
@@ -546,13 +602,11 @@ router.post('/delete-multiple', isAdmin, async (req, res) => {
 
         const objectIdsToDelete = productIds.map(id => new ObjectId(id));
 
-        // Find blocked IDs (Active Orders)
         const activeOrders = await ordersCollection.find({
             "items.productId": { $in: [...objectIdsToDelete, ...productIds] },
             "status": { $in: ['Processing', 'Shipped'] }
         }).toArray();
 
-        // Collect IDs that are in active orders
         const blockedProductIds = new Set();
         activeOrders.forEach(order => {
             order.items.forEach(item => {
@@ -560,7 +614,6 @@ router.post('/delete-multiple', isAdmin, async (req, res) => {
             });
         });
 
-        // Filter safe IDs
         const safeToDeleteIds = objectIdsToDelete.filter(id => !blockedProductIds.has(id.toString()));
 
         if (safeToDeleteIds.length > 0) {
@@ -578,7 +631,7 @@ router.post('/delete-multiple', isAdmin, async (req, res) => {
                 timestamp: new Date()
             });
 
-            const skippedCount = objectIdsToDelete.length - safeToDeleteIds.length;
+            const skippedCount = productIds.length - safeToDeleteIds.length;
             let msg = `Deleted ${safeToDeleteIds.length} products.`;
             if (skippedCount > 0) {
                 msg += ` Skipped ${skippedCount} active items.`;
@@ -594,7 +647,6 @@ router.post('/delete-multiple', isAdmin, async (req, res) => {
     }
 });
 
-// Stock Edit & Search
 router.get('/stock/:id', isAdmin, async (req, res) => {
     try {
         const db = req.app.locals.client.db(req.app.locals.dbName);
@@ -642,8 +694,10 @@ router.post('/stock/:id', isAdmin, async (req, res) => {
             updateQuery.retailPrice = newRetailPrice;
 
             if (productBeforeUpdate && productBeforeUpdate.retailPrice !== newRetailPrice) {
-                await activityLogCollection.insertOne({
-                    userId: req.session.user.userId, userFirstName: req.session.user.firstName, userRole: req.session.user.role,
+                const logEntry = {
+                    userId: req.session.user.userId,
+                    userFirstName: req.session.user.firstName,
+                    userRole: req.session.user.role,
                     actionType: 'PRICE_UPDATE',
                     details: {
                         productId: productBeforeUpdate._id,
@@ -652,7 +706,8 @@ router.post('/stock/:id', isAdmin, async (req, res) => {
                         newPrice: newRetailPrice
                     },
                     timestamp: new Date()
-                });
+                };
+                await activityLogCollection.insertOne(logEntry);
             }
         }
 
@@ -671,77 +726,6 @@ router.post('/stock/:id', isAdmin, async (req, res) => {
     }
 });
 
-// GET /:sku - Product Detail Page
-router.get('/:sku', async (req, res) => {
-    try {
-        const db = req.app.locals.client.db(req.app.locals.dbName);
-        const productsCollection = db.collection('products');
-        const usersCollection = db.collection('users');
-        const reviewsCollection = db.collection('reviews');
-        const { sku } = req.params;
-        const currency = res.locals.locationData.currency;
-
-        if (['men', 'women', 'search'].includes(sku.toLowerCase())) {
-            return res.status(404).send("Page not found.");
-        }
-
-        let product = await productsCollection.findOne({ sku: sku });
-
-        if (!product) {
-            return res.status(404).render('404', { title: "Product Not Found" });
-        }
-        
-        let relatedProducts = [];
-        const [reviews, user] = await Promise.all([
-            reviewsCollection.aggregate([
-                { $match: { productId: product._id } },
-                { $sort: { createdAt: -1 } },
-                { $lookup: { from: 'users', localField: 'userId', foreignField: 'userId', as: 'author' } },
-                { $unwind: '$author' }
-            ]).toArray(),
-            req.session.user ? usersCollection.findOne({ userId: req.session.user.userId }) : null,
-        ]);
-        
-        [product] = await applySalesToProducts([product], db);
-
-        relatedProducts = await productsCollection.find({
-            brand: product.brand,
-            _id: { $ne: product._id }
-        }).limit(8).toArray();
-        relatedProducts = await applySalesToProducts(relatedProducts, db);
-
-        const userWishlist = user?.wishlist || [];
-        const isWishlisted = userWishlist.some(id => id.equals(product._id));
-
-        product.convertedPrice = await convertCurrency(product.retailPrice, currency);
-        if (product.onSale) {
-            product.convertedSalePrice = await convertCurrency(product.salePrice, currency);
-        }
-
-        const relatedProductsWithConvertedPrices = await Promise.all(relatedProducts.map(async (p) => {
-            p.convertedPrice = await convertCurrency(p.retailPrice, currency);
-            if (p.onSale) {
-                p.convertedSalePrice = await convertCurrency(p.salePrice, currency);
-            }
-            return p;
-        }));
-
-        res.render('product-detail', {
-            title: product.name,
-            product: product,
-            isWishlisted: isWishlisted,
-            reviews: reviews,
-            relatedProducts: relatedProductsWithConvertedPrices,
-            wishlist: userWishlist
-        });
-
-    } catch (err) {
-        console.error("Error fetching product details:", err);
-        res.status(500).send("Error loading product page.");
-    }
-});
-
-// GET & POST Reviews
 router.get('/:sku/review', isLoggedIn, async (req, res) => {
     try {
         const db = req.app.locals.client.db(req.app.locals.dbName);
@@ -785,6 +769,76 @@ router.post('/:sku/review', isLoggedIn, async (req, res) => {
         });
         res.redirect(`/products/${sku}`);
     } catch (err) { res.status(500).send("Error."); }
+});
+
+router.get('/:sku', async (req, res) => {
+    try {
+        const db = req.app.locals.client.db(req.app.locals.dbName);
+        const productsCollection = db.collection('products');
+        const usersCollection = db.collection('users');
+        const reviewsCollection = db.collection('reviews');
+        const { sku } = req.params;
+        const currency = res.locals.locationData.currency;
+
+        if (['men', 'women', 'search'].includes(sku.toLowerCase())) {
+            return res.status(404).send("Page not found.");
+        }
+
+        let product = await productsCollection.findOne({ sku: sku });
+
+        if (!product) {
+            return res.status(404).render('404', { title: "Product Not Found" });
+        }
+        
+        let relatedProducts = [];
+        const [reviews, user] = await Promise.all([
+            reviewsCollection.aggregate([
+                { $match: { productId: product._id } },
+                { $sort: { createdAt: -1 } },
+                { $lookup: { from: 'users', localField: 'userId', foreignField: 'userId', as: 'author' } },
+                { $unwind: '$author' }
+            ]).toArray(),
+            
+            req.session.user ? usersCollection.findOne({ userId: req.session.user.userId }) : null,
+        ]);
+        
+        [product] = await applySalesToProducts([product], db);
+
+        relatedProducts = await productsCollection.find({
+            brand: product.brand,
+            _id: { $ne: product._id }
+        }).limit(8).toArray();
+        relatedProducts = await applySalesToProducts(relatedProducts, db);
+
+        const userWishlist = user?.wishlist || [];
+        const isWishlisted = userWishlist.some(id => id.equals(product._id));
+
+        product.convertedPrice = await convertCurrency(product.retailPrice, currency);
+        if (product.onSale) {
+            product.convertedSalePrice = await convertCurrency(product.salePrice, currency);
+        }
+
+        const relatedProductsWithConvertedPrices = await Promise.all(relatedProducts.map(async (p) => {
+            p.convertedPrice = await convertCurrency(p.retailPrice, currency);
+            if (p.onSale) {
+                p.convertedSalePrice = await convertCurrency(p.salePrice, currency);
+            }
+            return p;
+        }));
+
+        res.render('product-detail', {
+            title: product.name,
+            product: product,
+            isWishlisted: isWishlisted,
+            reviews: reviews,
+            relatedProducts: relatedProductsWithConvertedPrices,
+            wishlist: userWishlist
+        });
+
+    } catch (err) {
+        console.error("Error fetching product details:", err);
+        res.status(500).send("Error loading product page.");
+    }
 });
 
 module.exports = router;

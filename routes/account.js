@@ -10,7 +10,7 @@ const { convertCurrency } = require('./currency');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
-const ExcelJS = require('exceljs'); // NEW: Required for Excel exports
+const ExcelJS = require('exceljs'); // Required for Excel exports
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -144,11 +144,23 @@ router.get('/', (req, res) => {
 // =========== USER ROUTES ==================
 // ==========================================
 
-router.get('/settings', (req, res) => { 
-    res.render('account/settings', { 
-        title: "Settings", 
-        view: 'settings' 
-    }); 
+// UPDATED: Fetch user data from DB to ensure bio is fresh
+router.get('/settings', async (req, res) => { 
+    try {
+        const db = req.app.locals.client.db(req.app.locals.dbName);
+        const user = await db.collection('users').findOne({ userId: req.session.user.userId });
+        
+        res.render('account/settings', { 
+            title: "Settings", 
+            view: 'settings',
+            user: user, // Pass the full user object (with bio) from DB
+            message: req.query.message, 
+            error: req.query.error 
+        }); 
+    } catch (err) {
+        console.error("Error loading settings:", err);
+        res.status(500).send("Error loading settings.");
+    }
 });
 
 router.get('/identity', async (req, res) => {
@@ -326,6 +338,63 @@ router.get('/orders/:id', async (req, res) => {
     }
 });
 
+// NEW: My Financing / Loans Route
+router.get('/loans', async (req, res) => {
+    try {
+        const db = req.app.locals.client.db(req.app.locals.dbName);
+        const currency = res.locals.locationData.currency;
+        
+        // Fetch orders paid via Financing
+        const loanOrders = await db.collection('orders').find({
+            userId: req.session.user.userId,
+            'paymentDetails.method': 'Financing'
+        }).sort({ orderDate: -1 }).toArray();
+
+        // Process loans (Mocking payment progress for demo purposes)
+        const loans = await Promise.all(loanOrders.map(async (order) => {
+            // Convert total
+            const convertedTotal = await convertCurrency(order.total, currency);
+            
+            // Mock Logic: Determine progress based on order date
+            const daysSinceOrder = Math.floor((new Date() - new Date(order.orderDate)) / (1000 * 60 * 60 * 24));
+            let paymentsMade = 1; // Initial payment
+            let totalPayments = order.paymentDetails.plan === 'Pay in 4' ? 4 : 6; // 4 for PayIn4, 6 for Monthly
+            
+            // Simulate payments every 14 days
+            paymentsMade += Math.floor(daysSinceOrder / 14);
+            if (paymentsMade > totalPayments) paymentsMade = totalPayments;
+
+            const progress = (paymentsMade / totalPayments) * 100;
+            const remainingBalance = order.total * (1 - (paymentsMade / totalPayments));
+            const convertedRemaining = await convertCurrency(remainingBalance, currency);
+            const nextPaymentDate = new Date(order.orderDate);
+            nextPaymentDate.setDate(nextPaymentDate.getDate() + (paymentsMade * 14));
+
+            return {
+                orderId: order._id,
+                plan: order.paymentDetails.plan || 'Pay in 4',
+                total: convertedTotal,
+                remaining: convertedRemaining,
+                progress: progress,
+                paymentsMade: paymentsMade,
+                totalPayments: totalPayments,
+                nextPayment: paymentsMade < totalPayments ? nextPaymentDate : null,
+                status: paymentsMade >= totalPayments ? 'Paid Off' : 'Active',
+                items: order.items.slice(0, 3) // Show first 3 items preview
+            };
+        }));
+
+        res.render('account/loans', { 
+            title: "My Financing", 
+            view: 'loans', 
+            loans: loans 
+        });
+    } catch (err) { 
+        console.error("Error loading loans:", err);
+        res.status(500).send("Error loading financing data."); 
+    }
+});
+
 // --- USER FORM ACTIONS ---
 router.post('/settings/update-profile', upload.single('profilePhoto'), async (req, res) => {
     try {
@@ -335,8 +404,10 @@ router.post('/settings/update-profile', upload.single('profilePhoto'), async (re
         
         await req.app.locals.client.db(req.app.locals.dbName).collection('users').updateOne({ userId: req.session.user.userId }, { $set: updateFields });
         
+        // Update session
         req.session.user.firstName = firstName;
         req.session.user.lastName = lastName;
+        req.session.user.bio = bio; // UPDATED: Ensure bio is updated in session
         if (req.file) req.session.user.profilePictureUrl = updateFields.profilePictureUrl;
         
         res.redirect('/account/identity?message=' + encodeURIComponent('Profile updated!'));

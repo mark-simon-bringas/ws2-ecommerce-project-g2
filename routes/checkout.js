@@ -12,6 +12,22 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 const SHIPPING_COST_BASE = 5; // e.g., $5 shipping
 const FREE_SHIPPING_THRESHOLD_BASE = 150; // e.g., free shipping on orders over $150
 
+// --- STORE LOCATIONS DATA ---
+const STORES = [
+    { id: 1, name: "Sneakslab Podium", address: "2/F The Podium, 12 ADB Ave, Mandaluyong", city: "Metro Manila" },
+    { id: 2, name: "Sneakslab The Fort", address: "B3 Bonifacio High St, BGC, Taguig", city: "Metro Manila" },
+    { id: 3, name: "Sneakslab Greenbelt", address: "Level 3, Greenbelt 5, Makati", city: "Metro Manila" },
+    { id: 4, name: "Sneakslab SM Baguio", address: "UGF, SM City Baguio, Luneta Hill", city: "Baguio" },
+    { id: 5, name: "Sneakslab Session", address: "104 Session Road, Baguio City", city: "Baguio" },
+    { id: 6, name: "Sneakslab Camp John Hay", address: "Technohub, Camp John Hay, Baguio", city: "Baguio" },
+    { id: 7, name: "Sneakslab Ayala Cebu", address: "Level 1, Ayala Center Cebu", city: "Cebu" },
+    { id: 8, name: "Sneakslab SM Seaside", address: "2nd Level, SM Seaside City Cebu", city: "Cebu" },
+    { id: 9, name: "Sneakslab IT Park", address: "Central Bloc, Cebu IT Park", city: "Cebu" },
+    { id: 10, name: "Sneakslab SM Lanang", address: "2nd Floor, SM Lanang Premier", city: "Davao" },
+    { id: 11, name: "Sneakslab Abreeza", address: "G/F Abreeza Mall, J.P. Laurel Ave", city: "Davao" },
+    { id: 12, name: "Sneakslab G-Mall", address: "3rd Level, Gaisano Mall of Davao", city: "Davao" }
+];
+
 // Helper function for date formatting
 const formatDate = (date) => {
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
@@ -121,7 +137,8 @@ router.get('/', async (req, res) => {
         addresses: userAddresses,
         availableVouchers: availableVouchers,
         discountAmount: convertedDiscount,
-        appliedVoucher: cart.voucher
+        appliedVoucher: cart.voucher,
+        stores: STORES // Passed to view for pickup selector
     });
 });
 
@@ -196,36 +213,77 @@ router.post('/place-order', async (req, res) => {
 
         let shippingAddress;
         let billingAddress;
-        const { selectedAddressId, saveAddress, sameAsShipping } = req.body;
+        let finalShippingCost;
+
+        const { selectedAddressId, saveAddress, sameAsShipping, 'delivery-method': deliveryMethod } = req.body;
         const paymentMethod = req.body['payment-method'];
 
-        // Handle Address Selection
-        if (req.session.user && selectedAddressId && selectedAddressId !== 'new') {
-            const user = await usersCollection.findOne({ userId: req.session.user.userId });
-            const savedAddress = user.addresses.find(addr => addr.addressId === selectedAddressId);
-            if (savedAddress) {
-                shippingAddress = savedAddress;
-            }
-        } else {
+        // --- HANDLE DELIVERY METHOD (Shipping vs Pickup) ---
+        if (deliveryMethod === 'pickup') {
+            // Store Pickup Logic
+            const storeId = parseInt(req.body.pickupStore);
+            const store = STORES.find(s => s.id === storeId);
+            
+            if (!store) throw new Error("Invalid store selected");
+
             shippingAddress = {
-                firstName: req.body.firstName,
-                lastName: req.body.lastName,
-                address: req.body.address,
-                country: req.body.country,
-                state: req.body.state,
-                zip: req.body.zip,
-                phone: req.body.phone
+                firstName: req.body.pickupFirstName,
+                lastName: req.body.pickupLastName,
+                address: `STORE PICKUP: ${store.name} (${store.address})`, // Save full pickup location
+                country: 'Philippines',
+                state: store.city,
+                zip: 'N/A',
+                phone: req.body.pickupPhone,
+                isPickup: true
             };
-            if (req.session.user && saveAddress === 'on') {
-                const newAddressForProfile = { ...shippingAddress, addressId: uuidv4(), isDefault: false };
-                await usersCollection.updateOne(
-                    { userId: req.session.user.userId },
-                    { $push: { addresses: newAddressForProfile } }
-                );
+            
+            finalShippingCost = 0; // Free shipping for pickup
+
+        } else {
+            // Standard Shipping Logic
+            if (req.session.user && selectedAddressId && selectedAddressId !== 'new') {
+                const user = await usersCollection.findOne({ userId: req.session.user.userId });
+                const savedAddress = user.addresses.find(addr => addr.addressId === selectedAddressId);
+                if (savedAddress) {
+                    shippingAddress = savedAddress;
+                }
             }
+            
+            // Fallback to manual entry if no saved address selected or guest
+            if (!shippingAddress) {
+                shippingAddress = {
+                    firstName: req.body.firstName,
+                    lastName: req.body.lastName,
+                    address: req.body.address,
+                    country: req.body.country,
+                    state: req.body.state,
+                    zip: req.body.zip,
+                    phone: req.body.phone
+                };
+                
+                // Only save address to profile if it's standard shipping and user requested it
+                if (req.session.user && saveAddress === 'on') {
+                    const newAddressForProfile = { ...shippingAddress, addressId: uuidv4(), isDefault: false };
+                    await usersCollection.updateOne(
+                        { userId: req.session.user.userId },
+                        { $push: { addresses: newAddressForProfile } }
+                    );
+                }
+            }
+
+            // Calculate Shipping Cost for Standard Delivery
+            const now = new Date();
+            const activeSale = await db.collection('sales').findOne({
+                startDate: { $lte: now },
+                endDate: { $gte: now }
+            });
+            finalShippingCost = (activeSale || cart.totalPrice >= FREE_SHIPPING_THRESHOLD_BASE) ? 0 : SHIPPING_COST_BASE;
         }
 
-        if (sameAsShipping === 'on') {
+        // --- HANDLE BILLING ADDRESS ---
+        if (sameAsShipping === 'on' || deliveryMethod === 'pickup') {
+            // For pickup, we use the contact details as billing, or you could force a separate billing entry.
+            // Here we copy shippingAddress (which contains the user name/phone)
             billingAddress = { ...shippingAddress };
         } else {
             billingAddress = {
@@ -236,14 +294,20 @@ router.post('/place-order', async (req, res) => {
             };
         }
 
-        // Handle Payment Method Details
+        // --- HANDLE PAYMENT METHOD ---
         let paymentDetails = { method: 'Unknown' };
+        
         if (paymentMethod === 'cc') {
             const ccNumber = req.body['cc-number'] || '';
             paymentDetails.method = 'Credit Card';
             paymentDetails.last4 = ccNumber.slice(-4);
+        } else if (paymentMethod === 'financing') {
+            // NEW: Handle Financing Logic (Merged)
+            paymentDetails.method = 'Financing';
+            const plan = req.body['financing-plan'];
+            paymentDetails.plan = plan === 'pay-in-4' ? 'Pay in 4' : 'Monthly Installments';
         } else if (paymentMethod === 'cod') {
-            paymentDetails.method = 'Cash on Delivery';
+            paymentDetails.method = deliveryMethod === 'pickup' ? 'Pay in Store' : 'Cash on Delivery';
         } else if (paymentMethod) {
             paymentDetails.method = paymentMethod.charAt(0).toUpperCase() + paymentMethod.slice(1);
         }
@@ -261,13 +325,6 @@ router.post('/place-order', async (req, res) => {
         }
         if (discountAmount > subtotal) discountAmount = subtotal;
 
-        const now = new Date();
-        const activeSale = await db.collection('sales').findOne({
-            startDate: { $lte: now },
-            endDate: { $gte: now }
-        });
-
-        const finalShippingCost = (activeSale || subtotal >= FREE_SHIPPING_THRESHOLD_BASE) ? 0 : SHIPPING_COST_BASE;
         const finalTotal = subtotal - discountAmount + finalShippingCost;
 
         const order = {
@@ -290,7 +347,8 @@ router.post('/place-order', async (req, res) => {
             convertedTotal: await convertCurrency(finalTotal, currency),
             orderDate: new Date(),
             status: 'Processing',
-            isNew: true 
+            isNew: true,
+            deliveryMethod: deliveryMethod || 'shipping'
         };
 
         if (req.session.user) {
@@ -362,7 +420,7 @@ router.post('/place-order', async (req, res) => {
                 <div class="container">
                     <div class="header">
                         <h1>Thank you for your order.</h1>
-                        <p>Your order #${order._id.toString().slice(-7).toUpperCase()} is confirmed and will be shipping soon.</p>
+                        <p>Your order #${order._id.toString().slice(-7).toUpperCase()} is confirmed and will be ready soon.</p>
                     </div>
 
                     <table class="items-table">
@@ -393,12 +451,13 @@ router.post('/place-order', async (req, res) => {
 
                     <div class="info-grid">
                         <div class="info-column">
-                            <h3>Shipping to</h3>
+                            <h3>${order.deliveryMethod === 'pickup' ? 'Pickup Location' : 'Shipping to'}</h3>
                             <p style="color: #6e6e73; margin:0;">${order.customer.firstName} ${order.customer.lastName}<br>${order.shippingAddress.address}<br>${order.shippingAddress.state}, ${order.shippingAddress.zip}</p>
                         </div>
                         <div class="info-column">
                             <h3>Payment</h3>
                             <p style="color: #6e6e73; margin:0;">${order.paymentDetails.method} ${order.paymentDetails.last4 ? `ending in ${order.paymentDetails.last4}` : ''}</p>
+                            ${order.paymentDetails.plan ? `<p style="color: #6e6e73; margin:0;">Plan: ${order.paymentDetails.plan}</p>` : ''}
                         </div>
                     </div>
 
@@ -419,6 +478,7 @@ router.post('/place-order', async (req, res) => {
         });
 
         req.session.cart = null;
+        if(req.session.voucher) delete req.session.voucher;
 
         res.redirect(`/checkout/success/${result.insertedId}`);
 

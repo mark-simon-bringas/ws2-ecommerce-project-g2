@@ -44,6 +44,7 @@
                                             </div>
                                         <% } %>
                                     </div>
+
                                     <% if (shipping.amountNeeded > 0) { %>
                                         <div class="mb-3 p-3 bg-white rounded-3 border">
                                             <div class="d-flex justify-content-between align-items-center mb-2">
@@ -114,7 +115,8 @@
                     <h1 class="h3 fw-bold mb-0">Checkout</h1>
                     <% if (!currentUser) { %>
                         <p class="text-body-secondary small mb-0">
-                            Already have an account? <a href="/users/login?redirect=/checkout" class="text-dark fw-bold text-decoration-underline">Log in</a> for faster checkout.
+                            Already have an account?
+                            <a href="/users/login?redirect=/checkout" class="text-dark fw-bold text-decoration-underline">Log in</a> for faster checkout.
                         </p>
                     <% } else { %>
                          <p class="text-body-secondary small mb-0">Logged in as <span class="fw-medium text-dark"><%= currentUser.email %></span></p>
@@ -123,6 +125,7 @@
             </div>
 
             <form action="/checkout/place-order" method="POST" id="checkout-form">
+                
                 <% if (!currentUser) { %>
                     <div class="card border-0 shadow-sm rounded-4 mb-4">
                         <div class="card-body p-4">
@@ -166,6 +169,7 @@
                 <div id="shipping-section" class="card border-0 shadow-sm rounded-4 mb-4">
                     <div class="card-body p-4">
                         <h5 class="fw-bold mb-3">Shipping Address</h5>
+                        
                         <% if (currentUser && addresses && addresses.length > 0) { %>
                             <div class="address-grid mb-4">
                                 <% addresses.forEach((addr, index) => { %>
@@ -214,70 +218,123 @@
                 </div>
                 
                 <div id="pickup-form" class="card border-0 shadow-sm rounded-4 mb-4 d-none">
-                     <div class="card-body p-4 text-center">
-                         <div class="bg-warning-subtle text-warning rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 50px; height: 50px;">
-                             <i class="bi bi-shop fs-4"></i>
-                         </div>
-                         <h6 class="fw-bold">Store Pickup Unavailable</h6>
-                         <p class="text-secondary small mb-0">Please select "Ship to Address" to proceed.</p>
-                     </div>
+                     <div class="card-body p-4">
+                        <h5 class="fw-bold mb-3">Store Pickup</h5>
+                        <p class="text-secondary small mb-3">Select a store to pick up your order.</p>
+                        
+                        <div class="form-floating mb-4">
+                            <select class="form-select bg-light border-0" id="pickupStore" name="pickupStore">
+                                <option value="" selected disabled>Select a store location</option>
+                                <% if (typeof stores !== 'undefined' && stores.length > 0) { %>
+                                    <% stores.forEach(store => { %>
+                                        <option value="<%= store.id %>"><%= store.name %> (<%= store.city %>)</option>
+                                    <% }) %>
+                                <% } %>
+                            </select>
+                            <label for="pickupStore">Location</label>
+                        </div>
+
+                        <h6 class="fw-bold mb-3">Pickup Contact Person</h6>
+                        <div class="row g-3">
+                             <div class="col-6">
+                                <div class="form-floating">
+                                    <input type="text" class="form-control bg-light border-0" id="pickupFirstName" name="pickupFirstName" placeholder="First">
+                                    <label>First Name</label>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="form-floating">
+                                    <input type="text" class="form-control bg-light border-0" id="pickupLastName" name="pickupLastName" placeholder="Last">
+                                    <label>Last Name</label>
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <div class="form-floating">
+                                    <input type="tel" class="form-control bg-light border-0" id="pickupPhone" name="pickupPhone" placeholder="Phone">
+                                    <label>Phone Number</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
-                <div class="card border-0 shadow-sm rounded-4 mb-4">
-                    <div class="card-body p-4">
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="sameAsShipping" name="sameAsShipping" checked>
-                            <label class="form-check-label fw-medium" for="sameAsShipping">
-                                Billing address is the same as shipping
-                            </label>
-                        </div>
-                        
-                        <div id="billing-address-form" class="d-none mt-4 pt-3 border-top">
-                            <h6 class="fw-bold mb-3">Billing Address</h6>
-                            <div class="form-floating mb-3">
-                                <input type="text" class="form-control bg-light border-0" name="billing-address" id="billing-address" placeholder="Address">
-                                <label for="billing-address">Billing Address</label>
+                <div id="billing-section">
+                    <div class="card border-0 shadow-sm rounded-4 mb-4">
+                        <div class="card-body p-4">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="sameAsShipping" name="sameAsShipping" checked>
+                                <label class="form-check-label fw-medium" for="sameAsShipping">
+                                    Billing address is the same as shipping/pickup
+                                </label>
                             </div>
-                             <div class="row g-3">
-                                 <div class="col-6">
-                                     <div class="form-floating">
-                                        <input type="text" class="form-control bg-light border-0" name="billing-state" placeholder="State">
-                                        <label>State</label>
+                            
+                            <div id="billing-address-form" class="d-none mt-4 pt-3 border-top">
+                                <h6 class="fw-bold mb-3">Billing Address</h6>
+                                <div class="form-floating mb-3">
+                                    <input type="text" class="form-control bg-light border-0" name="billing-address" id="billing-address" placeholder="Address">
+                                    <label for="billing-address">Billing Address</label>
+                                </div>
+                                 <div class="row g-3">
+                                     <div class="col-6">
+                                         <div class="form-floating">
+                                             <input type="text" class="form-control bg-light border-0" name="billing-state" placeholder="State">
+                                            <label>State</label>
+                                         </div>
                                      </div>
-                                 </div>
-                                 <div class="col-6">
-                                     <div class="form-floating">
-                                        <input type="text" class="form-control bg-light border-0" name="billing-zip" placeholder="Zip">
-                                        <label>Zip</label>
+                                     <div class="col-6">
+                                         <div class="form-floating">
+                                              <input type="text" class="form-control bg-light border-0" name="billing-zip" placeholder="Zip">
+                                            <label>Zip</label>
+                                         </div>
                                      </div>
-                                 </div>
-                             </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
 
                 <div class="card border-0 shadow-sm rounded-4 mb-4">
                     <div class="card-body p-4">
-                        <h5 class="fw-bold mb-3">Payment</h5>
+                         <h5 class="fw-bold mb-3">Payment</h5>
                         <div class="row g-3">
-                            <div class="col-6"><label class="selection-card w-100 h-100"><input type="radio" name="payment-method" value="cod" class="btn-check" checked><div class="p-3 rounded-3 border text-center selection-content transition-all h-100 d-flex flex-column align-items-center justify-content-center"><i class="bi bi-cash-stack fs-4 mb-2 d-block text-success"></i><span class="fw-bold small">Cash on Delivery</span></div></label></div>
-                             <div class="col-6"><label class="selection-card w-100 h-100"><input type="radio" name="payment-method" value="cc" class="btn-check"><div class="p-3 rounded-3 border text-center selection-content transition-all h-100 d-flex flex-column align-items-center justify-content-center"><i class="bi bi-credit-card fs-4 mb-2 d-block text-primary"></i><span class="fw-bold small">Credit/Debit</span></div></label></div>
+                            <div class="col-6"><label class="selection-card w-100 h-100"><input type="radio" name="payment-method" value="cod" class="btn-check" checked><div class="p-3 rounded-3 border text-center selection-content transition-all h-100 d-flex flex-column align-items-center justify-content-center"><i class="bi bi-cash-stack fs-4 mb-2 d-block text-success"></i><span class="fw-bold small">Cash / Pay in Store</span></div></label></div>
+                            <div class="col-6"><label class="selection-card w-100 h-100"><input type="radio" name="payment-method" value="cc" class="btn-check"><div class="p-3 rounded-3 border text-center selection-content transition-all h-100 d-flex flex-column align-items-center justify-content-center"><i class="bi bi-credit-card fs-4 mb-2 d-block text-primary"></i><span class="fw-bold small">Credit/Debit</span></div></label></div>
+                            
                             <div class="col-4"><label class="selection-card w-100 h-100"><input type="radio" name="payment-method" value="gcash" class="btn-check"><div class="p-3 rounded-3 border text-center selection-content transition-all h-100 d-flex flex-column align-items-center justify-content-center"><i class="bi bi-wallet2 fs-5 mb-1 d-block text-primary"></i><span class="fw-bold small" style="font-size: 0.75rem;">GCash</span></div></label></div>
                             <div class="col-4"><label class="selection-card w-100 h-100"><input type="radio" name="payment-method" value="grabpay" class="btn-check"><div class="p-3 rounded-3 border text-center selection-content transition-all h-100 d-flex flex-column align-items-center justify-content-center"><i class="bi bi-phone fs-5 mb-1 d-block text-success"></i><span class="fw-bold small" style="font-size: 0.75rem;">GrabPay</span></div></label></div>
                             <div class="col-4"><label class="selection-card w-100 h-100"><input type="radio" name="payment-method" value="paypal" class="btn-check"><div class="p-3 rounded-3 border text-center selection-content transition-all h-100 d-flex flex-column align-items-center justify-content-center"><i class="bi bi-paypal fs-5 mb-1 d-block text-info"></i><span class="fw-bold small" style="font-size: 0.75rem;">PayPal</span></div></label></div>
+                            
+                            <div class="col-12"><label class="selection-card w-100 h-100"><input type="radio" name="payment-method" value="financing" class="btn-check"><div class="p-3 rounded-3 border text-center selection-content transition-all h-100 d-flex flex-row align-items-center justify-content-center gap-3"><i class="bi bi-pie-chart-fill fs-4 text-info"></i><span class="fw-bold small">Installments / Buy Now, Pay Later</span></div></label></div>
                         </div>
+
                         <div id="payment-details-cc" class="mt-4 d-none">
                             <div class="bg-light p-3 rounded-3">
                                 <div class="form-floating mb-3"><input type="text" class="form-control border-0 bg-white" name="cc-number" placeholder="Card Number"><label>Card Number</label></div>
                                 <div class="row g-3"><div class="col-6"><div class="form-floating"><input type="text" class="form-control border-0 bg-white" name="cc-expiration" placeholder="MM/YY"><label>Expiration</label></div></div><div class="col-6"><div class="form-floating"><input type="text" class="form-control border-0 bg-white" name="cc-cvv" placeholder="CVC"><label>CVC</label></div></div></div>
                             </div>
                         </div>
-                        <div id="payment-details-cod" class="mt-3 text-center p-3 bg-light rounded-3"><p class="small text-secondary mb-0"><i class="bi bi-info-circle me-1"></i> You will pay in cash upon delivery.</p></div>
-                         <div id="payment-details-gcash" class="mt-3 d-none text-center p-3 bg-light rounded-3"><p class="small text-secondary mb-0">You will be redirected to GCash to complete your payment.</p></div>
+
+                        <div id="payment-details-financing" class="mt-4 d-none">
+                            <div class="bg-light p-3 rounded-3">
+                                <p class="fw-bold mb-2">Buy Now, Pay Later</p>
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="radio" name="financing-plan" id="plan-4" value="pay-in-4" checked>
+                                    <label class="form-check-label small" for="plan-4">Pay in 4 interest-free payments</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="financing-plan" id="plan-monthly" value="monthly">
+                                    <label class="form-check-label small" for="plan-monthly">Monthly payments</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="payment-details-cod" class="mt-3 text-center p-3 bg-light rounded-3"><p class="small text-secondary mb-0"><i class="bi bi-info-circle me-1"></i> You will pay in cash upon delivery/pickup.</p></div>
+                        <div id="payment-details-gcash" class="mt-3 d-none text-center p-3 bg-light rounded-3"><p class="small text-secondary mb-0">You will be redirected to GCash to complete your payment.</p></div>
                         <div id="payment-details-grabpay" class="mt-3 d-none text-center p-3 bg-light rounded-3"><p class="small text-secondary mb-0">You will be redirected to GrabPay to complete your payment.</p></div>
                         <div id="payment-details-paypal" class="mt-3 d-none text-center p-3 bg-light rounded-3"><p class="small text-secondary mb-0">You will be redirected to PayPal to complete your payment.</p></div>
                     </div>
                 </div>
+                
                 <button type="submit" class="btn btn-dark btn-lg w-100 rounded-pill py-3 fw-bold shadow-sm">Place Order</button>
             </form>
         </div>
@@ -288,17 +345,17 @@
                     <h4 class="fw-bold mb-4">Order Summary</h4>
                     
                     <div class="mb-4">
-                        <label class="form-label small fw-bold text-secondary text-uppercase">Discount Code</label>
+                         <label class="form-label small fw-bold text-secondary text-uppercase">Discount Code</label>
                         <div class="input-group mb-2">
                             <input type="text" id="voucher-code-desktop" class="form-control bg-light border-0" placeholder="Code">
                             <button class="btn btn-dark" type="button" onclick="applyVoucher('desktop')">Apply</button>
                         </div>
                         
                         <button type="button" class="btn btn-outline-secondary w-100 py-3 d-flex justify-content-between align-items-center" data-bs-toggle="modal" data-bs-target="#voucherWalletModal">
-                            <span class="fw-medium"><i class="bi bi-ticket-perforated me-2"></i> Select from Wallet</span>
+                             <span class="fw-medium"><i class="bi bi-ticket-perforated me-2"></i> Select from Wallet</span>
                             <% if (availableVouchers && availableVouchers.length > 0) { %>
                                 <span class="badge bg-dark rounded-pill"><%= availableVouchers.length %></span>
-                            <% } %>
+                             <% } %>
                         </button>
 
                         <div id="voucher-message-desktop" class="mt-2 small"></div>
@@ -309,7 +366,7 @@
                                 <span class="fw-bold">-<%= locationData.symbol %><%= discountAmount.toLocaleString(undefined, { minimumFractionDigits: 2 }) %></span>
                             </div>
                             <div class="text-end mt-1">
-                                <button onclick="removeVoucher()" class="btn btn-link text-danger p-0 small text-decoration-none">Remove Voucher</button>
+                                 <button onclick="removeVoucher()" class="btn btn-link text-danger p-0 small text-decoration-none">Remove Voucher</button>
                             </div>
                         <% } %>
                     </div>
@@ -320,7 +377,7 @@
                                 <small class="text-body-secondary">Add <strong><%= locationData.symbol %><%= shipping.amountNeeded.toLocaleString(undefined, { minimumFractionDigits: 2 }) %></strong> for free shipping</small>
                                 <small class="fw-bold"><%= parseInt(shipping.progress) %>%</small>
                             </div>
-                            <div class="progress" style="height: 6px;">
+                             <div class="progress" style="height: 6px;">
                                 <div class="progress-bar bg-dark" role="progressbar" style="width: <%= shipping.progress %>%;"></div>
                             </div>
                         </div>
@@ -332,26 +389,26 @@
 
                     <div class="cart-items-preview mb-4 p-3" style="max-height: 250px; overflow-y: auto;">
                         <% cart.items.forEach(item => { %>
-                            <div class="d-flex gap-3 mb-3 align-items-center">
+                             <div class="d-flex gap-3 mb-3 align-items-center">
                                 <div class="position-relative me-2">
                                     <img src="<%= item.thumbnailUrl %>" alt="<%= item.name %>" class="rounded-3 border bg-white" style="width: 64px; height: 64px; object-fit: contain;">
                                     <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-secondary border border-light" style="font-size: 0.65rem; z-index: 2;"><%= item.qty %></span>
                                 </div>
                                 <div class="flex-grow-1 min-w-0">
                                     <h6 class="fw-medium mb-0 text-dark small text-truncate" style="max-width: 200px;"><%= item.name %></h6>
-                                    <small class="text-secondary"><%= item.brand %></small>
+                                     <small class="text-secondary"><%= item.brand %></small>
                                 </div>
                                 <span class="fw-semibold small"><%= locationData.symbol %><%= item.convertedPrice.toLocaleString(undefined, { minimumFractionDigits: 2 }) %></span>
-                            </div>
+                             </div>
                         <% }) %>
                     </div>
 
                     <div class="bg-light rounded-3 p-3 mb-4 d-flex align-items-center gap-3">
-                        <i class="bi bi-box-seam fs-4 text-secondary"></i>
+                         <i class="bi bi-box-seam fs-4 text-secondary"></i>
                         <div>
                             <small class="text-secondary d-block text-uppercase fw-bold" style="font-size: 0.7rem;">Estimated Arrival</small>
                             <span class="fw-medium text-dark small"><%= arrivalDate %></span>
-                        </div>
+                         </div>
                     </div>
 
                     <div class="d-flex justify-content-between mb-2">
@@ -363,17 +420,17 @@
                             <span>Discount</span>
                             <span class="fw-medium">-<%= locationData.symbol %><%= discountAmount.toLocaleString(undefined, { minimumFractionDigits: 2 }) %></span>
                         </div>
-                    <% } %>
+                     <% } %>
                     <div class="d-flex justify-content-between mb-3">
                         <span class="text-secondary">Shipping</span>
-                        <span class="fw-medium"><%= shipping.cost > 0 ? locationData.symbol + shipping.cost.toLocaleString(undefined, { minimumFractionDigits: 2 }) : 'Free' %></span>
+                        <span class="fw-medium" id="shipping-cost-display"><%= shipping.cost > 0 ? locationData.symbol + shipping.cost.toLocaleString(undefined, { minimumFractionDigits: 2 }) : 'Free' %></span>
                     </div>
 
                     <hr class="border-secondary-subtle">
 
                     <div class="d-flex justify-content-between align-items-center">
                         <span class="fw-bold fs-5">Total</span>
-                        <div class="text-end">
+                         <div class="text-end">
                             <span class="fw-bold fs-4"><%= locationData.symbol %><%= totalWithShipping.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></span>
                             <% if (locationData.currency !== 'USD') { %>
                                 <br>
@@ -381,7 +438,7 @@
                                     USD <%= (cart.totalPrice + (shipping.cost > 0 ? 5 : 0)).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %>
                                 </small>
                             <% } %>
-                        </div>
+                         </div>
                     </div>
                 </div>
             </div>
@@ -398,14 +455,13 @@
             </div>
             <div class="modal-body p-3">
                 <% if (availableVouchers && availableVouchers.length > 0) { %>
-                    <div class="list-group list-group-flush gap-2">
+                     <div class="list-group list-group-flush gap-2">
                         <% availableVouchers.forEach(v => { 
-                            // Check if this voucher is currently applied
                             const isApplied = (typeof appliedVoucher !== 'undefined' && appliedVoucher && appliedVoucher.code === v.code);
                         %>
                             <div class="list-group-item border rounded-3 p-3 d-flex justify-content-between align-items-center <%= isApplied ? 'bg-success-subtle border-success-subtle' : 'bg-white' %>">
                                 <div>
-                                    <div class="d-flex align-items-center gap-2">
+                                     <div class="d-flex align-items-center gap-2">
                                         <span class="badge <%= isApplied ? 'bg-success' : 'bg-dark' %>"><%= v.code %></span>
                                         <% if (isApplied) { %><span class="badge bg-white text-success border border-success"><i class="bi bi-check"></i> Applied</span><% } %>
                                     </div>
@@ -415,18 +471,17 @@
                                     <small class="text-body-secondary d-block">Min. Spend $<%= v.minOrderAmount %></small>
                                     <small class="text-body-tertiary" style="font-size: 0.75rem;">Expires: <%= new Date(v.expiryDate).toLocaleDateString() %></small>
                                 </div>
-                                
                                 <% if (isApplied) { %>
                                     <button class="btn btn-sm btn-outline-danger rounded-pill fw-bold px-3" onclick="removeVoucher()">
-                                        Remove
+                                          Remove
                                     </button>
                                 <% } else { %>
                                     <button class="btn btn-sm btn-dark rounded-pill fw-bold px-3 apply-wallet-voucher" data-code="<%= v.code %>">
                                         Apply
-                                    </button>
+                                     </button>
                                 <% } %>
                             </div>
-                        <% }) %>
+                       <% }) %>
                     </div>
                 <% } else { %>
                     <div class="text-center py-5">
@@ -434,7 +489,7 @@
                             <i class="bi bi-ticket-perforated text-secondary fs-3"></i>
                         </div>
                         <h6 class="fw-bold">No vouchers found</h6>
-                        <p class="text-secondary small mb-0">You don't have any active coupons at the moment.</p>
+                         <p class="text-secondary small mb-0">You don't have any active coupons at the moment.</p>
                     </div>
                 <% } %>
             </div>
@@ -452,12 +507,12 @@
     .form-floating > .form-control:focus { box-shadow: 0 0 0 2px rgba(0,0,0,0.1); }
 </style>
 
-<% if (currentUser) { %>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        // --- ADDRESS PRE-FILL LOGIC ---
         const addresses = <%- JSON.stringify(addresses || []) %>;
         const addressRadios = document.querySelectorAll('input[name="selectedAddressId"]');
-        const fieldset = document.getElementById('shipping-address-fieldset');
+        const shippingFieldset = document.getElementById('shipping-address-fieldset');
         const saveAddressContainer = document.getElementById('save-address-container');
         
         const formFields = {
@@ -471,9 +526,9 @@
         };
 
         function populateForm(address) {
-            for (const key in formFields) {
-                if (formFields.hasOwnProperty(key) && address.hasOwnProperty(key)) {
-                    if(formFields[key]) formFields[key].value = address[key];
+             for (const key in formFields) {
+                if (formFields.hasOwnProperty(key) && address.hasOwnProperty(key) && formFields[key]) {
+                    formFields[key].value = address[key];
                 }
             }
         }
@@ -484,12 +539,12 @@
             }
         }
 
-        function toggleForm(state) {
+        function toggleAddressForm(state) {
             if (state === 'disabled') {
-                fieldset.disabled = true;
+                shippingFieldset.disabled = true;
                 if(saveAddressContainer) saveAddressContainer.style.display = 'none';
             } else {
-                fieldset.disabled = false;
+                shippingFieldset.disabled = false;
                 if(saveAddressContainer) saveAddressContainer.style.display = 'block';
             }
         }
@@ -498,51 +553,91 @@
             addressRadios.forEach(radio => {
                 radio.addEventListener('change', function() {
                     if (this.value === 'new') {
-                        clearForm();
-                        toggleForm('enabled');
+                         clearForm();
+                        toggleAddressForm('enabled');
                     } else {
                         const selectedAddress = addresses.find(addr => addr.addressId === this.value);
-                        if (selectedAddress) {
+                         if (selectedAddress) {
                             populateForm(selectedAddress);
-                            toggleForm('disabled');
+                            toggleAddressForm('disabled');
                         }
-                    }
+                     }
                 });
             });
-            
+            // Initialize form state
             const checked = document.querySelector('input[name="selectedAddressId"]:checked');
             if(checked && checked.value !== 'new') {
                  const addr = addresses.find(a => a.addressId === checked.value);
-                 if(addr) { populateForm(addr); toggleForm('disabled'); }
+                 if(addr) { populateForm(addr); toggleAddressForm('disabled'); }
             } else {
-                 toggleForm('enabled');
+                 toggleAddressForm('enabled');
             }
         }
-    });
-</script>
-<% } %>
 
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Payment Method Toggle
+        // --- DELIVERY METHOD TOGGLE ---
         const deliveryRadios = document.querySelectorAll('input[name="delivery-method"]');
         const shippingSection = document.getElementById('shipping-section');
         const pickupForm = document.getElementById('pickup-form');
-        
-        deliveryRadios.forEach(radio => {
-            radio.addEventListener('change', function() {
-                if (this.value === 'ship') {
-                    shippingSection.classList.remove('d-none');
-                    pickupForm.classList.add('d-none');
-                } else {
-                    shippingSection.classList.add('d-none');
-                    pickupForm.classList.remove('d-none');
+        const billingCheck = document.getElementById('sameAsShipping');
+        const billingSection = document.getElementById('billing-section');
+        // Inputs for validation toggling
+        const shippingInputs = document.querySelectorAll('#shipping-address-fieldset input, #shipping-address-fieldset select');
+        const pickupInputs = document.querySelectorAll('#pickup-form input, #pickup-form select');
+
+        const setRequired = (elements, required) => {
+            elements.forEach(input => {
+                input.required = required;
+                if (elements === shippingInputs && shippingFieldset.disabled) {
+                   input.required = false; 
                 }
             });
-        });
+        };
 
+        const updateDeliveryMode = (mode) => {
+            const usingSavedAddress = document.querySelector('input[name="selectedAddressId"]:checked')?.value !== 'new';
+            const shippingCostDisplay = document.getElementById('shipping-cost-display');
+
+            if (mode === 'ship') {
+                shippingSection.classList.remove('d-none');
+                pickupForm.classList.add('d-none');
+                
+                // Show Billing Section again
+                billingSection.classList.remove('d-none');
+                // Validation Logic
+                setRequired(shippingInputs, !usingSavedAddress);
+                setRequired(pickupInputs, false);
+                
+                // Update Summary
+                if (shippingCostDisplay) shippingCostDisplay.innerText = "<%= shipping.cost > 0 ? locationData.symbol + shipping.cost.toLocaleString(undefined, { minimumFractionDigits: 2 }) : 'Free' %>";
+            } else {
+                // Pickup Mode
+                shippingSection.classList.add('d-none');
+                pickupForm.classList.remove('d-none');
+                
+                // Validation Logic
+                setRequired(shippingInputs, false);
+                setRequired(pickupInputs, true);
+                
+                // Force Billing to be "Same as Pickup"
+                if(billingCheck) billingCheck.checked = true;
+                billingSection.classList.add('d-none'); 
+
+                // Update Summary
+                if (shippingCostDisplay) shippingCostDisplay.innerText = "Free (Pickup)";
+            }
+        };
+
+        deliveryRadios.forEach(radio => {
+            radio.addEventListener('change', function() { updateDeliveryMode(this.value); });
+        });
+        // Init Delivery Mode
+        const checkedDelivery = document.querySelector('input[name="delivery-method"]:checked');
+        if(checkedDelivery) updateDeliveryMode(checkedDelivery.value);
+
+        // --- PAYMENT METHOD TOGGLE (MERGED LOGIC) ---
         const paymentRadios = document.querySelectorAll('input[name="payment-method"]');
         const ccDetails = document.getElementById('payment-details-cc');
+        const financingDetails = document.getElementById('payment-details-financing');
         const codDetails = document.getElementById('payment-details-cod');
         const gcashDetails = document.getElementById('payment-details-gcash');
         const grabDetails = document.getElementById('payment-details-grabpay');
@@ -551,16 +646,23 @@
 
         paymentRadios.forEach(radio => {
             radio.addEventListener('change', function() {
+                // Hide all details first
                 ccDetails.classList.add('d-none');
+                financingDetails.classList.add('d-none');
                 codDetails.classList.add('d-none');
                 gcashDetails.classList.add('d-none');
                 grabDetails.classList.add('d-none');
                 paypalDetails.classList.add('d-none');
+                
+                // Remove required attribute from CC
                 ccInputs.forEach(input => input.required = false);
 
+                // Show specific details
                 if (this.value === 'cc') {
                     ccDetails.classList.remove('d-none');
                     ccInputs.forEach(input => input.required = true);
+                } else if (this.value === 'financing') {
+                    financingDetails.classList.remove('d-none');
                 } else if (this.value === 'cod') {
                     codDetails.classList.remove('d-none');
                 } else if (this.value === 'gcash') {
@@ -572,19 +674,19 @@
                 }
             });
         });
-        
-        // Billing Toggle
-        const billingCheck = document.getElementById('sameAsShipping');
-        const billingForm = document.getElementById('billing-address-form');
-        const billingInputs = billingForm.querySelectorAll('input');
-        
+
+        // --- BILLING TOGGLE ---
+        const billingAddressForm = document.getElementById('billing-address-form');
+        const billingInputs = billingAddressForm.querySelectorAll('input');
         if(billingCheck) {
             billingCheck.addEventListener('change', function() {
                 if(this.checked) {
-                    billingForm.classList.add('d-none');
+                    billingAddressForm.classList.add('d-none');
                     billingInputs.forEach(i => i.required = false);
                 } else {
-                    billingForm.classList.remove('d-none');
+                     billingAddressForm.classList.remove('d-none');
+                    // Only require billing inputs if form is visible
+                    billingInputs.forEach(i => i.required = true);
                 }
             });
         }
@@ -605,12 +707,11 @@
                 .then(res => res.json())
                 .then(data => {
                     if(data.success) location.reload();
-                });
+                 });
         }
 
         function performApply(code, msgDivElement) {
             if(msgDivElement) msgDivElement.innerHTML = '<span class="text-body-secondary"><i class="bi bi-hourglass-split"></i> Applying...</span>';
-
             fetch('/checkout/apply-voucher', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
@@ -623,17 +724,15 @@
                 } else {
                      if(msgDivElement) msgDivElement.innerHTML = `<span class="text-danger"><i class="bi bi-exclamation-circle me-1"></i> ${data.message}</span>`;
                 }
-            })
+             })
             .catch(err => {
                 console.error(err);
                  if(msgDivElement) msgDivElement.innerHTML = `<span class="text-danger">Error applying voucher.</span>`;
             });
         }
 
-        // Handle "Select from Wallet" clicks for both mobile and desktop via Modal
         document.querySelectorAll('.apply-wallet-voucher').forEach(btn => {
             btn.addEventListener('click', function() {
-                // Default to showing error in the desktop area, unless on mobile
                 const isMobile = window.innerWidth < 992;
                 const msgDiv = document.getElementById(isMobile ? 'voucher-message-mobile' : 'voucher-message-desktop');
                 
