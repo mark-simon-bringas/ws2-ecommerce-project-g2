@@ -7,6 +7,7 @@ const saltRounds = 12;
 const { Resend } = require('resend');
 const resend = new Resend(process.env.RESEND_API_KEY);
 const verifyTurnstile = require('../utils/turnstileVerify');
+const speakeasy = require('speakeasy');
 
 // Show registration form
 router.get('/register', (req, res) => {
@@ -107,6 +108,7 @@ router.post('/register', async (req, res) => {
             loginHistory: [],
             vouchers: userVouchers,
             profilePictureUrl: null,
+            is2FAEnabled: false, // Default to disabled
             createdAt: currentDate,
             updatedAt: currentDate
         };
@@ -200,6 +202,18 @@ router.post('/login', async (req, res) => {
             });
         }
 
+        // --- 2FA CHECK ---
+        if (user.is2FAEnabled) {
+            // Store user ID in a temporary session variable for the 2nd step
+            req.session.partialLoginId = user.userId;
+            req.session.redirectUrl = req.body.redirect || '/account'; 
+            // Also store "keep me signed in" preference temporarily
+            req.session.tempKeepSignedIn = req.body.keepSignedIn; 
+            
+            return res.redirect('/users/login/2fa');
+        }
+
+        // --- STANDARD LOGIN (If 2FA Disabled) ---
         req.session.user = {
             userId: user.userId,
             firstName: user.firstName,
@@ -207,29 +221,28 @@ router.post('/login', async (req, res) => {
             email: user.email,
             role: user.role,
             isEmailVerified: user.isEmailVerified,
-            profilePictureUrl: user.profilePictureUrl
+            profilePictureUrl: user.profilePictureUrl,
+            is2FAEnabled: false
         };
 
-        // --- IMPLEMENT "KEEP ME SIGNED IN" ---
+        // Implement "Keep Me Signed In"
         if (req.body.keepSignedIn === 'on') {
-            // Set session maxAge to 30 days (in milliseconds)
             req.session.cookie.maxAge = 30 * 24 * 60 * 60 * 1000;
         } else {
-            // Revert to default session length (15 mins) if not checked
             req.session.cookie.maxAge = 15 * 60 * 1000;
         }
 
         // Track Login History
         try {
             const userAgent = req.headers['user-agent'] || 'Unknown Device';
-            const ip = req.headers['x-forwarded-for'] || req.ip || req.connection.remoteAddress;
+            const userIp = req.headers['x-forwarded-for'] || req.ip || req.connection.remoteAddress;
             
             await usersCollection.updateOne(
                 { userId: user.userId },
                 {
                     $push: {
                         loginHistory: {
-                            $each: [{ userAgent, ip, timestamp: new Date() }],
+                            $each: [{ userAgent, ip: userIp, timestamp: new Date() }],
                             $sort: { timestamp: -1 },
                             $slice: 5 
                         }
@@ -246,6 +259,92 @@ router.post('/login', async (req, res) => {
     } catch (err) {
         console.error("Error during login:", err);
         res.status(500).redirect('/users/login?error=' + encodeURIComponent('An unexpected error occurred.'));
+    }
+});
+
+// --- NEW: 2FA Login Routes ---
+
+// GET /users/login/2fa - Show 2FA Input Form
+router.get('/login/2fa', (req, res) => {
+    if (!req.session.partialLoginId) return res.redirect('/users/login');
+    res.render('login-2fa', { 
+        title: "Two-Factor Authentication",
+        page: 'auth',
+        error: req.query.error
+    });
+});
+
+// POST /users/login/2fa - Verify Code
+router.post('/login/2fa', async (req, res) => {
+    try {
+        const userId = req.session.partialLoginId;
+        if (!userId) return res.redirect('/users/login');
+
+        const { token } = req.body;
+        const db = req.app.locals.client.db(req.app.locals.dbName);
+        const usersCollection = db.collection('users');
+        const user = await usersCollection.findOne({ userId: userId });
+
+        const verified = speakeasy.totp.verify({
+            secret: user.twoFactorSecret.base32 || user.twoFactorSecret, // Handle object or string storage
+            encoding: 'base32',
+            token: token
+        });
+
+        if (verified) {
+            // Complete Login
+            req.session.user = {
+                userId: user.userId,
+                firstName: user.firstName,
+                lastName: user.lastName,
+                email: user.email,
+                role: user.role,
+                isEmailVerified: user.isEmailVerified,
+                profilePictureUrl: user.profilePictureUrl,
+                is2FAEnabled: true
+            };
+
+            // Restore "Keep Me Signed In" preference
+            if (req.session.tempKeepSignedIn === 'on') {
+                req.session.cookie.maxAge = 30 * 24 * 60 * 60 * 1000;
+            } else {
+                req.session.cookie.maxAge = 15 * 60 * 1000;
+            }
+            delete req.session.tempKeepSignedIn;
+
+            // Track Login History (2FA Success)
+            try {
+                const userAgent = req.headers['user-agent'] || 'Unknown Device';
+                const userIp = req.headers['x-forwarded-for'] || req.ip || req.connection.remoteAddress;
+                await usersCollection.updateOne(
+                    { userId: user.userId },
+                    {
+                        $push: {
+                            loginHistory: {
+                                $each: [{ userAgent, ip: userIp, timestamp: new Date() }],
+                                $sort: { timestamp: -1 },
+                                $slice: 5 
+                            }
+                        }
+                    }
+                );
+            } catch (historyErr) { console.error(historyErr); }
+            
+            delete req.session.partialLoginId;
+            const redirectUrl = req.session.redirectUrl || '/account';
+            delete req.session.redirectUrl;
+            
+            res.redirect(redirectUrl);
+        } else {
+            res.render('login-2fa', { 
+                title: "Two-Factor Authentication",
+                page: 'auth',
+                error: "Invalid code. Please try again."
+            });
+        }
+    } catch (err) {
+        console.error("2FA Login Error:", err);
+        res.redirect('/users/login');
     }
 });
 

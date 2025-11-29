@@ -22,8 +22,10 @@
     "geoip-lite": "^1.4.10",
     "mongodb": "^6.19.0",
     "multer": "^2.0.2",
+    "qrcode": "^1.5.4",
     "resend": "^6.0.2",
     "socket.io": "^4.7.5",
+    "speakeasy": "^2.0.0",
     "uuid": "^12.0.0",
     "xmlbuilder2": "^4.0.0"
   }

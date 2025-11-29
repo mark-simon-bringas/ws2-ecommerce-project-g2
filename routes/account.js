@@ -11,6 +11,8 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const ExcelJS = require('exceljs'); // Required for Excel exports
+const speakeasy = require('speakeasy');
+const QRCode = require('qrcode');
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -175,20 +177,101 @@ router.get('/identity', async (req, res) => {
     });
 });
 
+// GET /security - Updated to pass 2FA status
 router.get('/security', async (req, res) => {
-    const db = req.app.locals.client.db(req.app.locals.dbName);
-    const user = await db.collection('users').findOne({ userId: req.session.user.userId });
-    const loginHistory = (user && user.loginHistory) ? user.loginHistory.map(entry => {
-        const details = parseDevice(entry.userAgent);
-        return { ...entry, displayName: details.name, icon: details.icon };
-    }) : [];
-    res.render('account/settings-security', { 
-        title: "Security", 
-        view: 'settings', 
-        message: req.query.message, 
-        error: req.query.error, 
-        loginHistory: loginHistory 
-    });
+    try {
+        const db = req.app.locals.client.db(req.app.locals.dbName);
+        const user = await db.collection('users').findOne({ userId: req.session.user.userId });
+        const loginHistory = (user && user.loginHistory) ? user.loginHistory.map(entry => {
+            const details = parseDevice(entry.userAgent);
+            return { ...entry, displayName: details.name, icon: details.icon };
+        }) : [];
+        
+        res.render('account/settings-security', { 
+            title: "Security", 
+            view: 'settings', 
+            message: req.query.message, 
+            error: req.query.error, 
+            loginHistory: loginHistory,
+            user: user // Pass full user object to check is2FAEnabled
+        });
+    } catch (err) {
+        console.error("Error loading security settings:", err);
+        res.status(500).send("Error loading security settings.");
+    }
+});
+
+// --- 2FA ROUTES ---
+
+// 1. Generate Secret & QR Code (Called via AJAX)
+router.post('/security/2fa/setup', async (req, res) => {
+    try {
+        const secret = speakeasy.generateSecret({
+            name: `Sneakslab (${req.session.user.email})`
+        });
+        
+        // Store secret temporarily in session (not DB yet) until verified
+        req.session.temp2faSecret = secret.base32;
+
+        QRCode.toDataURL(secret.otpauth_url, (err, data_url) => {
+            if (err) return res.status(500).json({ success: false, message: "Could not generate QR code" });
+            res.json({ success: true, qrCode: data_url, secret: secret.base32 });
+        });
+    } catch (err) {
+        console.error("2FA Setup Error:", err);
+        res.status(500).json({ success: false, message: "Server error" });
+    }
+});
+
+// 2. Verify Token & Enable 2FA
+router.post('/security/2fa/verify', async (req, res) => {
+    try {
+        const { token } = req.body;
+        const secret = req.session.temp2faSecret;
+
+        if (!secret) return res.status(400).json({ success: false, message: "Session expired. Please try again." });
+
+        const verified = speakeasy.totp.verify({
+            secret: secret,
+            encoding: 'base32',
+            token: token
+        });
+
+        if (verified) {
+            const db = req.app.locals.client.db(req.app.locals.dbName);
+            await db.collection('users').updateOne(
+                { userId: req.session.user.userId },
+                { $set: { twoFactorSecret: secret, is2FAEnabled: true } }
+            );
+            
+            // Update session
+            req.session.user.is2FAEnabled = true;
+            delete req.session.temp2faSecret;
+
+            res.json({ success: true });
+        } else {
+            res.json({ success: false, message: "Invalid verification code." });
+        }
+    } catch (err) {
+        console.error("2FA Verify Error:", err);
+        res.status(500).json({ success: false, message: "Verification failed." });
+    }
+});
+
+// 3. Disable 2FA
+router.post('/security/2fa/disable', async (req, res) => {
+    try {
+        const db = req.app.locals.client.db(req.app.locals.dbName);
+        await db.collection('users').updateOne(
+            { userId: req.session.user.userId },
+            { $set: { twoFactorSecret: null, is2FAEnabled: false } }
+        );
+        
+        req.session.user.is2FAEnabled = false;
+        res.redirect('/account/security?message=' + encodeURIComponent('Two-Factor Authentication disabled.'));
+    } catch (err) {
+        res.redirect('/account/security?error=' + encodeURIComponent('Could not disable 2FA.'));
+    }
 });
 
 router.get('/addresses', async (req, res) => {
@@ -407,7 +490,7 @@ router.post('/settings/update-profile', upload.single('profilePhoto'), async (re
         // Update session
         req.session.user.firstName = firstName;
         req.session.user.lastName = lastName;
-        req.session.user.bio = bio; // UPDATED: Ensure bio is updated in session
+        req.session.user.bio = bio; 
         if (req.file) req.session.user.profilePictureUrl = updateFields.profilePictureUrl;
         
         res.redirect('/account/identity?message=' + encodeURIComponent('Profile updated!'));

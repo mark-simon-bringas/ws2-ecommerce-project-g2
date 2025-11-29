@@ -1,0 +1,38 @@
+<div class="auth-container">
+    <div class="auth-card text-center">
+        <div class="mb-4">
+            <div class="bg-light rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 64px; height: 64px;">
+                <i class="bi bi-shield-lock-fill fs-2 text-primary"></i>
+            </div>
+        </div>
+
+        <h1 class="h3 mb-2">Two-Factor Authentication</h1>
+        <p class="text-body-secondary mb-4">Enter the 6-digit code from your authenticator app.</p>
+
+        <% if (typeof error !== 'undefined' && error) { %>
+            <div class="alert alert-danger text-center small" role="alert">
+                <%= error %>
+            </div>
+        <% } %>
+
+        <form action="/users/login/2fa" method="POST">
+            <div class="mb-4">
+                <input type="text" name="token" class="form-control form-control-lg text-center fs-2 letter-spacing-4 fw-bold" 
+                       maxlength="6" placeholder="000000" autofocus required autocomplete="off" inputmode="numeric">
+            </div>
+            
+            <div class="d-grid">
+                <button type="submit" class="btn btn-primary btn-lg rounded-pill">Verify</button>
+            </div>
+        </form>
+
+        <div class="mt-4">
+            <a href="/users/login" class="text-decoration-none small text-secondary">Back to Login</a>
+        </div>
+    </div>
+</div>
+
+<style>
+    .letter-spacing-4 { letter-spacing: 0.5rem; }
+    /* Reuse auth styles from style.css/auth.css */
+</style>
