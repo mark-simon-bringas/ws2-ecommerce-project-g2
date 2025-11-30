@@ -178,7 +178,7 @@ router.get('/identity', async (req, res) => {
     });
 });
 
-// GET /security - Updated to pass 2FA status and trusted devices
+// GET /security - Updated to parse Trusted Devices
 router.get('/security', async (req, res) => {
     try {
         const db = req.app.locals.client.db(req.app.locals.dbName);
@@ -193,8 +193,15 @@ router.get('/security', async (req, res) => {
         
         const isCurrentDeviceTrusted = user.trustedDevices && user.trustedDevices.some(d => d.token === currentTrustToken && new Date(d.expiry) > new Date());
 
-        // Filter active trusted devices for list
-        const activeTrustedDevices = (user.trustedDevices || []).filter(d => new Date(d.expiry) > new Date());
+        // Filter & Parse active trusted devices for management list
+        const trustedDevices = (user.trustedDevices || [])
+            .filter(d => new Date(d.expiry) > new Date())
+            .map(d => {
+                const details = parseDevice(d.userAgent);
+                // Flag if this specific entry is the current session
+                const isCurrent = d.token === currentTrustToken;
+                return { ...d, displayName: details.name, icon: details.icon, isCurrent };
+            });
         
         res.render('account/settings-security', { 
             title: "Security", 
@@ -204,7 +211,7 @@ router.get('/security', async (req, res) => {
             loginHistory: loginHistory,
             user: user, 
             isCurrentDeviceTrusted: isCurrentDeviceTrusted,
-            trustedDevices: activeTrustedDevices
+            trustedDevices: trustedDevices
         });
     } catch (err) {
         console.error("Error loading security settings:", err);
@@ -340,7 +347,68 @@ router.post('/security/2fa/token', async (req, res) => {
     } catch (err) { res.status(500).json({ success: false, message: 'Generation failed.' }); }
 });
 
-// 5. Revoke Trusted Devices
+// 5. Trust Current Device (Manual)
+router.post('/security/trust-device', async (req, res) => {
+    try {
+        const db = req.app.locals.client.db(req.app.locals.dbName);
+        const userId = req.session.user.userId;
+
+        const deviceToken = crypto.randomBytes(32).toString('hex');
+        const expiryDate = new Date();
+        expiryDate.setDate(expiryDate.getDate() + 30); 
+
+        await db.collection('users').updateOne(
+            { userId: userId },
+            { 
+                $push: { 
+                    trustedDevices: {
+                        token: deviceToken,
+                        expiry: expiryDate,
+                        userAgent: req.headers['user-agent'],
+                        addedAt: new Date()
+                    } 
+                } 
+            }
+        );
+
+        res.cookie('trust_token', deviceToken, { 
+            maxAge: 30 * 24 * 60 * 60 * 1000, 
+            httpOnly: true, 
+            signed: true, 
+            secure: process.env.NODE_ENV === 'production' 
+        });
+
+        res.redirect('/account/security?message=' + encodeURIComponent('Device trusted successfully.'));
+    } catch (err) {
+        console.error(err);
+        res.redirect('/account/security?error=' + encodeURIComponent('Failed to trust device.'));
+    }
+});
+
+// 6. Revoke Specific Device
+router.post('/security/revoke-device', async (req, res) => {
+    try {
+        const { token } = req.body;
+        const db = req.app.locals.client.db(req.app.locals.dbName);
+        const userId = req.session.user.userId;
+
+        await db.collection('users').updateOne(
+            { userId: userId },
+            { $pull: { trustedDevices: { token: token } } }
+        );
+
+        // If revoking current, clear cookie
+        if (req.signedCookies.trust_token === token) {
+            res.clearCookie('trust_token');
+        }
+
+        res.redirect('/account/security?message=' + encodeURIComponent('Device revoked.'));
+    } catch (err) {
+        res.redirect('/account/security?error=' + encodeURIComponent('Failed to revoke device.'));
+    }
+});
+
+// 7. Revoke ALL Devices
 router.post('/security/revoke-devices', async (req, res) => {
     try {
         await req.app.locals.client.db(req.app.locals.dbName).collection('users').updateOne(
@@ -348,7 +416,7 @@ router.post('/security/revoke-devices', async (req, res) => {
             { $set: { trustedDevices: [] } }
         );
         res.clearCookie('trust_token');
-        res.redirect('/account/security?message=' + encodeURIComponent('Trusted devices revoked.'));
+        res.redirect('/account/security?message=' + encodeURIComponent('All trusted devices revoked.'));
     } catch (err) { res.redirect('/account/security?error=Error'); }
 });
 

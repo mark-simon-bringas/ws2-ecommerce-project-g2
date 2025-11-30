@@ -38,9 +38,9 @@
     <% if (user && user.is2FAEnabled) { %>
         <div class="card border-0 shadow-sm rounded-4 mb-4 overflow-hidden" style="background: linear-gradient(145deg, #1a1a1a, #000); color: white;">
             <div class="card-body p-4">
-                <div class="d-flex justify-content-between align-items-center mb-4">
+                <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center mb-4 gap-3">
                     <div class="d-flex align-items-center gap-3">
-                        <div class="rounded-circle bg-white text-dark d-flex align-items-center justify-content-center" style="width: 42px; height: 42px;">
+                        <div class="rounded-circle bg-white text-dark d-flex align-items-center justify-content-center flex-shrink-0" style="width: 42px; height: 42px;">
                             <i class="bi bi-shield-lock-fill fs-5"></i>
                         </div>
                         <div>
@@ -49,9 +49,9 @@
                         </div>
                     </div>
                     <% if (typeof isCurrentDeviceTrusted !== 'undefined' && isCurrentDeviceTrusted) { %>
-                        <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-3"><i class="bi bi-check2 me-1"></i> Trusted</span>
+                        <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-3 ms-auto ms-sm-0"><i class="bi bi-check2 me-1"></i> Trusted</span>
                     <% } else { %>
-                        <span class="badge bg-warning-subtle text-warning border border-warning-subtle rounded-pill px-3"><i class="bi bi-exclamation-triangle me-1"></i> Untrusted</span>
+                        <span class="badge bg-warning-subtle text-warning border border-warning-subtle rounded-pill px-3 ms-auto ms-sm-0"><i class="bi bi-exclamation-triangle me-1"></i> Untrusted</span>
                     <% } %>
                 </div>
 
@@ -68,7 +68,7 @@
                         <i class="bi bi-eye me-2"></i> Reveal Login Code
                     </button>
                 <% } else { %>
-                    <div class="alert alert-dark border-secondary text-white-50 mb-0 small">
+                    <div class="alert alert-dark border-secondary text-dark-50 mb-0 small">
                         <i class="bi bi-lock me-2"></i> To use this feature, you must trust this device during login.
                     </div>
                 <% } %>
@@ -78,15 +78,15 @@
 
     <div class="card border-0 shadow-sm rounded-4 mb-4">
         <div class="card-body p-4">
-            <div class="d-flex justify-content-between align-items-start mb-3">
+            <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start mb-3 gap-3">
                 <div>
                     <h6 class="fw-bold mb-1">Two-Factor Authentication</h6>
                     <p class="text-secondary small mb-0">Secure your account with an authenticator app.</p>
                 </div>
                 <% if (user && user.is2FAEnabled) { %>
-                    <span class="badge bg-success-subtle text-success rounded-pill px-3 py-2">Enabled</span>
+                    <span class="badge bg-success-subtle text-success rounded-pill px-3 py-2 ms-auto ms-sm-0">Enabled</span>
                 <% } else { %>
-                    <span class="badge bg-secondary-subtle text-secondary rounded-pill px-3 py-2">Disabled</span>
+                    <span class="badge bg-secondary-subtle text-secondary rounded-pill px-3 py-2 ms-auto ms-sm-0">Disabled</span>
                 <% } %>
             </div>
 
@@ -104,20 +104,70 @@
         </div>
     </div>
 
+    <% if (user && user.is2FAEnabled && (typeof isCurrentDeviceTrusted !== 'undefined' && !isCurrentDeviceTrusted)) { %>
+        <div class="card border-0 shadow-sm rounded-4 mb-4 bg-light">
+            <div class="card-body p-4 d-flex flex-wrap align-items-center justify-content-between gap-3">
+                <div>
+                    <h6 class="fw-bold mb-1">Trust this device?</h6>
+                    <p class="text-secondary small mb-0">Skip 2FA codes when logging in from this browser.</p>
+                </div>
+                <form action="/account/security/trust-device" method="POST" class="w-100 w-sm-auto">
+                    <button type="submit" class="btn btn-dark rounded-pill fw-bold px-4 w-100 w-sm-auto">Trust</button>
+                </form>
+            </div>
+        </div>
+    <% } %>
+
     <% if (user && user.is2FAEnabled) { %>
     <div class="card border-0 shadow-sm rounded-4 mb-4">
-        <div class="card-body p-4">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <div>
-                    <h6 class="fw-bold mb-1">Trusted Devices</h6>
-                    <p class="text-secondary small mb-0">Devices that can generate login codes.</p>
-                </div>
-                <span class="badge bg-light text-dark border"><%= (typeof trustedDevices !== 'undefined' && trustedDevices) ? trustedDevices.length : 0 %> Active</span>
+        <div class="card-header bg-white border-bottom-0 pt-4 px-4 pb-0 d-flex justify-content-between align-items-end">
+            <div>
+                <h6 class="fw-bold mb-1">Trusted Devices</h6>
+                <p class="text-secondary small mb-0 opacity-75">Devices that can generate keys.</p>
             </div>
             <% if (typeof trustedDevices !== 'undefined' && trustedDevices && trustedDevices.length > 0) { %>
-                <form action="/account/security/revoke-devices" method="POST">
-                    <button type="submit" class="btn btn-outline-secondary w-100 rounded-pill btn-sm">Revoke All Devices</button>
+                <form action="/account/security/revoke-devices" method="POST" onsubmit="return confirm('Revoke ALL devices? You will need to re-authenticate everywhere.');">
+                    <button type="submit" class="btn btn-danger btn-sm rounded-pill px-3 fw-bold" style="font-size: 0.75rem;">
+                        Revoke All
+                    </button>
                 </form>
+            <% } %>
+        </div>
+        <div class="card-body p-0 mt-3">
+            <% if (typeof trustedDevices !== 'undefined' && trustedDevices && trustedDevices.length > 0) { %>
+                <ul class="list-group list-group-flush">
+                    <% trustedDevices.forEach(device => { %>
+                        <li class="list-group-item px-4 py-3 border-0 border-bottom d-flex align-items-center justify-content-between transition-hover">
+                            <div class="d-flex align-items-center gap-3 overflow-hidden">
+                                <div class="bg-light rounded-circle d-flex align-items-center justify-content-center text-secondary flex-shrink-0" style="width: 48px; height: 48px;">
+                                    <i class="bi <%= device.icon %> fs-5"></i>
+                                </div>
+                                <div class="min-w-0">
+                                    <div class="fw-bold text-dark small d-flex align-items-center gap-2 flex-wrap">
+                                        <span class="text-truncate"><%= device.displayName %></span>
+                                        <% if (device.isCurrent) { %>
+                                            <span class="badge bg-success-subtle text-success border border-success-subtle flex-shrink-0" style="font-size: 0.65rem;">Current</span>
+                                        <% } %>
+                                    </div>
+                                    <div class="text-secondary small text-truncate" style="font-size: 0.75rem;">
+                                        <span class="d-none d-sm-inline">Added: </span><%= new Date(device.addedAt).toLocaleDateString() %>
+                                    </div>
+                                </div>
+                            </div>
+                            <form action="/account/security/revoke-device" method="POST" class="ms-3" onsubmit="return confirm('Revoke access for this device?');">
+                                <input type="hidden" name="token" value="<%= device.token %>">
+                                <button type="submit" class="btn btn-light text-danger border-0 rounded-circle d-flex align-items-center justify-content-center btn-hover-danger" title="Revoke Access" style="width: 36px; height: 36px;">
+                                    <i class="bi bi-trash3-fill"></i>
+                                </button>
+                            </form>
+                        </li>
+                    <% }) %>
+                </ul>
+            <% } else { %>
+                <div class="p-5 text-center text-secondary">
+                    <i class="bi bi-shield-x fs-1 mb-2 opacity-25"></i>
+                    <p class="mb-0 small">No trusted devices yet.</p>
+                </div>
             <% } %>
         </div>
     </div>
@@ -129,23 +179,26 @@
         </div>
         <div class="card-body p-0">
             <div class="list-group list-group-flush">
-                <% if (loginHistory && loginHistory.length > 0) { %>
+                <% if (typeof loginHistory !== 'undefined' && loginHistory && loginHistory.length > 0) { %>
                     <% loginHistory.forEach((login, index) => { %>
-                        <div class="list-group-item p-4 d-flex align-items-center justify-content-between border-0 <%= index !== loginHistory.length - 1 ? 'border-bottom' : '' %>">
-                            <div class="d-flex align-items-center gap-3">
-                                <div class="bg-light rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                        <div class="list-group-item p-4 d-flex flex-wrap flex-sm-nowrap align-items-center justify-content-between border-0 <%= index !== loginHistory.length - 1 ? 'border-bottom' : '' %> gap-3">
+                            <div class="d-flex align-items-center gap-3 overflow-hidden">
+                                <div class="bg-light rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 40px; height: 40px;">
                                     <i class="bi <%= login.icon %> text-secondary"></i>
                                 </div>
-                                <div>
-                                    <h6 class="fw-semibold mb-0"><%= login.displayName %></h6>
+                                <div class="min-w-0">
+                                    <h6 class="fw-semibold mb-0 text-truncate"><%= login.displayName %></h6>
                                     <% if (index === 0) { %>
                                         <small class="text-success d-flex align-items-center gap-1"><i class="bi bi-circle-fill" style="font-size: 6px;"></i> Current Session</small>
                                     <% } else { %>
-                                        <small class="text-secondary"><%= login.ip %></small>
+                                        <small class="text-secondary text-truncate d-block"><%= login.ip %></small>
                                      <% } %>
                                 </div>
                             </div>
-                            <small class="text-secondary text-end"><%= new Date(login.timestamp).toLocaleDateString() %> <br> <%= new Date(login.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) %></small>
+                            <small class="text-secondary text-start text-sm-end w-100 w-sm-auto ps-5 ps-sm-0">
+                                <%= new Date(login.timestamp).toLocaleDateString() %> <span class="d-none d-sm-inline"><br></span> 
+                                <span class="d-inline d-sm-block"><%= new Date(login.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) %></span>
+                            </small>
                         </div>
                     <% }) %>
                 <% } else { %>
@@ -171,11 +224,11 @@
                 </div>
 
                 <div class="row g-3 mb-4">
-                    <div class="col-md-6">
+                    <div class="col-12 col-md-6">
                         <label for="newPassword" class="form-label small fw-bold text-uppercase text-secondary">New Password</label>
                         <input type="password" class="form-control bg-light border-0 p-3" id="newPassword" name="newPassword" placeholder="At least 8 characters" required>
                     </div>
-                    <div class="col-md-6">
+                    <div class="col-12 col-md-6">
                         <label for="confirmPassword" class="form-label small fw-bold text-uppercase text-secondary">Confirm Password</label>
                         <input type="password" class="form-control bg-light border-0 p-3" id="confirmPassword" name="confirmPassword" placeholder="Re-enter new password" required>
                     </div>
@@ -183,7 +236,7 @@
 
                 <div class="bg-light rounded-3 p-3 mb-4">
                     <h6 class="small fw-bold text-dark mb-2">Password Requirements</h6>
-                    <div class="d-flex flex-wrap gap-3">
+                    <div class="d-flex flex-wrap gap-2 gap-md-3">
                         <small class="text-secondary"><i class="bi bi-dot"></i> 8+ Characters</small>
                         <small class="text-secondary"><i class="bi bi-dot"></i> Uppercase & Lowercase</small>
                         <small class="text-secondary"><i class="bi bi-dot"></i> 1+ Number</small>
@@ -192,7 +245,7 @@
                 </div>
 
                 <div class="d-flex justify-content-end">
-                    <button type="submit" class="btn btn-dark rounded-pill px-4 py-2 fw-bold">Update Password</button>
+                    <button type="submit" class="btn btn-dark rounded-pill px-4 py-2 fw-bold w-100 w-sm-auto">Update Password</button>
                 </div>
             </form>
         </div>
@@ -220,6 +273,7 @@
                     <div class="bg-white p-2 rounded-3 border d-inline-block shadow-sm mb-3">
                         <img id="qrCodeImage" src="" alt="QR Code" style="width: 180px; height: 180px;">
                     </div>
+
                 </div>
 
                 <div class="d-flex align-items-center gap-3 mb-4">
@@ -256,6 +310,27 @@
     }
     .letter-spacing-4 { letter-spacing: 0.5rem; }
     .letter-spacing-2 { letter-spacing: 4px; }
+    
+    /* Button Hover Effect for Revoke */
+    .btn-hover-danger:hover {
+        background-color: #dc3545 !important; /* Bootstrap Danger Red */
+        color: white !important;
+    }
+    .transition-hover {
+        transition: background-color 0.2s ease;
+    }
+    .transition-hover:hover {
+        background-color: #f8f9fa;
+    }
+
+    /* Helper for mobile w-100 behavior on sm only */
+    @media (max-width: 576px) {
+        .w-sm-auto { width: 100% !important; }
+    }
+    @media (min-width: 576px) {
+        .w-sm-auto { width: auto !important; }
+        .ms-sm-0 { margin-left: 0 !important; }
+    }
 </style>
 
 <script>
@@ -299,14 +374,11 @@
     }
 
     function autoVerifyOnThisDevice() {
-        // 1. Get a token from the temp secret
         fetch('/account/security/2fa/temp-token', { method: 'POST' })
             .then(res => res.json())
             .then(data => {
                 if(data.success) {
-                    // 2. Auto-fill input
                     document.getElementById('verifyToken').value = data.token;
-                    // 3. Verify with "trustDevice" flag = true
                     verify2FA(true);
                 } else {
                     alert('Could not generate token. Please verify manually.');
@@ -348,7 +420,6 @@
         if(display) display.classList.remove('d-none');
         
         fetchCode();
-        // Clear previous interval to prevent duplicates
         if (authInterval) clearInterval(authInterval);
         authInterval = setInterval(fetchCode, 1000);
     }
@@ -365,7 +436,6 @@
                     if(codeEl) codeEl.textContent = data.token.slice(0,3) + ' ' + data.token.slice(3);
                     if(timerEl) timerEl.textContent = Math.floor(data.remaining);
                     
-                    // Update progress bar
                     if(progressEl) {
                         const percent = (data.remaining / 30) * 100;
                         progressEl.style.width = percent + '%';
