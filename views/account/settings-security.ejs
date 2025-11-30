@@ -1,8 +1,8 @@
-<div class="settings-page-wrapper" style="max-width: 800px;">
+<div class="settings-page-wrapper" style="max-width: 800px; margin: 0 auto;">
     <div class="d-flex align-items-center mb-4">
-        <a href="/account/settings" class="btn btn-icon btn-light rounded-circle me-3">
-                <i class="bi bi-arrow-left"></i>
-            </a>
+        <a href="/account/settings" class="btn btn-icon btn-light rounded-circle me-3 border d-flex align-items-center justify-content-center" style="width: 48px; height: 48px;">
+            <i class="bi bi-arrow-left"></i>
+        </a>
         <div>
             <h1 class="h3 fw-bold mb-0">Login & Security</h1>
             <p class="text-body-secondary small mb-0">Manage your password and account access</p>
@@ -35,12 +35,53 @@
         </div>
     </div>
 
+    <% if (user && user.is2FAEnabled) { %>
+        <div class="card border-0 shadow-sm rounded-4 mb-4 overflow-hidden" style="background: linear-gradient(145deg, #1a1a1a, #000); color: white;">
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="rounded-circle bg-white text-dark d-flex align-items-center justify-content-center" style="width: 42px; height: 42px;">
+                            <i class="bi bi-shield-lock-fill fs-5"></i>
+                        </div>
+                        <div>
+                            <h6 class="fw-bold mb-0 text-white">Sneakslab Authenticator</h6>
+                            <small class="text-white-50">Use this device to log in elsewhere</small>
+                        </div>
+                    </div>
+                    <% if (typeof isCurrentDeviceTrusted !== 'undefined' && isCurrentDeviceTrusted) { %>
+                        <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-3"><i class="bi bi-check2 me-1"></i> Trusted</span>
+                    <% } else { %>
+                        <span class="badge bg-warning-subtle text-warning border border-warning-subtle rounded-pill px-3"><i class="bi bi-exclamation-triangle me-1"></i> Untrusted</span>
+                    <% } %>
+                </div>
+
+                <% if (typeof isCurrentDeviceTrusted !== 'undefined' && isCurrentDeviceTrusted) { %>
+                    <div id="authenticator-display" class="d-none text-center py-3">
+                        <div class="display-1 fw-bold letter-spacing-4 mb-3" id="auth-code">------</div>
+                        <div class="progress bg-white bg-opacity-25" style="height: 4px; border-radius: 2px;">
+                            <div class="progress-bar bg-white" id="auth-progress" role="progressbar" style="width: 100%"></div>
+                        </div>
+                        <p class="text-white-50 small mt-2 mb-0">Code refreshes in <span id="auth-timer">30</span>s</p>
+                    </div>
+
+                    <button id="btn-show-code" class="btn btn-light w-100 rounded-pill fw-bold py-2" onclick="showAuthCode()">
+                        <i class="bi bi-eye me-2"></i> Reveal Login Code
+                    </button>
+                <% } else { %>
+                    <div class="alert alert-dark border-secondary text-white-50 mb-0 small">
+                        <i class="bi bi-lock me-2"></i> To use this feature, you must trust this device during login.
+                    </div>
+                <% } %>
+            </div>
+        </div>
+    <% } %>
+
     <div class="card border-0 shadow-sm rounded-4 mb-4">
         <div class="card-body p-4">
             <div class="d-flex justify-content-between align-items-start mb-3">
                 <div>
-                    <h6 class="fw-bold mb-1"><i class="bi bi-phone me-2 text-secondary"></i> Two-Factor Authentication</h6>
-                    <p class="text-secondary small mb-0">Add an extra layer of security by requiring a code from your authenticator app.</p>
+                    <h6 class="fw-bold mb-1">Two-Factor Authentication</h6>
+                    <p class="text-secondary small mb-0">Secure your account with an authenticator app.</p>
                 </div>
                 <% if (user && user.is2FAEnabled) { %>
                     <span class="badge bg-success-subtle text-success rounded-pill px-3 py-2">Enabled</span>
@@ -63,9 +104,28 @@
         </div>
     </div>
 
+    <% if (user && user.is2FAEnabled) { %>
+    <div class="card border-0 shadow-sm rounded-4 mb-4">
+        <div class="card-body p-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div>
+                    <h6 class="fw-bold mb-1">Trusted Devices</h6>
+                    <p class="text-secondary small mb-0">Devices that can generate login codes.</p>
+                </div>
+                <span class="badge bg-light text-dark border"><%= (typeof trustedDevices !== 'undefined' && trustedDevices) ? trustedDevices.length : 0 %> Active</span>
+            </div>
+            <% if (typeof trustedDevices !== 'undefined' && trustedDevices && trustedDevices.length > 0) { %>
+                <form action="/account/security/revoke-devices" method="POST">
+                    <button type="submit" class="btn btn-outline-secondary w-100 rounded-pill btn-sm">Revoke All Devices</button>
+                </form>
+            <% } %>
+        </div>
+    </div>
+    <% } %>
+
     <div class="card border-0 shadow-sm rounded-4 mb-4">
         <div class="card-header bg-white border-bottom p-4">
-            <h5 class="fw-bold mb-0">Recent Devices</h5>
+            <h5 class="fw-bold mb-0">Recent Activity</h5>
         </div>
         <div class="card-body p-0">
             <div class="list-group list-group-flush">
@@ -154,23 +214,36 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body p-4 text-center">
+                
                 <div class="mb-4">
-                    <p class="text-secondary small mb-3">Scan this QR code with your authenticator app (Google Authenticator, Authy, etc.).</p>
-                    <div class="bg-white p-2 rounded-3 border d-inline-block shadow-sm">
-                        <img id="qrCodeImage" src="" alt="QR Code" style="width: 200px; height: 200px;">
+                    <p class="text-secondary small mb-3">Scan this QR code with Google Authenticator or Authy.</p>
+                    <div class="bg-white p-2 rounded-3 border d-inline-block shadow-sm mb-3">
+                        <img id="qrCodeImage" src="" alt="QR Code" style="width: 180px; height: 180px;">
                     </div>
-                    <p class="text-body-tertiary small mt-2">Or enter code manually: <strong id="secretCodeText" class="text-dark font-monospace"></strong></p>
+                </div>
+
+                <div class="d-flex align-items-center gap-3 mb-4">
+                    <div class="flex-grow-1 border-top"></div>
+                    <span class="text-secondary small fw-bold">OR</span>
+                    <div class="flex-grow-1 border-top"></div>
+                </div>
+
+                <div class="mb-4">
+                    <button type="button" class="btn btn-outline-dark rounded-pill w-100 fw-bold" onclick="autoVerifyOnThisDevice()">
+                        <i class="bi bi-laptop me-2"></i> Use this device as Authenticator
+                    </button>
+                    <p class="text-secondary small mt-2 fst-italic">We'll set up and trust this browser automatically.</p>
                 </div>
                 
-                <div class="text-start">
-                    <label class="form-label small fw-bold text-secondary">Enter 6-digit Code</label>
-                    <input type="text" id="verifyToken" class="form-control bg-light border-0 text-center fs-4 letter-spacing-2" maxlength="6" placeholder="000000">
+                <div class="text-start bg-light p-3 rounded-3">
+                    <label class="form-label small fw-bold text-secondary">Verify Code</label>
+                    <div class="d-flex gap-2">
+                        <input type="text" id="verifyToken" class="form-control border-0 bg-white text-center fs-5 letter-spacing-2" maxlength="6" placeholder="000000">
+                        <button type="button" class="btn btn-primary rounded-3 fw-bold" onclick="verify2FA(false)">Verify</button>
+                    </div>
                     <div id="verifyError" class="text-danger small mt-2 d-none"><i class="bi bi-exclamation-circle"></i> Invalid code</div>
                 </div>
                 
-                <div class="d-grid mt-4">
-                    <button type="button" class="btn btn-primary rounded-pill fw-bold" onclick="verify2FA()">Verify & Enable</button>
-                </div>
             </div>
         </div>
     </div>
@@ -181,22 +254,15 @@
         margin: 0 auto;
         padding: 1rem;
     }
-    .btn-icon {
-        width: 40px;
-        height: 40px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border: 1px solid var(--border-color);
-    }
+    .letter-spacing-4 { letter-spacing: 0.5rem; }
     .letter-spacing-2 { letter-spacing: 4px; }
 </style>
 
 <script>
-    // Define the variable globally, but don't initialize it yet
+    // Safe Modal Initialization
     let setupModalInstance = null;
+    let authInterval;
 
-    // Helper function to get or create the modal instance safely
     function getSetupModal() {
         if (!setupModalInstance) {
             const modalEl = document.getElementById('setup2FAModal');
@@ -207,6 +273,7 @@
         return setupModalInstance;
     }
 
+    // --- SETUP LOGIC ---
     function start2FASetup() {
         const modal = getSetupModal();
         if (!modal) {
@@ -214,7 +281,6 @@
             return;
         }
 
-        // Fetch QR Code
         fetch('/account/security/2fa/setup', { method: 'POST' })
             .then(res => res.json())
             .then(data => {
@@ -227,30 +293,42 @@
                     
                     modal.show();
                 } else {
-                    alert('Error initializing 2FA setup: ' + (data.message || 'Unknown error'));
+                    alert('Error initializing 2FA setup.');
                 }
-            })
-            .catch(err => {
-                console.error(err);
-                alert('Network error initializing 2FA.');
             });
     }
 
-    function verify2FA() {
+    function autoVerifyOnThisDevice() {
+        // 1. Get a token from the temp secret
+        fetch('/account/security/2fa/temp-token', { method: 'POST' })
+            .then(res => res.json())
+            .then(data => {
+                if(data.success) {
+                    // 2. Auto-fill input
+                    document.getElementById('verifyToken').value = data.token;
+                    // 3. Verify with "trustDevice" flag = true
+                    verify2FA(true);
+                } else {
+                    alert('Could not generate token. Please verify manually.');
+                }
+            });
+    }
+
+    function verify2FA(trustThisDevice = false) {
         const tokenInput = document.getElementById('verifyToken');
         const errorDiv = document.getElementById('verifyError');
         
-        if (!tokenInput) return;
+        if (!tokenInput || !tokenInput.value) return;
 
         fetch('/account/security/2fa/verify', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ token: tokenInput.value })
+            body: JSON.stringify({ token: tokenInput.value, trustDevice: trustThisDevice })
         })
         .then(res => res.json())
         .then(data => {
             if(data.success) {
-                window.location.reload(); // Reload to show enabled state
+                window.location.reload(); 
             } else {
                 if (errorDiv) {
                     errorDiv.textContent = data.message || "Invalid code";
@@ -259,5 +337,45 @@
             }
         })
         .catch(err => console.error(err));
+    }
+
+    // --- BUILT-IN AUTHENTICATOR LOGIC ---
+    function showAuthCode() {
+        const display = document.getElementById('authenticator-display');
+        const btn = document.getElementById('btn-show-code');
+        
+        if(btn) btn.classList.add('d-none');
+        if(display) display.classList.remove('d-none');
+        
+        fetchCode();
+        // Clear previous interval to prevent duplicates
+        if (authInterval) clearInterval(authInterval);
+        authInterval = setInterval(fetchCode, 1000);
+    }
+
+    function fetchCode() {
+        fetch('/account/security/2fa/token', { method: 'POST' })
+            .then(res => res.json())
+            .then(data => {
+                if(data.success) {
+                    const codeEl = document.getElementById('auth-code');
+                    const timerEl = document.getElementById('auth-timer');
+                    const progressEl = document.getElementById('auth-progress');
+
+                    if(codeEl) codeEl.textContent = data.token.slice(0,3) + ' ' + data.token.slice(3);
+                    if(timerEl) timerEl.textContent = Math.floor(data.remaining);
+                    
+                    // Update progress bar
+                    if(progressEl) {
+                        const percent = (data.remaining / 30) * 100;
+                        progressEl.style.width = percent + '%';
+                    }
+                } else {
+                    if(authInterval) clearInterval(authInterval);
+                    alert(data.message);
+                    location.reload();
+                }
+            })
+            .catch(err => console.error(err));
     }
 </script>

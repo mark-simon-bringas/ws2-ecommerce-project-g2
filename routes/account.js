@@ -10,9 +10,10 @@ const { convertCurrency } = require('./currency');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
-const ExcelJS = require('exceljs'); // Required for Excel exports
+const ExcelJS = require('exceljs'); 
 const speakeasy = require('speakeasy');
 const QRCode = require('qrcode');
+const crypto = require('crypto'); // Required for generating trust tokens
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -146,7 +147,7 @@ router.get('/', (req, res) => {
 // =========== USER ROUTES ==================
 // ==========================================
 
-// UPDATED: Fetch user data from DB to ensure bio is fresh
+// Settings: Fetch fresh data
 router.get('/settings', async (req, res) => { 
     try {
         const db = req.app.locals.client.db(req.app.locals.dbName);
@@ -177,7 +178,7 @@ router.get('/identity', async (req, res) => {
     });
 });
 
-// GET /security - Updated to pass 2FA status
+// GET /security - Updated to pass 2FA status and trusted devices
 router.get('/security', async (req, res) => {
     try {
         const db = req.app.locals.client.db(req.app.locals.dbName);
@@ -186,6 +187,14 @@ router.get('/security', async (req, res) => {
             const details = parseDevice(entry.userAgent);
             return { ...entry, displayName: details.name, icon: details.icon };
         }) : [];
+
+        // Check if CURRENT device is trusted (Safe Check)
+        const currentTrustToken = req.signedCookies ? req.signedCookies.trust_token : null;
+        
+        const isCurrentDeviceTrusted = user.trustedDevices && user.trustedDevices.some(d => d.token === currentTrustToken && new Date(d.expiry) > new Date());
+
+        // Filter active trusted devices for list
+        const activeTrustedDevices = (user.trustedDevices || []).filter(d => new Date(d.expiry) > new Date());
         
         res.render('account/settings-security', { 
             title: "Security", 
@@ -193,7 +202,9 @@ router.get('/security', async (req, res) => {
             message: req.query.message, 
             error: req.query.error, 
             loginHistory: loginHistory,
-            user: user // Pass full user object to check is2FAEnabled
+            user: user, 
+            isCurrentDeviceTrusted: isCurrentDeviceTrusted,
+            trustedDevices: activeTrustedDevices
         });
     } catch (err) {
         console.error("Error loading security settings:", err);
@@ -201,78 +212,149 @@ router.get('/security', async (req, res) => {
     }
 });
 
-// --- 2FA ROUTES ---
+// ==========================================
+// ============= 2FA ROUTES =================
+// ==========================================
 
-// 1. Generate Secret & QR Code (Called via AJAX)
+// 1. Generate Secret & QR Code (Setup)
 router.post('/security/2fa/setup', async (req, res) => {
     try {
-        const secret = speakeasy.generateSecret({
-            name: `Sneakslab (${req.session.user.email})`
-        });
-        
-        // Store secret temporarily in session (not DB yet) until verified
+        const secret = speakeasy.generateSecret({ name: `Sneakslab (${req.session.user.email})` });
         req.session.temp2faSecret = secret.base32;
-
         QRCode.toDataURL(secret.otpauth_url, (err, data_url) => {
-            if (err) return res.status(500).json({ success: false, message: "Could not generate QR code" });
+            if (err) return res.status(500).json({ success: false, message: "Error generating QR" });
             res.json({ success: true, qrCode: data_url, secret: secret.base32 });
         });
-    } catch (err) {
-        console.error("2FA Setup Error:", err);
-        res.status(500).json({ success: false, message: "Server error" });
-    }
+    } catch (err) { res.status(500).json({ success: false, message: "Server error" }); }
 });
 
-// 2. Verify Token & Enable 2FA
+// NEW: Generate Token from Temp Secret (For self-enrollment)
+router.post('/security/2fa/temp-token', async (req, res) => {
+    try {
+        if (!req.session.temp2faSecret) {
+            return res.status(400).json({ success: false, message: "Setup not initialized." });
+        }
+        const token = speakeasy.totp({
+            secret: req.session.temp2faSecret,
+            encoding: 'base32'
+        });
+        res.json({ success: true, token });
+    } catch (err) { res.status(500).json({ success: false, message: "Error generating token." }); }
+});
+
+// 2. Verify & Enable (Updated to Trust Device)
 router.post('/security/2fa/verify', async (req, res) => {
     try {
-        const { token } = req.body;
+        const { token, trustDevice } = req.body;
         const secret = req.session.temp2faSecret;
+        if (!secret) return res.status(400).json({ success: false, message: "Session expired. Try again." });
 
-        if (!secret) return res.status(400).json({ success: false, message: "Session expired. Please try again." });
-
-        const verified = speakeasy.totp.verify({
-            secret: secret,
-            encoding: 'base32',
-            token: token
-        });
-
+        const verified = speakeasy.totp.verify({ secret: secret, encoding: 'base32', token: token });
+        
         if (verified) {
             const db = req.app.locals.client.db(req.app.locals.dbName);
-            await db.collection('users').updateOne(
-                { userId: req.session.user.userId },
-                { $set: { twoFactorSecret: secret, is2FAEnabled: true } }
-            );
-            
-            // Update session
+            const updateFields = { twoFactorSecret: secret, is2FAEnabled: true };
+
+            // If user chose to trust this device (or auto-trust for built-in auth)
+            if (trustDevice) {
+                const deviceToken = crypto.randomBytes(32).toString('hex');
+                const expiryDate = new Date();
+                expiryDate.setDate(expiryDate.getDate() + 30); // 30 Days
+
+                await db.collection('users').updateOne(
+                    { userId: req.session.user.userId },
+                    { 
+                        $set: updateFields,
+                        $push: { 
+                            trustedDevices: {
+                                token: deviceToken,
+                                expiry: expiryDate,
+                                userAgent: req.headers['user-agent'],
+                                addedAt: new Date()
+                            } 
+                        } 
+                    }
+                );
+                
+                res.cookie('trust_token', deviceToken, { 
+                    maxAge: 30 * 24 * 60 * 60 * 1000, 
+                    httpOnly: true, 
+                    signed: true, 
+                    secure: process.env.NODE_ENV === 'production' 
+                });
+            } else {
+                await db.collection('users').updateOne(
+                    { userId: req.session.user.userId },
+                    { $set: updateFields }
+                );
+            }
+
             req.session.user.is2FAEnabled = true;
             delete req.session.temp2faSecret;
-
             res.json({ success: true });
         } else {
-            res.json({ success: false, message: "Invalid verification code." });
+            res.json({ success: false, message: "Invalid code." });
         }
-    } catch (err) {
-        console.error("2FA Verify Error:", err);
-        res.status(500).json({ success: false, message: "Verification failed." });
+    } catch (err) { 
+        console.error(err);
+        res.status(500).json({ success: false, message: "Verification failed." }); 
     }
 });
 
 // 3. Disable 2FA
 router.post('/security/2fa/disable', async (req, res) => {
     try {
-        const db = req.app.locals.client.db(req.app.locals.dbName);
-        await db.collection('users').updateOne(
+        await req.app.locals.client.db(req.app.locals.dbName).collection('users').updateOne(
             { userId: req.session.user.userId },
-            { $set: { twoFactorSecret: null, is2FAEnabled: false } }
+            { $set: { twoFactorSecret: null, is2FAEnabled: false, trustedDevices: [] } }
         );
-        
         req.session.user.is2FAEnabled = false;
-        res.redirect('/account/security?message=' + encodeURIComponent('Two-Factor Authentication disabled.'));
-    } catch (err) {
-        res.redirect('/account/security?error=' + encodeURIComponent('Could not disable 2FA.'));
-    }
+        res.clearCookie('trust_token');
+        res.redirect('/account/security?message=' + encodeURIComponent('2FA Disabled.'));
+    } catch (err) { res.redirect('/account/security?error=Error'); }
 });
+
+// 4. Built-in Authenticator (Get Current Code)
+router.post('/security/2fa/token', async (req, res) => {
+    try {
+        const user = await req.app.locals.client.db(req.app.locals.dbName).collection('users').findOne({ userId: req.session.user.userId });
+
+        if (!user.is2FAEnabled || !user.twoFactorSecret) {
+            return res.status(400).json({ success: false, message: '2FA is not enabled.' });
+        }
+
+        const trustToken = req.signedCookies ? req.signedCookies.trust_token : null;
+        const isTrusted = user.trustedDevices?.some(d => d.token === trustToken && new Date(d.expiry) > new Date());
+        
+        if (!isTrusted) {
+            return res.status(403).json({ success: false, message: 'Untrusted Device.' });
+        }
+
+        // Handle object or string storage for secret
+        const secret = user.twoFactorSecret.base32 || user.twoFactorSecret;
+
+        const token = speakeasy.totp({ secret: secret, encoding: 'base32' });
+        const remaining = 30 - Math.floor((new Date().getTime() / 1000.0) % 30);
+
+        res.json({ success: true, token, remaining });
+    } catch (err) { res.status(500).json({ success: false, message: 'Generation failed.' }); }
+});
+
+// 5. Revoke Trusted Devices
+router.post('/security/revoke-devices', async (req, res) => {
+    try {
+        await req.app.locals.client.db(req.app.locals.dbName).collection('users').updateOne(
+            { userId: req.session.user.userId },
+            { $set: { trustedDevices: [] } }
+        );
+        res.clearCookie('trust_token');
+        res.redirect('/account/security?message=' + encodeURIComponent('Trusted devices revoked.'));
+    } catch (err) { res.redirect('/account/security?error=Error'); }
+});
+
+// ==========================================
+// =========== USER ADDRESSES ===============
+// ==========================================
 
 router.get('/addresses', async (req, res) => {
     const db = req.app.locals.client.db(req.app.locals.dbName);
@@ -705,7 +787,7 @@ router.get('/admin/dashboard', isAdmin, async (req, res) => {
                 productCount, 
                 orderCount: stats.orderCount, 
                 totalRevenue, 
-                dailySales,
+                dailySales, 
                 topProducts,
                 salesByBrand: salesByBrandRaw,
                 orderStatus: orderStatusRaw,
@@ -1025,7 +1107,7 @@ router.post('/admin/sales/create', isAdmin, async (req, res) => {
             name: saleName, discountPercentage: parseInt(discountPercentage), startDate: new Date(startDate), endDate: new Date(endDate), productIds: pIds.map(id => new ObjectId(id)), createdAt: new Date()
         });
         res.redirect('/account/admin/sales?message=Created');
-    } catch (err) { res.redirect('/account/admin/sales?error=Error'); }
+    } catch (err) { res.redirect('/account/admin/sales?error=Failed'); }
 });
 
 // Order Status Updates

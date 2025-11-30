@@ -4,6 +4,7 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const { MongoClient, ObjectId } = require('mongodb');
 const session = require('express-session');
+const cookieParser = require('cookie-parser'); // <--- ADDED THIS
 const path = require('path');
 const ejsLayouts = require('express-ejs-layouts');
 const geoip = require('geoip-lite');
@@ -28,6 +29,9 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(express.static('public')); // Serve static files
 
+// --- ADDED: Cookie Parser (Must be before session) ---
+app.use(cookieParser(process.env.SESSION_SECRET || 'dev-secret')); 
+
 // -- View Engine Setup --
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
@@ -48,18 +52,16 @@ app.use(session({
 app.use(async (req, res, next) => {
     res.locals.currentUser = req.session.user;
     res.locals.cart = req.session.cart;
-    
-    // Ensure path is available for returnTo logic
     res.locals.path = req.originalUrl; 
 
     // Determine IP and Country
     const ip = ['::1', '127.0.0.1', '::ffff:127.0.0.1'].includes(req.ip) ? '122.54.69.1' : req.ip; 
     const geo = geoip.lookup(ip);
-    const countryCode = req.session.country_override || (geo ? geo.country : 'US'); // Default to 'US'
+    const countryCode = req.session.country_override || (geo ? geo.country : 'US');
 
     res.locals.currentCountryCode = countryCode;
     res.locals.locationData = getCountryData(countryCode);
-    res.locals.countryData = countryData; // Pass all country data for the dropdown
+    res.locals.countryData = countryData;
 
     // Fetch admin counts only if admin is logged in
     if (req.session.user && req.session.user.role === 'admin') {
@@ -101,12 +103,10 @@ const client = new MongoClient(uri);
 app.locals.client = client;
 app.locals.dbName = process.env.DB_NAME || "ecommerceDB";
 
-
 // Socket.IO Setup for real-time chat
 io.on('connection', (socket) => {
     console.log(`Socket connected: ${socket.id}`);
 
-    // Join a room specific to a ticket
     socket.on('joinTicket', (ticketId) => {
         if (ticketId) {
             socket.join(ticketId);
@@ -114,7 +114,6 @@ io.on('connection', (socket) => {
         }
     });
 
-    // Handle incoming chat messages
     socket.on('chatMessage', async (data) => {
         if (!data || !data.ticketId || !data.message || !data.sender) {
             return;
@@ -156,10 +155,7 @@ io.on('connection', (socket) => {
     });
 });
 
-
-// =================================== //
-// ===== DYNAMIC SITEMAP ROUTE ===== //
-// =================================== //
+// Sitemap Route
 app.get('/sitemap.xml', async (req, res, next) => {
     try {
         if (!req.app.locals.client || !req.app.locals.client.topology || !req.app.locals.client.topology.isConnected()) {
@@ -242,7 +238,6 @@ async function main() {
 
         // --- Mount Routes ---
 
-        // Currency Change Route
         app.post('/currency/change', (req, res) => {
             const { country, returnTo } = req.body;
             if (country && countryData[country]) {
@@ -263,8 +258,6 @@ async function main() {
         app.use('/support', supportRoute);
 
         // --- Error Handlers ---
-
-        // 404 Handler
         app.use((req, res, next) => {
              if (!res.headersSent) {
                 res.status(404).render("404", { title: "Page Not Found" });
@@ -273,12 +266,9 @@ async function main() {
              }
         });
 
-        // Global Error Handler (500)
         app.use((err, req, res, next) => {
             console.error(`Error on ${req.method} ${req.originalUrl}:`, err);
-            
             if (res.headersSent) return next(err);
-
             res.status(err.status || 500).render('500', {
                  title: 'Server Error',
                  error: process.env.NODE_ENV === 'development' ? err : { message: "An unexpected error occurred." }
