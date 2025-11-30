@@ -4,7 +4,7 @@ const express = require('express');
 const router = express.Router();
 const axios = require('axios');
 const { ObjectId } = require('mongodb');
-const { convertCurrency } = require('./currency');
+const { convertCurrency, getExchangeRate } = require('./currency'); 
 
 // --- Helper function to apply sales to products ---
 async function applySalesToProducts(products, db) {
@@ -46,6 +46,73 @@ async function applySalesToProducts(products, db) {
     });
 }
 
+// --- NEW: Centralized Query Builder for Filtering & Sorting ---
+async function buildProductQuery(req, baseQuery = {}) {
+    const { category, brand, new: isNew, minPrice, maxPrice, sizes, brands: filterBrands, sort } = req.query;
+    // Helper to safely get currency from response locals
+    const currency = req.res.locals.locationData ? req.res.locals.locationData.currency : 'USD';
+    
+    let query = { ...baseQuery };
+    let sortQuery = { importedAt: -1 }; // Default sort
+
+    // 1. Category Filter
+    if (category) {
+        query.gender = category.toLowerCase();
+    }
+
+    // 2. Brand Filter (Single vs Multiple)
+    if (brand) {
+        query.brand = brand; 
+    } else if (filterBrands) {
+        const brandList = Array.isArray(filterBrands) ? filterBrands : [filterBrands];
+        query.brand = { $in: brandList };
+    }
+
+    // 3. Price Range Filter (Currency Aware)
+    if (minPrice || maxPrice) {
+        // Fetch exchange rate: 1 USD = X Target Currency
+        const rate = await getExchangeRate(currency); 
+        query.retailPrice = {};
+        
+        // Convert User Input (e.g., PHP) -> DB Value (USD)
+        // DB_Price = Input_Price / Exchange_Rate
+        if (minPrice) query.retailPrice.$gte = Number(minPrice) / rate;
+        if (maxPrice) query.retailPrice.$lte = Number(maxPrice) / rate;
+    }
+
+    // 4. Size Filter
+    if (sizes) {
+        const sizeList = Array.isArray(sizes) ? sizes : [sizes];
+        const sizeQueries = sizeList.map(s => {
+            const key = `stock.${s.replace('.', '_')}`;
+            return { [key]: { $gt: 0 } };
+        });
+        if (sizeQueries.length > 0) {
+            // If we already have an $or (from search), combine with $and
+            if (query.$or) {
+                query.$and = [ { $or: query.$or }, { $or: sizeQueries } ];
+                delete query.$or;
+            } else {
+                query.$or = sizeQueries;
+            }
+        }
+    }
+
+    // 5. Sorting
+    if (isNew === 'true') {
+        sortQuery = { importedAt: -1 };
+    } else if (sort) {
+        switch (sort) {
+            case 'date-desc': sortQuery = { importedAt: -1 }; break;
+            case 'price-asc': sortQuery = { retailPrice: 1 }; break;
+            case 'price-desc': sortQuery = { retailPrice: -1 }; break;
+            default: sortQuery = { importedAt: -1 };
+        }
+    }
+
+    return { query, sortQuery };
+}
+
 // Middleware to check if the user is logged in
 const isLoggedIn = (req, res, next) => {
     if (!req.session.user) {
@@ -66,7 +133,7 @@ const isAdmin = (req, res, next) => {
 // ============ SHOP ROUTES =================
 // ==========================================
 
-// GET /products - The main shop page with filtering
+// GET /products - Main Shop
 router.get('/', async (req, res) => {
     try {
         const db = req.app.locals.client.db(req.app.locals.dbName);
@@ -80,28 +147,18 @@ router.get('/', async (req, res) => {
             userWishlist = user?.wishlist || [];
         }
 
-        let query = {};
-        let sort = { importedAt: -1 }; 
+        // Use centralized query builder
+        const { query, sortQuery } = await buildProductQuery(req);
+
+        // Page Title Logic
         let pageTitle = "Shop All";
-
-        if (req.query.category) {
-            query.gender = req.query.category;
-            pageTitle = `${req.query.category.charAt(0).toUpperCase() + req.query.category.slice(1)}'s Collection`;
-        }
-        
-        if (req.query.brand) {
-            query.brand = req.query.brand;
-            pageTitle = `${req.query.brand} Collection`;
-        }
-
-        if (req.query.new === 'true') {
-            sort = { importedAt: -1 };
-            pageTitle = "New Arrivals";
-        }
+        if (req.query.category) pageTitle = `${req.query.category.charAt(0).toUpperCase() + req.query.category.slice(1)}'s Collection`;
+        if (req.query.brand) pageTitle = `${req.query.brand} Collection`;
+        if (req.query.new === 'true') pageTitle = "New Arrivals";
 
         let products = await productsCollection.aggregate([
             { $match: query },
-            { $sort: sort },
+            { $sort: sortQuery },
             {
                 $lookup: {
                     from: 'reviews',
@@ -127,27 +184,40 @@ router.get('/', async (req, res) => {
             return product;
         }));
 
+        // Get unique brands for sidebar
+        const allBrands = await productsCollection.distinct('brand');
+
         res.render('shop', { 
             title: pageTitle,
             pageTitle: pageTitle,
             products: productsWithConvertedPrices,
-            wishlist: userWishlist
+            wishlist: userWishlist,
+            filters: {
+                minPrice: req.query.minPrice || '',
+                maxPrice: req.query.maxPrice || '',
+                sizes: Array.isArray(req.query.sizes) ? req.query.sizes : (req.query.sizes ? [req.query.sizes] : []),
+                brands: Array.isArray(req.query.brands) ? req.query.brands : (req.query.brands ? [req.query.brands] : []),
+                category: req.query.category || '',
+                sort: req.query.sort || 'date-desc',
+                brand: req.query.brand || ''
+            },
+            allBrands: allBrands.sort()
         });
 
     } catch (err) {
-        console.error("Error fetching products for shop page:", err);
-        res.status(500).send("Error loading the shop page.");
+        console.error("Error fetching products:", err);
+        res.status(500).send("Error loading shop.");
     }
 });
 
-// --- UPDATED: Clearance Route (Fixed currentCategory error) ---
+// GET /products/clearance - Dedicated Clearance Page
 router.get('/clearance', async (req, res) => {
     try {
         const db = req.app.locals.client.db(req.app.locals.dbName);
         const productsCollection = db.collection('products');
         const usersCollection = db.collection('users');
         const currency = res.locals.locationData.currency;
-        const { category } = req.query; // Capture category
+        const { category } = req.query; 
 
         let userWishlist = [];
         if (req.session.user) {
@@ -197,7 +267,7 @@ router.get('/clearance', async (req, res) => {
             title: "Clearance Sale",
             products: productsWithConvertedPrices,
             wishlist: userWishlist,
-            currentCategory: category || 'all' // *** FIX: Passing the variable here ***
+            currentCategory: category || 'all' 
         });
 
     } catch (err) {
@@ -206,53 +276,7 @@ router.get('/clearance', async (req, res) => {
     }
 });
 
-// Route for dedicated sale page
-router.get('/sale/:saleId', async (req, res) => {
-    try {
-        const db = req.app.locals.client.db(req.app.locals.dbName);
-        const { saleId } = req.params;
-        const salesCollection = db.collection('sales');
-        const productsCollection = db.collection('products');
-        const usersCollection = db.collection('users');
-        const currency = res.locals.locationData.currency;
-        
-        const sale = await salesCollection.findOne({ _id: new ObjectId(saleId) });
-
-        if (!sale) {
-            return res.status(404).send("Sale not found.");
-        }
-        
-        let userWishlist = [];
-        if (req.session.user) {
-            const user = await usersCollection.findOne({ userId: req.session.user.userId });
-            userWishlist = user?.wishlist || [];
-        }
-
-        let products = await productsCollection.find({ _id: { $in: sale.productIds } }).toArray();
-        products = await applySalesToProducts(products, db);
-        
-        const productsWithConvertedPrices = await Promise.all(products.map(async (product) => {
-            product.convertedPrice = await convertCurrency(product.retailPrice, currency);
-            if (product.onSale) {
-                product.convertedSalePrice = await convertCurrency(product.salePrice, currency);
-            }
-            return product;
-        }));
-        
-        res.render('shop', {
-            title: sale.name,
-            pageTitle: sale.name,
-            products: productsWithConvertedPrices,
-            wishlist: userWishlist
-        });
-
-    } catch (err) {
-        console.error("Error fetching sale page:", err);
-        res.status(500).send("Error loading sale page.");
-    }
-});
-
-// GET /products/search - Handle search queries
+// GET /products/search - Search Results
 router.get('/search', async (req, res) => {
     try {
         const db = req.app.locals.client.db(req.app.locals.dbName);
@@ -267,32 +291,24 @@ router.get('/search', async (req, res) => {
             userWishlist = user?.wishlist || [];
         }
 
-        const query = {
+        // Base search query
+        const baseSearch = {
             $or: [
                 { name: { $regex: searchQuery, $options: 'i' } },
                 { brand: { $regex: searchQuery, $options: 'i' } }
             ]
         };
 
+        // Apply filters on top of search
+        const { query, sortQuery } = await buildProductQuery(req, baseSearch);
+
         let products = await productsCollection.aggregate([
             { $match: query },
-            {
-                $lookup: {
-                    from: 'reviews',
-                    localField: '_id',
-                    foreignField: 'productId',
-                    as: 'reviews'
-                }
-            },
-            {
-                $addFields: {
-                    averageRating: { $avg: '$reviews.rating' }
-                }
-            }
+            { $sort: sortQuery },
+            { $lookup: { from: 'reviews', localField: '_id', foreignField: 'productId', as: 'reviews' } },
+            { $addFields: { averageRating: { $avg: '$reviews.rating' } } }
         ]).toArray();
 
-        const pageTitle = `Search results for "${searchQuery}"`;
-        
         products = await applySalesToProducts(products, db);
 
         const productsWithConvertedPrices = await Promise.all(products.map(async (product) => {
@@ -302,12 +318,23 @@ router.get('/search', async (req, res) => {
             }
             return product;
         }));
+        
+        const allBrands = await productsCollection.distinct('brand');
 
         res.render('shop', {
-            title: pageTitle,
-            pageTitle: pageTitle,
+            title: `Search: ${searchQuery}`,
+            pageTitle: `Results for "${searchQuery}"`,
             products: productsWithConvertedPrices,
-            wishlist: userWishlist
+            wishlist: userWishlist,
+            filters: {
+                minPrice: req.query.minPrice || '',
+                maxPrice: req.query.maxPrice || '',
+                sizes: Array.isArray(req.query.sizes) ? req.query.sizes : (req.query.sizes ? [req.query.sizes] : []),
+                brands: Array.isArray(req.query.brands) ? req.query.brands : (req.query.brands ? [req.query.brands] : []),
+                category: req.query.category || '',
+                sort: req.query.sort || 'date-desc'
+            },
+            allBrands: allBrands.sort()
         });
 
     } catch (err) {
@@ -316,6 +343,63 @@ router.get('/search', async (req, res) => {
     }
 });
 
+// GET /sale/:saleId - Dedicated Sale Page
+router.get('/sale/:saleId', async (req, res) => {
+    try {
+        const db = req.app.locals.client.db(req.app.locals.dbName);
+        const { saleId } = req.params;
+        const salesCollection = db.collection('sales');
+        const productsCollection = db.collection('products');
+        const usersCollection = db.collection('users');
+        const currency = res.locals.locationData.currency;
+        
+        const sale = await salesCollection.findOne({ _id: new ObjectId(saleId) });
+        if (!sale) return res.status(404).send("Sale not found.");
+        
+        let userWishlist = [];
+        if (req.session.user) {
+            const user = await usersCollection.findOne({ userId: req.session.user.userId });
+            userWishlist = user?.wishlist || [];
+        }
+
+        // Base query: Items in this sale
+        const baseSaleQuery = { _id: { $in: sale.productIds } };
+        const { query, sortQuery } = await buildProductQuery(req, baseSaleQuery);
+
+        let products = await productsCollection.find(query).sort(sortQuery).toArray();
+        products = await applySalesToProducts(products, db);
+        
+        const productsWithConvertedPrices = await Promise.all(products.map(async (product) => {
+            product.convertedPrice = await convertCurrency(product.retailPrice, currency);
+            if (product.onSale) {
+                product.convertedSalePrice = await convertCurrency(product.salePrice, currency);
+            }
+            return product;
+        }));
+        
+        const allBrands = await productsCollection.distinct('brand');
+
+        res.render('shop', {
+            title: sale.name,
+            pageTitle: sale.name,
+            products: productsWithConvertedPrices,
+            wishlist: userWishlist,
+            filters: {
+                minPrice: req.query.minPrice || '',
+                maxPrice: req.query.maxPrice || '',
+                sizes: Array.isArray(req.query.sizes) ? req.query.sizes : (req.query.sizes ? [req.query.sizes] : []),
+                brands: Array.isArray(req.query.brands) ? req.query.brands : (req.query.brands ? [req.query.brands] : []),
+                category: req.query.category || '',
+                sort: req.query.sort || 'date-desc'
+            },
+            allBrands: allBrands.sort()
+        });
+
+    } catch (err) {
+        console.error("Error fetching sale page:", err);
+        res.status(500).send("Error loading sale page.");
+    }
+});
 
 // ==========================================
 // =========== ADMIN MANAGEMENT =============
@@ -546,6 +630,7 @@ router.post('/import-multiple', isAdmin, async (req, res) => {
     }
 });
 
+// --- UPDATED: Delete Single Product with Active Order Check ---
 router.post('/delete', isAdmin, async (req, res) => {
     try {
         const db = req.app.locals.client.db(req.app.locals.dbName);
@@ -554,6 +639,7 @@ router.post('/delete', isAdmin, async (req, res) => {
         const activityLogCollection = db.collection('activity_log');
         const { productId } = req.body;
 
+        // Check for active orders containing this product
         const activeOrderCount = await ordersCollection.countDocuments({
             "items.productId": { $in: [new ObjectId(productId), productId] },
             "status": { $in: ['Processing', 'Shipped'] }
@@ -589,6 +675,7 @@ router.post('/delete', isAdmin, async (req, res) => {
     }
 });
 
+// --- UPDATED: Bulk Delete with Active Order Check ---
 router.post('/delete-multiple', isAdmin, async (req, res) => {
     try {
         const db = req.app.locals.client.db(req.app.locals.dbName);
@@ -726,51 +813,7 @@ router.post('/stock/:id', isAdmin, async (req, res) => {
     }
 });
 
-router.get('/:sku/review', isLoggedIn, async (req, res) => {
-    try {
-        const db = req.app.locals.client.db(req.app.locals.dbName);
-        const { sku } = req.params;
-        const product = await db.collection('products').findOne({ sku: sku });
-        if (!product) return res.status(404).render('404', { title: "Product Not Found" });
-
-        const hasPurchased = await db.collection('orders').findOne({
-            "userId": req.session.user.userId,
-            "items.sku": sku,
-            "status": "Delivered"
-        });
-
-        if (!hasPurchased) {
-            return res.status(403).render('info-page', {
-                title: "Review Not Allowed",
-                message: "You can only review purchased and delivered items.",
-                buttonText: "Back to Product",
-                buttonLink: `/products/${sku}`,
-                page: 'auth'
-            });
-        }
-
-        res.render('add-review', { title: `Review ${product.name}`, product, page: 'auth' });
-    } catch (err) { res.status(500).send("Error."); }
-});
-
-router.post('/:sku/review', isLoggedIn, async (req, res) => {
-    try {
-        const db = req.app.locals.client.db(req.app.locals.dbName);
-        const { productId, rating, comment } = req.body;
-        const { sku } = req.params;
-
-        await db.collection('reviews').insertOne({
-            productId: new ObjectId(productId),
-            userId: req.session.user.userId,
-            rating: parseInt(rating),
-            comment: comment,
-            createdAt: new Date(),
-            author: { firstName: req.session.user.firstName }
-        });
-        res.redirect(`/products/${sku}`);
-    } catch (err) { res.status(500).send("Error."); }
-});
-
+// GET /:sku - Product Detail Page
 router.get('/:sku', async (req, res) => {
     try {
         const db = req.app.locals.client.db(req.app.locals.dbName);
@@ -780,7 +823,7 @@ router.get('/:sku', async (req, res) => {
         const { sku } = req.params;
         const currency = res.locals.locationData.currency;
 
-        if (['men', 'women', 'search'].includes(sku.toLowerCase())) {
+        if (['men', 'women', 'search', 'clearance'].includes(sku.toLowerCase())) {
             return res.status(404).send("Page not found.");
         }
 
@@ -839,6 +882,52 @@ router.get('/:sku', async (req, res) => {
         console.error("Error fetching product details:", err);
         res.status(500).send("Error loading product page.");
     }
+});
+
+// GET & POST Reviews
+router.get('/:sku/review', isLoggedIn, async (req, res) => {
+    try {
+        const db = req.app.locals.client.db(req.app.locals.dbName);
+        const { sku } = req.params;
+        const product = await db.collection('products').findOne({ sku: sku });
+        if (!product) return res.status(404).render('404', { title: "Product Not Found" });
+
+        const hasPurchased = await db.collection('orders').findOne({
+            "userId": req.session.user.userId,
+            "items.sku": sku,
+            "status": "Delivered"
+        });
+
+        if (!hasPurchased) {
+            return res.status(403).render('info-page', {
+                title: "Review Not Allowed",
+                message: "You can only review purchased and delivered items.",
+                buttonText: "Back to Product",
+                buttonLink: `/products/${sku}`,
+                page: 'auth'
+            });
+        }
+
+        res.render('add-review', { title: `Review ${product.name}`, product, page: 'auth' });
+    } catch (err) { res.status(500).send("Error."); }
+});
+
+router.post('/:sku/review', isLoggedIn, async (req, res) => {
+    try {
+        const db = req.app.locals.client.db(req.app.locals.dbName);
+        const { productId, rating, comment } = req.body;
+        const { sku } = req.params;
+
+        await db.collection('reviews').insertOne({
+            productId: new ObjectId(productId),
+            userId: req.session.user.userId,
+            rating: parseInt(rating),
+            comment: comment,
+            createdAt: new Date(),
+            author: { firstName: req.session.user.firstName }
+        });
+        res.redirect(`/products/${sku}`);
+    } catch (err) { res.status(500).send("Error."); }
 });
 
 module.exports = router;

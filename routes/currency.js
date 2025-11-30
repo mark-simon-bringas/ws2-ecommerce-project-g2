@@ -46,4 +46,13 @@ async function convertCurrency(amount, targetCurrency) {
     }
 }
 
-module.exports = { convertCurrency };
+// NEW: Helper to get the raw rate for inverse calculations (e.g. PHP -> USD)
+async function getExchangeRate(targetCurrency) {
+    const rates = await fetchRates();
+    if (rates && rates[targetCurrency]) {
+        return rates[targetCurrency];
+    }
+    return 1; // Fallback 1:1 if not found
+}
+
+module.exports = { convertCurrency, getExchangeRate };
