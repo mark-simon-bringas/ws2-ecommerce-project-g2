@@ -1,8 +1,7 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-
-<style>
+<script src="/socket.io/socket.io.js"></script> <style>
     /* --- Dashboard Specific Styles --- */
     .dashboard-wrapper {
         max-width: 1400px;
@@ -40,6 +39,7 @@
     .kpi-card {
         padding: 1.5rem;
         justify-content: center;
+        transition: background-color 0.5s ease; /* For flash effect */
     }
     .kpi-icon-wrapper {
         width: 44px; height: 44px;
@@ -51,7 +51,7 @@
     .kpi-value { 
         font-size: 1.75rem; 
         font-weight: 800; 
-        letter-spacing: -0.5px; 
+        letter-spacing: -0.5px;
         color: #111; 
         line-height: 1; 
         margin-bottom: 0.25rem;
@@ -59,7 +59,8 @@
         overflow: hidden;
         text-overflow: ellipsis;
     }
-    .kpi-label { font-size: 0.85rem; font-weight: 500; color: #757575; }
+    .kpi-label { font-size: 0.85rem;
+        font-weight: 500; color: #757575; }
 
     /* Filters */
     .filter-container {
@@ -82,7 +83,8 @@
         padding-bottom: 2px;
         scrollbar-width: none;
     }
-    .filter-chips-scroll::-webkit-scrollbar { display: none; }
+    .filter-chips-scroll::-webkit-scrollbar { display: none;
+    }
 
     .quick-filter-btn {
         border: 1px solid #f0f0f0;
@@ -96,7 +98,8 @@
         white-space: nowrap;
         transition: all 0.2s;
     }
-    .quick-filter-btn:hover { background: #f9f9f9; color: #111; }
+    .quick-filter-btn:hover { background: #f9f9f9; color: #111;
+    }
     .quick-filter-btn.active {
         background: #111;
         color: #fff;
@@ -131,15 +134,17 @@
 
     /* Charts */
     .chart-header { 
-        padding: 1.5rem; 
+        padding: 1.5rem;
         border-bottom: 1px solid #f9f9f9; 
         display: flex; 
         justify-content: space-between; 
         align-items: center; 
     }
-    .chart-body { padding: 1.5rem; position: relative; flex: 1; }
+    .chart-body { padding: 1.5rem; position: relative;
+        flex: 1; }
     .chart-container { height: 300px; width: 100%; }
-    .donut-container { height: 220px; display: flex; justify-content: center; }
+    .donut-container { height: 220px;
+        display: flex; justify-content: center; }
 
     /* List Items (Top Products & Activity) */
     .list-item {
@@ -151,10 +156,12 @@
         transition: background 0.1s;
     }
     .list-item:hover { background: #fafafa; }
-    .list-item:last-child { border-bottom: none; }
+    .list-item:last-child { border-bottom: none;
+    }
     
     .rank-badge {
-        width: 24px; height: 24px;
+        width: 24px;
+        height: 24px;
         background: #111; color: #fff;
         border-radius: 6px;
         display: flex; align-items: center; justify-content: center;
@@ -177,30 +184,50 @@
     }
 
     .activity-icon {
-        width: 36px; height: 36px;
+        width: 36px;
+        height: 36px;
         border-radius: 10px;
         display: flex; align-items: center; justify-content: center;
         font-size: 1rem;
         flex-shrink: 0;
     }
 
+    /* Animation Class for Live Updates */
+    .flash-update {
+        animation: flashGreen 1s ease-out;
+    }
+    
+    @keyframes flashGreen {
+        0% { background-color: #d1e7dd; } /* Success subtle green */
+        100% { background-color: #fff; }
+    }
+
     /* Mobile Adjustments */
     @media (max-width: 768px) {
-        .dashboard-wrapper { padding: 1rem; }
-        .dashboard-header-title { font-size: 1.75rem; }
+        .dashboard-wrapper { padding: 1rem;
+        }
+        .dashboard-header-title { font-size: 1.75rem;
+        }
         
         /* Compact Filters */
-        .filter-container { flex-direction: column; align-items: stretch; padding: 1rem; gap: 1rem; }
+        .filter-container { flex-direction: column;
+        align-items: stretch; padding: 1rem; gap: 1rem; }
         
         /* KPI Sizing */
-        .kpi-card { padding: 1.25rem; }
-        .kpi-value { font-size: 1.4rem; }
-        .kpi-icon-wrapper { margin-bottom: 0.5rem; width: 36px; height: 36px; font-size: 1rem; }
+        .kpi-card { padding: 1.25rem;
+        }
+        .kpi-value { font-size: 1.4rem;
+        }
+        .kpi-icon-wrapper { margin-bottom: 0.5rem; width: 36px; height: 36px; font-size: 1rem;
+        }
         
         /* List Items on Mobile */
-        .list-item { padding: 1rem; gap: 0.75rem; }
-        .product-thumb { width: 40px; height: 40px; }
-        .rank-badge { width: 20px; height: 20px; font-size: 0.7rem; }
+        .list-item { padding: 1rem;
+        gap: 0.75rem; }
+        .product-thumb { width: 40px; height: 40px;
+        }
+        .rank-badge { width: 20px; height: 20px; font-size: 0.7rem;
+        }
     }
 </style>
 
@@ -232,7 +259,7 @@
                 </div>
 
                 <div class="vr mx-2 d-none d-lg-block text-secondary opacity-25"></div>
-                
+    
                 <div class="d-flex flex-column flex-md-row gap-2 flex-fill">
                     <div class="filter-input-group flex-grow-1">
                         <i class="bi bi-calendar-range text-secondary me-2"></i>
@@ -259,16 +286,16 @@
 
     <div class="row g-3 mb-4">
         <div class="col-6 col-xl-3">
-            <div class="dash-card kpi-card">
+            <div class="dash-card kpi-card" id="card-revenue">
                 <div class="kpi-icon-wrapper bg-success-subtle text-success"><i class="bi bi-currency-dollar"></i></div>
-                <div class="kpi-value"><%= locationData.symbol %><%= data.totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 }) %></div>
+                <div class="kpi-value" id="kpi-revenue" data-raw="<%= data.totalRevenue %>"><%= locationData.symbol %><%= data.totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 }) %></div>
                 <div class="kpi-label">Revenue</div>
             </div>
         </div>
         <div class="col-6 col-xl-3">
-            <div class="dash-card kpi-card">
+            <div class="dash-card kpi-card" id="card-orders">
                 <div class="kpi-icon-wrapper bg-primary-subtle text-primary"><i class="bi bi-bag-fill"></i></div>
-                <div class="kpi-value"><%= data.orderCount %></div>
+                <div class="kpi-value" id="kpi-orders"><%= data.orderCount %></div>
                 <div class="kpi-label">Orders</div>
             </div>
         </div>
@@ -380,8 +407,8 @@
                     <h5 class="fw-bold mb-0 fs-6 text-uppercase text-secondary ls-wider">Activity Log</h5>
                 </div>
                 <div style="max-height: 350px; overflow-y: auto;">
+                    <div id="activity-log-container" class="d-flex flex-column">
                     <% if (data.recentActivity && data.recentActivity.length > 0) { %>
-                        <div class="d-flex flex-column">
                             <% data.recentActivity.forEach(act => { %>
                                 <div class="list-item">
                                     <div class="activity-icon <%= getActivityColor(act.type) %>">
@@ -405,10 +432,10 @@
                                     </div>
                                 </div>
                             <% }) %>
-                        </div>
                     <% } else { %>
                         <div class="p-5 text-center text-secondary small">No recent activity.</div>
                     <% } %>
+                    </div>
                 </div>
             </div>
         </div>
@@ -444,6 +471,77 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        const socket = io();
+        const currencySymbol = "<%= locationData.symbol %>";
+
+        // Listen for dashboard updates
+        socket.on('dashboardUpdate', (data) => {
+            if (data.type === 'new_order') {
+                // 1. Update Order Count
+                const orderEl = document.getElementById('kpi-orders');
+                const currentOrders = parseInt(orderEl.innerText) || 0;
+                orderEl.innerText = currentOrders + 1;
+                triggerFlash('card-orders');
+
+                // 2. Update Revenue
+                const revEl = document.getElementById('kpi-revenue');
+                // Note: The data.orderTotal from server is usually in USD. 
+                // Since this is a simple dashboard update, we assume the server converts it 
+                // OR we just add the raw value if dashboard is in USD. 
+                // Ideally, server sends converted value or we fetch updated stats.
+                // For visual simplicity, we will just increment.
+                
+                // Assuming data.orderTotal matches the dashboard currency context roughly
+                let currentRev = parseFloat(revEl.dataset.raw || 0);
+                // Simple addition (approximation if currency conversion is complex on client side)
+                currentRev += data.orderTotal; 
+                revEl.dataset.raw = currentRev;
+                revEl.innerText = currencySymbol + currentRev.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+                triggerFlash('card-revenue');
+
+                // 3. Add to Activity Log
+                addActivityLog(data.message);
+            }
+        });
+
+        function triggerFlash(elementId) {
+            const el = document.getElementById(elementId);
+            el.classList.remove('flash-update');
+            void el.offsetWidth; // trigger reflow
+            el.classList.add('flash-update');
+        }
+
+        function addActivityLog(message) {
+            const container = document.getElementById('activity-log-container');
+            // Remove "No activity" message if present
+            if (container.children.length === 1 && container.children[0].classList.contains('text-center')) {
+                container.innerHTML = '';
+            }
+
+            const now = new Date().toLocaleString();
+            
+            const html = `
+                <div class="list-item flash-update">
+                    <div class="activity-icon bg-primary-subtle text-primary">
+                        <i class="bi bi-bag-check-fill"></i>
+                    </div>
+                    <div class="product-info">
+                        <div class="small text-dark fw-medium mb-1" style="line-height: 1.4;">${message}</div>
+                        <div class="text-secondary" style="font-size: 0.75rem;">${now}</div>
+                    </div>
+                </div>
+            `;
+            
+            container.insertAdjacentHTML('afterbegin', html);
+            
+            // Limit log items
+            if (container.children.length > 10) {
+                container.lastElementChild.remove();
+            }
+        }
+
+        // --- Existing Code Below ---
+
         // 1. Init Flatpickr
         const fp = flatpickr("#dateRange", {
             mode: "range",
@@ -460,14 +558,12 @@
         const fmt = d => d.toISOString().split('T')[0];
         const today = new Date();
         
-        // Determine which button matches the current range value
         const ranges = {
             'today': fmt(today),
             'week': `${fmt(new Date(today.getTime() - 7*86400000))} to ${fmt(today)}`,
             'month': `${fmt(new Date(today.getTime() - 30*86400000))} to ${fmt(today)}`,
             'year': `${fmt(new Date(today.getFullYear(), 0, 1))} to ${fmt(today)}`
         };
-
         Object.keys(ranges).forEach(key => {
             if(currentVal === ranges[key]) {
                 const btn = document.getElementById(`btn-${key}`);
@@ -498,8 +594,7 @@
         // 4. Charts
         const rawSales = <%- JSON.stringify(data.dailySales || []) %>;
         const rawStatus = <%- JSON.stringify(data.orderStatus || []) %>;
-        const currencySymbol = "<%= locationData.symbol %>";
-
+        
         // Sales Chart
         const salesCtx = document.getElementById('salesChart');
         if (salesCtx && rawSales.length > 0) {

@@ -358,6 +358,17 @@ router.post('/place-order', async (req, res) => {
         const result = await ordersCollection.insertOne(order);
         order._id = result.insertedId;
 
+        // --- NEW: Emit Real-Time Update ---
+        const io = req.app.get('io');
+        if (io) {
+            io.emit('dashboardUpdate', { 
+                type: 'new_order', 
+                message: `New Order #${order._id.toString().slice(-4).toUpperCase()}`,
+                orderTotal: order.total
+            });
+        }
+        // -----------------------------------
+
         // --- Mark Voucher as Used (if applicable) ---
         if (req.session.user && cart.voucher && cart.voucher._id) {
             await usersCollection.updateOne(
