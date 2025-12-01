@@ -156,7 +156,7 @@ router.get('/settings', async (req, res) => {
         res.render('account/settings', { 
             title: "Settings", 
             view: 'settings',
-            user: user, 
+            user: user, // Pass the full user object (with bio) from DB
             message: req.query.message, 
             error: req.query.error 
         }); 
@@ -248,7 +248,7 @@ router.post('/security/2fa/temp-token', async (req, res) => {
     } catch (err) { res.status(500).json({ success: false, message: "Error generating token." }); }
 });
 
-// 3. Verify & Enable (Supports Trusting Device)
+// 3. Verify & Enable (Updated to Trust Device)
 router.post('/security/2fa/verify', async (req, res) => {
     try {
         const { token, trustDevice } = req.body;
@@ -261,6 +261,7 @@ router.post('/security/2fa/verify', async (req, res) => {
             const db = req.app.locals.client.db(req.app.locals.dbName);
             const updateFields = { twoFactorSecret: secret, is2FAEnabled: true };
 
+            // If user chose to trust this device (or auto-trust for built-in auth)
             if (trustDevice) {
                 const deviceToken = crypto.randomBytes(32).toString('hex');
                 const expiryDate = new Date();
@@ -335,7 +336,9 @@ router.post('/security/2fa/token', async (req, res) => {
             return res.status(403).json({ success: false, message: 'Untrusted Device.' });
         }
 
+        // Handle object or string storage for secret
         const secret = user.twoFactorSecret.base32 || user.twoFactorSecret;
+
         const token = speakeasy.totp({ secret: secret, encoding: 'base32' });
         const remaining = 30 - Math.floor((new Date().getTime() / 1000.0) % 30);
 
