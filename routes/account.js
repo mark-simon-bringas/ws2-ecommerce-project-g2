@@ -13,7 +13,7 @@ const fs = require('fs');
 const ExcelJS = require('exceljs'); 
 const speakeasy = require('speakeasy');
 const QRCode = require('qrcode');
-const crypto = require('crypto'); // Required for generating trust tokens
+const crypto = require('crypto'); // Required for trust tokens
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -156,7 +156,7 @@ router.get('/settings', async (req, res) => {
         res.render('account/settings', { 
             title: "Settings", 
             view: 'settings',
-            user: user, // Pass the full user object (with bio) from DB
+            user: user, 
             message: req.query.message, 
             error: req.query.error 
         }); 
@@ -190,7 +190,6 @@ router.get('/security', async (req, res) => {
 
         // Check if CURRENT device is trusted (Safe Check)
         const currentTrustToken = req.signedCookies ? req.signedCookies.trust_token : null;
-        
         const isCurrentDeviceTrusted = user.trustedDevices && user.trustedDevices.some(d => d.token === currentTrustToken && new Date(d.expiry) > new Date());
 
         // Filter & Parse active trusted devices for management list
@@ -235,7 +234,7 @@ router.post('/security/2fa/setup', async (req, res) => {
     } catch (err) { res.status(500).json({ success: false, message: "Server error" }); }
 });
 
-// NEW: Generate Token from Temp Secret (For self-enrollment)
+// 2. Generate Token from Temp Secret (For self-enrollment)
 router.post('/security/2fa/temp-token', async (req, res) => {
     try {
         if (!req.session.temp2faSecret) {
@@ -249,7 +248,7 @@ router.post('/security/2fa/temp-token', async (req, res) => {
     } catch (err) { res.status(500).json({ success: false, message: "Error generating token." }); }
 });
 
-// 2. Verify & Enable (Updated to Trust Device)
+// 3. Verify & Enable (Supports Trusting Device)
 router.post('/security/2fa/verify', async (req, res) => {
     try {
         const { token, trustDevice } = req.body;
@@ -262,7 +261,6 @@ router.post('/security/2fa/verify', async (req, res) => {
             const db = req.app.locals.client.db(req.app.locals.dbName);
             const updateFields = { twoFactorSecret: secret, is2FAEnabled: true };
 
-            // If user chose to trust this device (or auto-trust for built-in auth)
             if (trustDevice) {
                 const deviceToken = crypto.randomBytes(32).toString('hex');
                 const expiryDate = new Date();
@@ -308,7 +306,7 @@ router.post('/security/2fa/verify', async (req, res) => {
     }
 });
 
-// 3. Disable 2FA
+// 4. Disable 2FA
 router.post('/security/2fa/disable', async (req, res) => {
     try {
         await req.app.locals.client.db(req.app.locals.dbName).collection('users').updateOne(
@@ -321,7 +319,7 @@ router.post('/security/2fa/disable', async (req, res) => {
     } catch (err) { res.redirect('/account/security?error=Error'); }
 });
 
-// 4. Built-in Authenticator (Get Current Code)
+// 5. Built-in Authenticator (Get Current Code)
 router.post('/security/2fa/token', async (req, res) => {
     try {
         const user = await req.app.locals.client.db(req.app.locals.dbName).collection('users').findOne({ userId: req.session.user.userId });
@@ -337,9 +335,7 @@ router.post('/security/2fa/token', async (req, res) => {
             return res.status(403).json({ success: false, message: 'Untrusted Device.' });
         }
 
-        // Handle object or string storage for secret
         const secret = user.twoFactorSecret.base32 || user.twoFactorSecret;
-
         const token = speakeasy.totp({ secret: secret, encoding: 'base32' });
         const remaining = 30 - Math.floor((new Date().getTime() / 1000.0) % 30);
 
@@ -347,7 +343,7 @@ router.post('/security/2fa/token', async (req, res) => {
     } catch (err) { res.status(500).json({ success: false, message: 'Generation failed.' }); }
 });
 
-// 5. Trust Current Device (Manual)
+// 6. Trust Current Device (Manual)
 router.post('/security/trust-device', async (req, res) => {
     try {
         const db = req.app.locals.client.db(req.app.locals.dbName);
@@ -385,7 +381,7 @@ router.post('/security/trust-device', async (req, res) => {
     }
 });
 
-// 6. Revoke Specific Device
+// 7. Revoke Specific Device
 router.post('/security/revoke-device', async (req, res) => {
     try {
         const { token } = req.body;
@@ -408,7 +404,7 @@ router.post('/security/revoke-device', async (req, res) => {
     }
 });
 
-// 7. Revoke ALL Devices
+// 8. Revoke ALL Devices
 router.post('/security/revoke-devices', async (req, res) => {
     try {
         await req.app.locals.client.db(req.app.locals.dbName).collection('users').updateOne(

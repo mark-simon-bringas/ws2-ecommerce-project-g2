@@ -109,6 +109,7 @@ router.post('/register', async (req, res) => {
             vouchers: userVouchers,
             profilePictureUrl: null,
             is2FAEnabled: false, // Default to disabled
+            trustedDevices: [], // Initialize trusted devices array
             createdAt: currentDate,
             updatedAt: currentDate
         };
@@ -202,27 +203,43 @@ router.post('/login', async (req, res) => {
             });
         }
 
-        // --- 2FA CHECK ---
+        // --- 2FA CHECK WITH TRUSTED DEVICE LOGIC ---
+        let skip2FA = false;
         if (user.is2FAEnabled) {
-            // Store user ID in a temporary session variable for the 2nd step
-            req.session.partialLoginId = user.userId;
-            req.session.redirectUrl = req.body.redirect || '/account'; 
-            // Also store "keep me signed in" preference temporarily
-            req.session.tempKeepSignedIn = req.body.keepSignedIn; 
+            // Check if the browser has a valid trust token cookie
+            // Use req.signedCookies since we set it as signed
+            const trustToken = req.signedCookies ? req.signedCookies.trust_token : null;
             
-            return res.redirect('/users/login/2fa');
+            if (trustToken && user.trustedDevices) {
+                const device = user.trustedDevices.find(d => d.token === trustToken);
+                // Check if device exists and token is not expired
+                if (device && new Date(device.expiry) > new Date()) {
+                    skip2FA = true;
+                }
+            }
+
+            if (!skip2FA) {
+                // Store user ID in a temporary session variable for the 2nd step
+                req.session.partialLoginId = user.userId;
+                req.session.redirectUrl = req.body.redirect || '/account'; 
+                // Also store "keep me signed in" preference temporarily
+                req.session.tempKeepSignedIn = req.body.keepSignedIn; 
+                
+                return res.redirect('/users/login/2fa');
+            }
         }
 
-        // --- STANDARD LOGIN (If 2FA Disabled) ---
+        // --- COMPLETE LOGIN (Standard or Trusted 2FA) ---
         req.session.user = {
             userId: user.userId,
             firstName: user.firstName,
             lastName: user.lastName,
             email: user.email,
             role: user.role,
+            bio: user.bio, // Ensure bio is part of session
             isEmailVerified: user.isEmailVerified,
             profilePictureUrl: user.profilePictureUrl,
-            is2FAEnabled: false
+            is2FAEnabled: user.is2FAEnabled
         };
 
         // Implement "Keep Me Signed In"
@@ -262,7 +279,7 @@ router.post('/login', async (req, res) => {
     }
 });
 
-// --- NEW: 2FA Login Routes ---
+// --- 2FA Login Routes ---
 
 // GET /users/login/2fa - Show 2FA Input Form
 router.get('/login/2fa', (req, res) => {
@@ -299,6 +316,7 @@ router.post('/login/2fa', async (req, res) => {
                 lastName: user.lastName,
                 email: user.email,
                 role: user.role,
+                bio: user.bio,
                 isEmailVerified: user.isEmailVerified,
                 profilePictureUrl: user.profilePictureUrl,
                 is2FAEnabled: true
@@ -373,6 +391,9 @@ router.get('/verify/:token', async (req, res) => {
 router.get('/logout', (req, res) => {
     req.session.destroy(err => {
         if (err) console.error("Error destroying session:", err);
+        // IMPORTANT: Do NOT clear 'trust_token' cookie here.
+        // We want the device to remain trusted even if the user logs out.
+        // Only clear the session cookie.
         res.clearCookie('connect.sid');
         res.redirect('/users/login?status=loggedout');
     });
