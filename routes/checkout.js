@@ -5,6 +5,7 @@ const router = express.Router();
 const { ObjectId } = require('mongodb');
 const { Resend } = require('resend');
 const { convertCurrency } = require('./currency');
+const QRCode = require('qrcode'); // Required for NFC/QR Payment
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -32,6 +33,10 @@ const STORES = [
 const formatDate = (date) => {
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 };
+
+// ==========================================
+// ============ CHECKOUT ROUTES =============
+// ==========================================
 
 // GET /checkout - Display the main checkout page
 router.get('/', async (req, res) => {
@@ -109,6 +114,13 @@ router.get('/', async (req, res) => {
     arrivalEnd.setDate(today.getDate() + 7);
     const arrivalDate = `Arrives ${arrivalStart.toLocaleDateString('en-US', { weekday: 'short' })}, ${formatDate(arrivalStart)} - ${arrivalEnd.toLocaleDateString('en-US', { weekday: 'short' })}, ${formatDate(arrivalEnd)}`;
 
+    // --- NFC / QR PAYMENT SETUP ---
+    const nfcTransactionId = new ObjectId().toString();
+    const baseUrl = process.env.BASE_URL_LIVE || `http://${req.headers.host}`;
+    const nfcPayUrl = `${baseUrl}/checkout/nfc-pay/${nfcTransactionId}`;
+    const nfcQrCode = await QRCode.toDataURL(nfcPayUrl);
+    // ------------------------------
+
     // Convert Cart Items Prices (for Display)
     if (cart.items.length > 0) {
         cart.items = await Promise.all(cart.items.map(async (item) => {
@@ -138,9 +150,131 @@ router.get('/', async (req, res) => {
         availableVouchers: availableVouchers,
         discountAmount: convertedDiscount,
         appliedVoucher: cart.voucher,
-        stores: STORES // Passed to view for pickup selector
+        stores: STORES,
+        nfcTransactionId, // Pass to view for socket listener
+        nfcQrCode // Pass QR Image Data URL
     });
 });
+
+// ==========================================
+// ============ NFC & GATEWAY ROUTES ========
+// ==========================================
+
+// --- NFC Payer Screen (Mobile View) ---
+router.get('/nfc-pay/:id', (req, res) => {
+    // This page simulates the screen seen by the user tapping their phone
+    res.render('nfc-payer', { transactionId: req.params.id, title: "Sneakslab Pay" });
+});
+
+// --- NFC Trigger (Called by Payer Screen) ---
+router.post('/nfc-trigger', (req, res) => {
+    const { transactionId } = req.body;
+    const io = req.app.get('io');
+    
+    if(io) {
+        // Emit success event to the checkout page listening on this transaction ID
+        io.emit(`nfc-payment-success:${transactionId}`, { 
+            success: true, 
+            token: `NFC-${Date.now()}-${Math.floor(Math.random() * 1000)}` 
+        });
+        res.json({ success: true });
+    } else {
+        res.status(500).json({ success: false, message: "Socket not initialized" });
+    }
+});
+
+
+// --- Mock Payment Gateway Page ---
+router.get('/gateway/:provider/:orderId', async (req, res) => {
+    try {
+        const db = req.app.locals.client.db(req.app.locals.dbName);
+        const order = await db.collection('orders').findOne({ _id: new ObjectId(req.params.orderId) });
+        if(!order) return res.status(404).send("Order not found");
+
+        let theme = { bg: '#f5f5f7', icon: 'bi-wallet2', text: '#fff', headerBg: '#333', headerText: '#fff', btnBg: '#333', btnText: '#fff' };
+        let providerName = 'Payment Gateway';
+        
+        if (req.params.provider === 'gcash') {
+            theme = { bg: '#0057e7', headerBg: '#0057e7', headerText: '#fff', icon: 'bi-wallet-fill', btnBg: '#fff', btnText: '#0057e7' };
+            providerName = 'GCash';
+        } else if (req.params.provider === 'grabpay') {
+            theme = { bg: '#00b14f', headerBg: '#00b14f', headerText: '#fff', icon: 'bi-phone', btnBg: '#fff', btnText: '#00b14f' };
+            providerName = 'GrabPay';
+        } else if (req.params.provider === 'paypal') {
+            theme = { bg: '#003087', headerBg: '#fff', headerText: '#003087', icon: 'bi-paypal', btnBg: '#003087', btnText: '#fff' };
+            providerName = 'PayPal';
+        }
+
+        res.render('payment-gateway', {
+            title: `Pay with ${providerName}`, // <--- ADDED THIS LINE
+            orderId: req.params.orderId,
+            amount: order.convertedTotal,
+            currency: order.currency,
+            providerName,
+            theme
+        });
+    } catch(e) { 
+        console.error(e);
+        res.status(500).send("Error loading gateway"); 
+    }
+});
+
+// --- Confirm Payment (Callback from Gateway) ---
+router.post('/confirm-payment/:orderId', async (req, res) => {
+    const db = req.app.locals.client.db(req.app.locals.dbName);
+    const orderId = req.params.orderId;
+    
+    // 1. Update Order Status
+    await db.collection('orders').updateOne(
+        { _id: new ObjectId(orderId) }, 
+        { $set: { status: 'Processing' } }
+    );
+    
+    // 2. Get Updated Order & Session Data
+    const order = await db.collection('orders').findOne({ _id: new ObjectId(orderId) });
+    const cart = req.session.cart; // Cart still exists in session until confirmed
+
+    // 3. Deduct Stock (Late Deduction for Async Payments)
+    if (cart && cart.items) {
+        const productsCollection = db.collection('products');
+        const updates = cart.items.map(item => productsCollection.updateOne(
+            { _id: new ObjectId(item.productId) }, 
+            { $inc: { [`stock.${item.size.replace('.', '_')}`]: -item.qty } }
+        ));
+        await Promise.all(updates);
+    }
+
+    // 4. Update Admin Dashboard
+    const io = req.app.get('io');
+    if (io) {
+        io.emit('dashboardUpdate', { 
+            type: 'new_order', 
+            message: `New Order #${orderId.slice(-4)}`, 
+            orderTotal: order.total 
+        });
+    }
+
+    // 5. Send Email
+    // (Re-using email logic would be ideal here, but for brevity we rely on the main place-order logic or send a simple success email here)
+    if (order && order.customer && order.customer.email) {
+         await resend.emails.send({ 
+             from: process.env.RESEND_FROM_EMAIL, 
+             to: order.customer.email, 
+             subject: 'Payment Confirmed', 
+             html: `<h1>Payment Received</h1><p>Your order #${orderId.slice(-7)} is now processing.</p>` 
+        });
+    }
+
+    // 6. Clear Session
+    req.session.cart = null;
+    if(req.session.voucher) delete req.session.voucher;
+
+    res.redirect(`/checkout/success/${orderId}`);
+});
+
+// ==========================================
+// ============ ACTION ROUTES ===============
+// ==========================================
 
 // POST /checkout/apply-voucher
 router.post('/apply-voucher', async (req, res) => {
@@ -282,8 +416,6 @@ router.post('/place-order', async (req, res) => {
 
         // --- HANDLE BILLING ADDRESS ---
         if (sameAsShipping === 'on' || deliveryMethod === 'pickup') {
-            // For pickup, we use the contact details as billing, or you could force a separate billing entry.
-            // Here we copy shippingAddress (which contains the user name/phone)
             billingAddress = { ...shippingAddress };
         } else {
             billingAddress = {
@@ -294,7 +426,7 @@ router.post('/place-order', async (req, res) => {
             };
         }
 
-        // --- HANDLE PAYMENT METHOD ---
+        // --- HANDLE PAYMENT METHOD (Enhanced) ---
         let paymentDetails = { method: 'Unknown' };
         
         if (paymentMethod === 'cc') {
@@ -302,14 +434,16 @@ router.post('/place-order', async (req, res) => {
             paymentDetails.method = 'Credit Card';
             paymentDetails.last4 = ccNumber.slice(-4);
         } else if (paymentMethod === 'financing') {
-            // NEW: Handle Financing Logic (Merged)
             paymentDetails.method = 'Financing';
             const plan = req.body['financing-plan'];
             paymentDetails.plan = plan === 'pay-in-4' ? 'Pay in 4' : 'Monthly Installments';
-        } else if (paymentMethod === 'cod') {
-            paymentDetails.method = deliveryMethod === 'pickup' ? 'Pay in Store' : 'Cash on Delivery';
-        } else if (paymentMethod) {
+        } else if (paymentMethod === 'nfc') {
+            paymentDetails.method = 'NFC Tap to Pay';
+            paymentDetails.token = req.body['nfc-token']; // Token from hidden input populated by socket
+        } else if (['gcash', 'grabpay', 'paypal'].includes(paymentMethod)) {
             paymentDetails.method = paymentMethod.charAt(0).toUpperCase() + paymentMethod.slice(1);
+        } else {
+            paymentDetails.method = deliveryMethod === 'pickup' ? 'Pay in Store' : 'Cash on Delivery';
         }
         
         // Final Total Calculation with Vouchers & Shipping
@@ -327,6 +461,9 @@ router.post('/place-order', async (req, res) => {
 
         const finalTotal = subtotal - discountAmount + finalShippingCost;
 
+        // Determine Status based on Payment
+        const orderStatus = ['gcash', 'grabpay', 'paypal'].includes(paymentMethod) ? 'Pending Payment' : 'Processing';
+
         const order = {
             customer: {
                 firstName: shippingAddress.firstName,
@@ -338,15 +475,14 @@ router.post('/place-order', async (req, res) => {
             paymentDetails: paymentDetails,
             items: cart.items,
             subtotal: subtotal,
-            discount: discountAmount, // Store discount amount
-            voucherCode: cart.voucher ? cart.voucher.code : null, // Store used code
+            discount: discountAmount,
+            voucherCode: cart.voucher ? cart.voucher.code : null,
             shippingCost: finalShippingCost,
             total: finalTotal,
             currency: currency,
-            // We store the converted total at time of purchase for history reference
             convertedTotal: await convertCurrency(finalTotal, currency),
             orderDate: new Date(),
-            status: 'Processing',
+            status: orderStatus,
             isNew: true,
             deliveryMethod: deliveryMethod || 'shipping'
         };
@@ -358,7 +494,33 @@ router.post('/place-order', async (req, res) => {
         const result = await ordersCollection.insertOne(order);
         order._id = result.insertedId;
 
-        // --- NEW: Emit Real-Time Update ---
+        // --- HANDLE REDIRECTS FOR EXTERNAL GATEWAYS ---
+        if (['gcash', 'grabpay', 'paypal'].includes(paymentMethod)) {
+            // Note: We don't clear cart yet for async payments, wait for callback
+            return res.redirect(`/checkout/gateway/${paymentMethod}/${result.insertedId}`);
+        }
+
+        // --- POST-ORDER PROCESSING (Immediate Confirmation) ---
+
+        // Mark Voucher as Used
+        if (req.session.user && cart.voucher && cart.voucher._id) {
+            await usersCollection.updateOne(
+                { userId: req.session.user.userId, "vouchers.voucherId": new ObjectId(cart.voucher._id) },
+                { $set: { "vouchers.$.isUsed": true } }
+            );
+        }
+
+        // Stock Updates (Immediate)
+        const stockUpdates = cart.items.map(item => {
+            const safeSizeKey = item.size.replace('.', '_');
+            return productsCollection.updateOne(
+                { _id: new ObjectId(item.productId) },
+                { $inc: { [`stock.${safeSizeKey}`]: -item.qty } } 
+            );
+        });
+        await Promise.all(stockUpdates);
+
+        // Emit Real-Time Update to Admin
         const io = req.app.get('io');
         if (io) {
             io.emit('dashboardUpdate', { 
@@ -367,28 +529,8 @@ router.post('/place-order', async (req, res) => {
                 orderTotal: order.total
             });
         }
-        // -----------------------------------
 
-        // --- Mark Voucher as Used (if applicable) ---
-        if (req.session.user && cart.voucher && cart.voucher._id) {
-            await usersCollection.updateOne(
-                { userId: req.session.user.userId, "vouchers.voucherId": new ObjectId(cart.voucher._id) },
-                { $set: { "vouchers.$.isUsed": true } }
-            );
-        }
-
-        // Stock Updates
-        const stockUpdates = cart.items.map(item => {
-            const safeSizeKey = item.size.replace('.', '_');
-            const updateField = `stock.${safeSizeKey}`;
-            return productsCollection.updateOne(
-                { _id: new ObjectId(item.productId) },
-                { $inc: { [updateField]: -item.qty } } 
-            );
-        });
-        await Promise.all(stockUpdates);
-
-        // Generate Email HTML
+        // Generate Email
         const itemsWithConvertedPrice = await Promise.all(order.items.map(async item => {
             const convertedPrice = await convertCurrency(item.price, currency);
             return { ...item, convertedPrice };
@@ -488,6 +630,7 @@ router.post('/place-order', async (req, res) => {
             html: confirmationEmailHtml,
         });
 
+        // Clear Session
         req.session.cart = null;
         if(req.session.voucher) delete req.session.voucher;
 
@@ -499,7 +642,7 @@ router.post('/place-order', async (req, res) => {
     }
 });
 
-// GET /checkout/success/:orderId - Display the order confirmation page with Currency Conversion
+// GET /checkout/success/:orderId
 router.get('/success/:orderId', async (req, res) => {
     try {
         const db = req.app.locals.client.db(req.app.locals.dbName);
