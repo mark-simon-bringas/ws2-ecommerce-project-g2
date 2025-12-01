@@ -1,7 +1,7 @@
 <div class="settings-page-wrapper" style="max-width: 1000px;">
-    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4">
-        <div class="d-flex align-items-center mb-3 mb-md-0">
-            <a href="javascript:history.back()" class="btn btn-icon btn-light rounded-circle me-3">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
+        <div class="d-flex align-items-center">
+            <a href="javascript:history.back()" class="btn btn-icon btn-light rounded-circle me-3 flex-shrink-0">
                 <i class="bi bi-arrow-left"></i>
             </a>
             <div>
@@ -9,18 +9,26 @@
                 <p class="text-body-secondary small mb-0">Customer support tickets</p>
             </div>
         </div>
-        <div class="input-group" style="max-width: 300px;">
+        <div class="input-group w-100 w-md-auto" style="min-width: 280px;">
             <span class="input-group-text bg-white border-end-0 rounded-start-pill ps-3"><i class="bi bi-search text-secondary"></i></span>
             <input type="text" id="inbox-search" class="form-control border-start-0 rounded-end-pill" placeholder="Search messages...">
         </div>
     </div>
 
-    <div class="mb-4 overflow-x-auto">
+    <div class="mb-4 overflow-x-auto pb-2">
         <ul class="nav nav-pills flex-nowrap gap-2" id="inbox-filters">
-            <li class="nav-item"><button class="nav-link active rounded-pill px-4 bg-dark" data-filter="all">All</button></li>
-            <li class="nav-item"><button class="nav-link rounded-pill px-4 text-secondary bg-light" data-filter="Open">Open</button></li>
-            <li class="nav-item"><button class="nav-link rounded-pill px-4 text-secondary bg-light" data-filter="Answered">Answered</button></li>
-            <li class="nav-item"><button class="nav-link rounded-pill px-4 text-secondary bg-light" data-filter="Closed">Closed</button></li>
+            <li class="nav-item">
+                <button class="nav-link active rounded-pill px-4 bg-dark text-white border border-dark" data-filter="all">All</button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link rounded-pill px-4 text-secondary bg-light border" data-filter="Open">Open</button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link rounded-pill px-4 text-secondary bg-light border" data-filter="Answered">Answered</button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link rounded-pill px-4 text-secondary bg-light border" data-filter="Closed">Closed</button>
+            </li>
         </ul>
     </div>
 
@@ -29,18 +37,18 @@
             <div class="list-group list-group-flush" id="tickets-list">
                 <% if (tickets && tickets.length > 0) { %>
                     <% tickets.forEach(ticket => { %>
-                        <a href="/account/admin/tickets/<%= ticket.ticketId %>" class="list-group-item list-group-item-action p-4 d-flex align-items-center gap-3 border-0 border-bottom ticket-item" data-status="<%= ticket.status %>">
+                        <a href="/account/admin/tickets/<%= ticket.ticketId %>" class="list-group-item list-group-item-action p-3 p-md-4 d-flex align-items-center gap-3 border-0 border-bottom ticket-item" data-status="<%= ticket.status %>">
                             <div class="flex-shrink-0">
                                 <% if (ticket.status === 'Open') { %>
-                                    <div class="rounded-circle bg-primary-subtle text-primary d-flex align-items-center justify-content-center" style="width: 48px; height: 48px;">
+                                     <div class="status-icon-wrapper rounded-circle bg-primary-subtle text-primary d-flex align-items-center justify-content-center">
                                         <i class="bi bi-exclamation-circle-fill fs-5"></i>
                                     </div>
                                 <% } else if (ticket.status === 'Answered') { %>
-                                    <div class="rounded-circle bg-success-subtle text-success d-flex align-items-center justify-content-center" style="width: 48px; height: 48px;">
+                                    <div class="status-icon-wrapper rounded-circle bg-success-subtle text-success d-flex align-items-center justify-content-center">
                                         <i class="bi bi-check-circle-fill fs-5"></i>
                                     </div>
                                 <% } else { %>
-                                    <div class="rounded-circle bg-secondary-subtle text-secondary d-flex align-items-center justify-content-center" style="width: 48px; height: 48px;">
+                                    <div class="status-icon-wrapper rounded-circle bg-secondary-subtle text-secondary d-flex align-items-center justify-content-center">
                                         <i class="bi bi-archive-fill fs-5"></i>
                                     </div>
                                 <% } %>
@@ -54,16 +62,16 @@
                                     </small>
                                 </div>
                                 <div class="d-flex justify-content-between align-items-center">
-                                    <p class="text-secondary small mb-0 text-truncate ticket-meta" style="max-width: 80%;">
+                                    <p class="text-secondary small mb-0 text-truncate ticket-meta" style="max-width: 85%;">
                                         <%= ticket.userEmail %> • #<%= ticket.ticketId %>
                                     </p>
                                     <% if (ticket.status === 'Open') { %>
-                                        <span class="badge bg-primary rounded-pill" style="font-size: 0.6rem;">New</span>
+                                        <span class="badge bg-primary rounded-pill flex-shrink-0" style="font-size: 0.6rem;">New</span>
                                     <% } %>
                                 </div>
                             </div>
                             
-                            <i class="bi bi-chevron-right text-body-tertiary"></i>
+                            <i class="bi bi-chevron-right text-body-tertiary d-none d-sm-block"></i>
                         </a>
                     <% }) %>
                 <% } else { %>
@@ -79,11 +87,12 @@
                     <div class="bg-light rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px;">
                         <i class="bi bi-search text-secondary fs-4"></i>
                     </div>
-                    <p class="text-secondary mb-0">No tickets found matching your search.</p>
+                    <p class="text-secondary mb-0">No tickets found matching your criteria.</p>
+                    <button class="btn btn-link text-dark fw-bold btn-sm mt-2" onclick="resetFilters()">Clear Filters</button>
                 </div>
             </div>
         </div>
-        </div>
+    </div>
 </div>
 
 <style>
@@ -102,6 +111,24 @@
     .ticket-item:hover {
         background-color: #f8f9fa;
     }
+    
+    /* Responsive Icon Wrapper */
+    .status-icon-wrapper {
+        width: 40px;
+        height: 40px;
+    }
+    
+    @media (min-width: 768px) {
+        .status-icon-wrapper {
+            width: 48px;
+            height: 48px;
+        }
+        .w-md-auto {
+            width: auto !important;
+            max-width: 300px;
+        }
+    }
+
     /* Hide scrollbar for tabs */
     .overflow-x-auto::-webkit-scrollbar {
         display: none;
@@ -116,45 +143,64 @@
     document.addEventListener('DOMContentLoaded', function() {
         const searchInput = document.getElementById('inbox-search');
         const filterButtons = document.querySelectorAll('#inbox-filters button');
-        const ticketsListScrollable = document.getElementById('tickets-list-scrollable');
-        
-        // Use querySelectorAll on the specific scrollable container
-        const ticketItems = ticketsListScrollable.querySelectorAll('.ticket-item');
-        
+        const ticketsList = document.getElementById('tickets-list');
+        const ticketItems = ticketsList ? ticketsList.querySelectorAll('.ticket-item') : [];
         const noResults = document.getElementById('no-results');
         const emptyState = document.getElementById('empty-state');
 
         let currentFilter = 'all';
         let currentSearch = '';
-        
+
+        // Expose reset function globally for the "Clear Filters" button
+        window.resetFilters = function() {
+            if(searchInput) searchInput.value = '';
+            currentSearch = '';
+            currentFilter = 'all';
+            
+            // Reset UI buttons
+            filterButtons.forEach(b => {
+                b.classList.remove('active', 'bg-dark', 'text-white');
+                b.classList.add('text-secondary', 'bg-light');
+                if(b.dataset.filter === 'all') {
+                    b.classList.add('active', 'bg-dark', 'text-white');
+                    b.classList.remove('text-secondary', 'bg-light');
+                }
+            });
+            
+            filterTickets();
+        };
+
         function filterTickets() {
             let visibleCount = 0;
+            
             ticketItems.forEach(item => {
                 const status = item.dataset.status;
-                const subject = item.querySelector('.ticket-subject').textContent.toLowerCase();
-                const meta = item.querySelector('.ticket-meta').textContent.toLowerCase(); // Contains email and ID
+                const subject = item.querySelector('.ticket-subject').innerText.toLowerCase();
+                const meta = item.querySelector('.ticket-meta').innerText.toLowerCase();
                 
-                const searchMatch = subject.includes(currentSearch) || meta.includes(currentSearch);
-                const statusMatch = currentFilter === 'all' || status === currentFilter;
+                const matchesSearch = subject.includes(currentSearch) || meta.includes(currentSearch);
+                const matchesFilter = currentFilter === 'all' || status === currentFilter;
 
-                if (searchMatch && statusMatch) {
-                    item.style.display = 'flex'; // Reset to default flex (since these are <a> tags with d-flex)
+                if (matchesSearch && matchesFilter) {
+                    item.classList.remove('d-none');
+                    item.classList.add('d-flex'); // Restore flex display
                     visibleCount++;
                 } else {
-                    item.style.display = 'none';
+                    item.classList.add('d-none');
+                    item.classList.remove('d-flex');
                 }
             });
 
-            // Toggle No Results message
+            // Handle "No Results" state
             if (noResults) {
-                // Show "No Results" only if we have tickets in DB but search filtered them all out
                 if (ticketItems.length > 0 && visibleCount === 0) {
                     noResults.classList.remove('d-none');
                 } else {
                     noResults.classList.add('d-none');
                 }
             }
-            // Hide default empty state if we are searching/filtering
+
+            // Handle "Empty State" (only if DB is truly empty)
             if (emptyState && ticketItems.length > 0) {
                 emptyState.style.display = 'none';
             }
@@ -163,26 +209,27 @@
         // Search Listener
         if (searchInput) {
             searchInput.addEventListener('input', (e) => {
-                currentSearch = e.target.value.toLowerCase();
+                currentSearch = e.target.value.toLowerCase().trim();
                 filterTickets();
             });
         }
 
-        // Filter Tabs Listener
+        // Filter Buttons Listener
         filterButtons.forEach(btn => {
             btn.addEventListener('click', (e) => {
                 e.preventDefault();
-                
-                // Update visual state of tabs
+                const target = e.currentTarget; // Use currentTarget to ensure we get the button even if icon clicked
+
+                // 1. Update Visuals
                 filterButtons.forEach(b => {
                     b.classList.remove('active', 'bg-dark', 'text-white');
                     b.classList.add('text-secondary', 'bg-light');
                 });
-                e.target.classList.add('active', 'bg-dark', 'text-white');
-                e.target.classList.remove('text-secondary', 'bg-light');
+                target.classList.add('active', 'bg-dark', 'text-white');
+                target.classList.remove('text-secondary', 'bg-light');
 
-                // Apply Filter
-                currentFilter = e.target.dataset.filter;
+                // 2. Apply Logic
+                currentFilter = target.dataset.filter;
                 filterTickets();
             });
         });

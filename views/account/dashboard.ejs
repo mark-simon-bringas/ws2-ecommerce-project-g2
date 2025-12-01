@@ -1,7 +1,9 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-<script src="/socket.io/socket.io.js"></script> <style>
+<script src="/socket.io/socket.io.js"></script>
+
+<style>
     /* --- Dashboard Specific Styles --- */
     .dashboard-wrapper {
         max-width: 1400px;
@@ -9,7 +11,7 @@
         padding: 1.5rem;
     }
 
-    /* Header */
+    /* Header Styling */
     .dashboard-header-title {
         font-size: 2rem;
         font-weight: 800;
@@ -39,7 +41,7 @@
     .kpi-card {
         padding: 1.5rem;
         justify-content: center;
-        transition: background-color 0.5s ease; /* For flash effect */
+        transition: background-color 0.5s ease;
     }
     .kpi-icon-wrapper {
         width: 44px; height: 44px;
@@ -59,10 +61,9 @@
         overflow: hidden;
         text-overflow: ellipsis;
     }
-    .kpi-label { font-size: 0.85rem;
-        font-weight: 500; color: #757575; }
+    .kpi-label { font-size: 0.85rem; font-weight: 500; color: #757575; }
 
-    /* Filters */
+    /* Filter Section */
     .filter-container {
         background: #fff;
         padding: 0.5rem;
@@ -83,8 +84,7 @@
         padding-bottom: 2px;
         scrollbar-width: none;
     }
-    .filter-chips-scroll::-webkit-scrollbar { display: none;
-    }
+    .filter-chips-scroll::-webkit-scrollbar { display: none; }
 
     .quick-filter-btn {
         border: 1px solid #f0f0f0;
@@ -98,8 +98,7 @@
         white-space: nowrap;
         transition: all 0.2s;
     }
-    .quick-filter-btn:hover { background: #f9f9f9; color: #111;
-    }
+    .quick-filter-btn:hover { background: #f9f9f9; color: #111; }
     .quick-filter-btn.active {
         background: #111;
         color: #fff;
@@ -140,13 +139,11 @@
         justify-content: space-between; 
         align-items: center; 
     }
-    .chart-body { padding: 1.5rem; position: relative;
-        flex: 1; }
+    .chart-body { padding: 1.5rem; position: relative; flex: 1; }
     .chart-container { height: 300px; width: 100%; }
-    .donut-container { height: 220px;
-        display: flex; justify-content: center; }
+    .donut-container { height: 220px; display: flex; justify-content: center; }
 
-    /* List Items (Top Products & Activity) */
+    /* List Items */
     .list-item {
         padding: 1rem 1.5rem;
         border-bottom: 1px solid #f9f9f9;
@@ -156,95 +153,98 @@
         transition: background 0.1s;
     }
     .list-item:hover { background: #fafafa; }
-    .list-item:last-child { border-bottom: none;
-    }
+    .list-item:last-child { border-bottom: none; }
     
     .rank-badge {
-        width: 24px;
-        height: 24px;
+        width: 24px; height: 24px;
         background: #111; color: #fff;
         border-radius: 6px;
         display: flex; align-items: center; justify-content: center;
         font-size: 0.75rem; font-weight: 700;
         flex-shrink: 0;
     }
-    .product-thumb {
-        width: 48px; height: 48px;
-        border-radius: 10px;
-        background: #f5f5f5;
-        object-fit: contain;
-        padding: 4px;
-        border: 1px solid #f0f0f0;
-        flex-shrink: 0;
-    }
-    
-    .product-info {
-        flex-grow: 1;
-        min-width: 0; /* Crucial for text-truncate inside flex */
-    }
+    .product-thumb { width: 48px; height: 48px; border-radius: 10px; background: #f5f5f5; object-fit: contain; padding: 4px; border: 1px solid #f0f0f0; flex-shrink: 0; }
+    .activity-icon { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1rem; flex-shrink: 0; }
+    .product-info { flex-grow: 1; min-width: 0; }
 
-    .activity-icon {
-        width: 36px;
-        height: 36px;
-        border-radius: 10px;
-        display: flex; align-items: center; justify-content: center;
-        font-size: 1rem;
-        flex-shrink: 0;
-    }
-
-    /* Animation Class for Live Updates */
-    .flash-update {
-        animation: flashGreen 1s ease-out;
-    }
-    
+    /* Flash Animation */
+    .flash-update { animation: flashGreen 1s ease-out; }
     @keyframes flashGreen {
-        0% { background-color: #d1e7dd; } /* Success subtle green */
+        0% { background-color: #d1e7dd; }
         100% { background-color: #fff; }
     }
 
     /* Mobile Adjustments */
     @media (max-width: 768px) {
-        .dashboard-wrapper { padding: 1rem;
-        }
-        .dashboard-header-title { font-size: 1.75rem;
-        }
-        
-        /* Compact Filters */
-        .filter-container { flex-direction: column;
-        align-items: stretch; padding: 1rem; gap: 1rem; }
-        
-        /* KPI Sizing */
-        .kpi-card { padding: 1.25rem;
-        }
-        .kpi-value { font-size: 1.4rem;
-        }
-        .kpi-icon-wrapper { margin-bottom: 0.5rem; width: 36px; height: 36px; font-size: 1rem;
-        }
-        
-        /* List Items on Mobile */
-        .list-item { padding: 1rem;
-        gap: 0.75rem; }
-        .product-thumb { width: 40px; height: 40px;
-        }
-        .rank-badge { width: 20px; height: 20px; font-size: 0.7rem;
-        }
+        .dashboard-wrapper { padding: 1rem; }
+        .dashboard-header-title { font-size: 1.75rem; }
+        .kpi-card { padding: 1.25rem; }
+        .kpi-value { font-size: 1.4rem; }
+        .filter-container { flex-direction: column; align-items: stretch; padding: 1rem; gap: 1rem; }
+        .filter-input-group { width: 100%; }
+        .list-item { padding: 1rem; gap: 0.75rem; }
+    }
+
+    /* Print Styles */
+    @media print {
+        .navbar-desktop, .navbar-mobile, .dashboard-sidebar, .site-footer { display: none !important; }
+        .btn, .filter-container, .header-actions, .quick-filter-btn, .vr { display: none !important; }
+        .dashboard-wrapper { margin: 0; padding: 0; max-width: 100%; }
+        .dash-card { border: 1px solid #ddd; box-shadow: none; break-inside: avoid; margin-bottom: 20px; }
+        .col-md-3, .col-6, .col-lg-8, .col-lg-4, .col-lg-6 { width: 100% !important; flex: 0 0 100%; max-width: 100%; }
     }
 </style>
 
 <div class="settings-page-wrapper dashboard-wrapper">
     
-    <div class="d-flex align-items-center justify-content-between mb-4">
+    <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between mb-4 gap-3">
         <div class="d-flex align-items-center">
             <a href="/account/settings" class="btn btn-light btn-icon rounded-circle me-3 shadow-sm border-0 d-flex align-items-center justify-content-center" style="width: 48px; height: 48px;">
                 <i class="bi bi-arrow-left fs-5"></i>
             </a>
             <div>
-                <h1 class="dashboard-header-title h2">Dashboard Overview</h1>
-                <p class="text-secondary mb-0 small fw-medium"><%= new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }) %></p>
+                <h1 class="dashboard-header-title h2">Overview</h1>
+                <p class="text-secondary mb-0 small fw-medium">
+                    <% if (filters.dateRange) { %>
+                        Filtering: <%= filters.dateRange %>
+                    <% } else { %>
+                        <%= new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }) %>
+                    <% } %>
+                </p>
             </div>
         </div>
-        <div class="d-none d-md-block">
-            <a href="/account/admin/orders" class="btn btn-dark rounded-pill px-4 fw-bold">Manage Orders</a>
+
+        <div class="d-flex align-items-center gap-2">
+            
+            
+                <button class="btn btn-outline-dark rounded-pill px-4 fw-bold dropdown-toggle d-flex align-items-center gap-2" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="bi bi-download"></i> Export
+                </button>
+                
+                <ul class="dropdown-menu shadow border-0 rounded-4 mt-2 p-2" style="min-width: 220px;">
+                    <li><h6 class="dropdown-header text-uppercase small fw-bold text-secondary">Download Data</h6></li>
+                    <li>
+                        <a class="dropdown-item rounded-3 py-2 d-flex align-items-center" href="/account/admin/reports/export/daily-sales?dateRange=<%= filters.dateRange || '' %>&status=<%= filters.status || '' %>">
+                            <i class="bi bi-file-earmark-excel me-2 text-success"></i> Daily Sales (.xlsx)
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item rounded-3 py-2 d-flex align-items-center" href="/account/admin/reports/export/detailed-orders?dateRange=<%= filters.dateRange || '' %>&status=<%= filters.status || '' %>">
+                            <i class="bi bi-file-earmark-spreadsheet me-2 text-primary"></i> Detailed Orders (.xlsx)
+                        </a>
+                    </li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li>
+                        <a class="dropdown-item rounded-3 py-2 d-flex align-items-center" href="#" onclick="window.print()">
+                            <i class="bi bi-printer me-2 text-dark"></i> Print View
+                        </a>
+                    </li>
+                </ul>
+           
+            
+            <div class="d-none d-md-block">
+                <a href="/account/admin/orders" class="btn btn-dark rounded-pill px-4 fw-bold">Manage Orders</a>
+            </div>
         </div>
     </div>
 
@@ -494,7 +494,7 @@
                 // Assuming data.orderTotal matches the dashboard currency context roughly
                 let currentRev = parseFloat(revEl.dataset.raw || 0);
                 // Simple addition (approximation if currency conversion is complex on client side)
-                currentRev += data.orderTotal; 
+                currentRev += data.orderTotal;
                 revEl.dataset.raw = currentRev;
                 revEl.innerText = currencySymbol + currentRev.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 });
                 triggerFlash('card-revenue');
@@ -519,7 +519,6 @@
             }
 
             const now = new Date().toLocaleString();
-            
             const html = `
                 <div class="list-item flash-update">
                     <div class="activity-icon bg-primary-subtle text-primary">
@@ -533,7 +532,6 @@
             `;
             
             container.insertAdjacentHTML('afterbegin', html);
-            
             // Limit log items
             if (container.children.length > 10) {
                 container.lastElementChild.remove();
@@ -557,13 +555,13 @@
         const currentVal = document.getElementById('dateRange').value;
         const fmt = d => d.toISOString().split('T')[0];
         const today = new Date();
-        
         const ranges = {
             'today': fmt(today),
             'week': `${fmt(new Date(today.getTime() - 7*86400000))} to ${fmt(today)}`,
             'month': `${fmt(new Date(today.getTime() - 30*86400000))} to ${fmt(today)}`,
             'year': `${fmt(new Date(today.getFullYear(), 0, 1))} to ${fmt(today)}`
         };
+
         Object.keys(ranges).forEach(key => {
             if(currentVal === ranges[key]) {
                 const btn = document.getElementById(`btn-${key}`);
