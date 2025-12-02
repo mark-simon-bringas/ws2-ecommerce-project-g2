@@ -672,10 +672,30 @@ router.post('/settings/add-address', async (req, res) => {
             zip: req.body.zip, phone: req.body.phone, isDefault: req.body.isDefault === 'on' 
         };
         const db = req.app.locals.client.db(req.app.locals.dbName);
-        if (newAddr.isDefault) await db.collection('users').updateOne({ userId: req.session.user.userId }, { $set: { "addresses.$[].isDefault": false } });
-        await db.collection('users').updateOne({ userId: req.session.user.userId }, { $push: { addresses: newAddr } });
+        
+        // FIX: Handle "Set as Default" safely
+        if (newAddr.isDefault) {
+            try {
+                // Try to set all existing addresses to false
+                await db.collection('users').updateOne(
+                    { userId: req.session.user.userId }, 
+                    { $set: { "addresses.$[].isDefault": false } }
+                );
+            } catch (e) {
+                // Ignore "Path not found" error (Code 2) if array doesn't exist yet
+                if (e.code !== 2) throw e;
+            }
+        }
+
+        // Push the new address (MongoDB creates the array if missing)
+        await db.collection('users').updateOne(
+            { userId: req.session.user.userId }, 
+            { $push: { addresses: newAddr } }
+        );
+        
         res.redirect('/account/addresses?message=' + encodeURIComponent('Address added successfully!'));
     } catch (err) { 
+        console.error(err);
         res.redirect('/account/addresses?error=' + encodeURIComponent('Failed to add.')); 
     }
 });
@@ -688,10 +708,27 @@ router.post('/settings/edit-address/:addressId', async (req, res) => {
             zip: req.body.zip, phone: req.body.phone, isDefault: req.body.isDefault === 'on' 
         };
         const db = req.app.locals.client.db(req.app.locals.dbName);
-        if (updAddr.isDefault) await db.collection('users').updateOne({ userId: req.session.user.userId }, { $set: { "addresses.$[].isDefault": false } });
-        await db.collection('users').updateOne({ userId: req.session.user.userId, "addresses.addressId": req.params.addressId }, { $set: { "addresses.$": updAddr } });
+        
+        // FIX: Handle "Set as Default" safely
+        if (updAddr.isDefault) {
+            try {
+                await db.collection('users').updateOne(
+                    { userId: req.session.user.userId }, 
+                    { $set: { "addresses.$[].isDefault": false } }
+                );
+            } catch (e) {
+                if (e.code !== 2) throw e;
+            }
+        }
+
+        await db.collection('users').updateOne(
+            { userId: req.session.user.userId, "addresses.addressId": req.params.addressId }, 
+            { $set: { "addresses.$": updAddr } }
+        );
+        
         res.redirect('/account/addresses?message=' + encodeURIComponent('Address updated successfully!'));
     } catch (err) { 
+        console.error(err);
         res.redirect('/account/addresses?error=' + encodeURIComponent('Failed to update.')); 
     }
 });
