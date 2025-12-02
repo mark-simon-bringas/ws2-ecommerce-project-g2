@@ -51,13 +51,13 @@
                     
                     <% if (activeSale) { %>
                     <div class="carousel-item active h-100">
-                        <img src="https://images.unsplash.com/photo-1556906781-9a412961c28c?q=80&w=2000&auto=format&fit=crop" class="d-block w-100 h-100 object-fit-cover" alt="Flash Sale">
-                        <div class="hero-overlay" style="background: linear-gradient(to right, rgba(220, 20, 60, 0.5), rgba(0,0,0,0.6));"></div>
+                        <img src="https://images.unsplash.com/photo-1551107696-a4b0c5a0d9a2?q=80&w=2000&auto=format&fit=crop" class="d-block w-100 h-100 object-fit-cover" alt="Flash Sale">
+                        <div class="hero-overlay" style="background: linear-gradient(to right, rgba(25, 135, 84, 0.5), rgba(0,0,0,0.6));"></div>
                         <div class="carousel-caption d-flex flex-column justify-content-end align-items-start h-100 pb-5 ps-4 ps-md-5 text-start">
                             <div class="hero-text-content">
-                                <span class="badge bg-warning text-dark mb-3 px-3 py-2 fs-6 shadow-sm">Flash Sale Event</span>
+                                <span class="badge bg-success text-white mb-3 px-3 py-2 fs-6 shadow-sm">Flash Sale Event</span>
                                 <h1 class="display-1 fw-bold text-white mb-2 text-uppercase"><%= activeSale.name %></h1>
-                                <p class="lead text-white-50 mb-4 d-none d-md-block">Up to <span class="text-warning fw-bold"><%= activeSale.discountPercentage %>% OFF</span>. Limited time only.</p>
+                                <p class="lead text-white-50 mb-4 d-none d-md-block">Up to <span class="text-success fw-bold"><%= activeSale.discountPercentage %>% OFF</span>. Limited time only.</p>
                                 <a href="/products/sale/<%= activeSale._id %>" class="btn btn-light rounded-pill px-5 py-3 fw-bold btn-hero">Shop Sale <i class="bi bi-arrow-right ms-2"></i></a>
                             </div>
                         </div>
@@ -77,7 +77,7 @@
                     </div>
 
                     <div class="carousel-item h-100">
-                        <img src="https://images.unsplash.com/photo-1600185365926-3a2ce3cdb9eb?q=80&w=2025&auto=format&fit=crop" class="d-block w-100 h-100 object-fit-cover" alt="Nike">
+                        <img src="https://images.unsplash.com/photo-1460353581641-37baddab0fa2?q=80&w=2071&auto=format&fit=crop" class="d-block w-100 h-100 object-fit-cover" alt="Nike">
                         <div class="hero-overlay"></div>
                         <div class="carousel-caption d-flex flex-column justify-content-end align-items-start h-100 pb-5 ps-4 ps-md-5 text-start">
                             <div class="hero-text-content">
@@ -113,11 +113,11 @@
                     </div>
 
                     <div class="carousel-item h-100">
-                        <img src="https://images.unsplash.com/photo-1460353581641-37baddab0fa2?q=80&w=2071&auto=format&fit=crop" class="d-block w-100 h-100 object-fit-cover" alt="Limited">
+                        <img src="https://images.unsplash.com/photo-1587563871167-1ee9c731aefb?q=80&w=2000&auto=format&fit=crop" class="d-block w-100 h-100 object-fit-cover" alt="Limited">
                         <div class="hero-overlay"></div>
                         <div class="carousel-caption d-flex flex-column justify-content-end align-items-start h-100 pb-5 ps-4 ps-md-5 text-start">
                             <div class="hero-text-content">
-                                <h5 class="text-uppercase fw-bold text-info tracking-widest mb-2">Limited Edition</h5>
+                                <h5 class="text-uppercase fw-bold text-dark tracking-widest mb-2">Limited Edition</h5>
                                 <h1 class="display-1 fw-bold text-white mb-3 text-uppercase">Rare<br>Finds.</h1>
                                 <a href="/products" class="btn btn-light rounded-pill px-5 py-3 fw-bold btn-hero">Browse Exclusive <i class="bi bi-arrow-right ms-2"></i></a>
                             </div>
@@ -142,11 +142,11 @@
         <div class="container my-5 py-5">
             <div class="category-showcase-grid">
                 <a href="/products?category=men" class="category-showcase-item">
-                    <img src="https://images.unsplash.com/photo-1560769629-975ec94e6a86?q=80&w=1964&auto=format&fit=crop" alt="Men's Collection" class="category-showcase-item-bg">
+                    <img src=" https://images.unsplash.com/photo-1539185441755-769473a23570?q=80&w=2000&auto=format&fit=crop" alt="Men's Collection" class="category-showcase-item-bg">
                     <div class="btn btn-light btn-lg">Shop Men's</div>
                 </a>
                 <a href="/products?category=women" class="category-showcase-item">
-                    <img src="https://images.unsplash.com/photo-1595341888016-a392ef81b7de?q=80&w=2079&auto=format&fit=crop" alt="Women's Collection" class="category-showcase-item-bg">
+                    <img src="https://images.unsplash.com/photo-1551107696-a4b0c5a0d9a2?q=80&w=2000&auto=format&fit=crop" alt="Women's Collection" class="category-showcase-item-bg">
                     <div class="btn btn-light btn-lg">Shop Women's</div>
                 </a>
                 <a href="/products?category=kids" class="category-showcase-item">
@@ -154,7 +154,7 @@
                     <div class="btn btn-light btn-lg">Shop Kids'</div>
                 </a>
                 <a href="/products?sale=true" class="category-showcase-item">
-                    <img src="https://images.unsplash.com/photo-1562183241-b937e95585b6?q=80&w=1964&auto=format&fit=crop" alt="Sale" class="category-showcase-item-bg">
+                    <img src="https://images.unsplash.com/photo-1556906781-9a412961c28c?q=80&w=2000&auto=format&fit=crop" alt="Sale" class="category-showcase-item-bg">
                     <div class="btn btn-light btn-lg">Shop Sale</div>
                 </a>
             </div>
@@ -165,8 +165,8 @@
             <div class="container">
                 <div class="section-header">
                     <div class="d-flex align-items-center gap-3">
-                        <h2 class="display-5 fw-bold mb-0 text-danger"><%= activeSale.name %></h2>
-                        <span class="badge bg-warning text-dark d-none d-md-inline-block">Ends <%= new Date(activeSale.endDate).toLocaleDateString() %></span>
+                        <h2 class="display-5 fw-bold mb-0 text-success"><%= activeSale.name %></h2>
+                        <span class="badge bg-success text-white d-none d-md-inline-block">Ends <%= new Date(activeSale.endDate).toLocaleDateString() %></span>
                     </div>
                     <div class="section-header-actions">
                         <a href="/products/sale/<%= activeSale._id %>" class="btn btn-outline-dark d-none d-lg-inline-block">View All</a>
@@ -197,16 +197,14 @@
                                     <% } %>
                                     <button type="button" class="btn-action" title="Add to Cart" data-bs-toggle="modal" data-bs-target="#productModal-<%= product.sku %>"><i class="bi bi-bag-plus"></i></button>
                                 </div>
-                                <span class="position-absolute top-0 start-0 m-2 badge bg-danger">
-                                    -<%= product.discountPercentage %>%
-                                </span>
-                            </div>
+                                </div>
                             <div class="product-card-body">
                                 <a href="/products/<%= product.sku %>" class="text-decoration-none">
                                     <div class="product-title"><%= product.name %></div>
                                     <div class="product-price">
-                                        <span class="fw-bold text-danger"><%= locationData.symbol %><%= product.convertedSalePrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></span>
+                                        <span class="fw-bold text-dark"><%= locationData.symbol %><%= product.convertedSalePrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></span>
                                         <del class="text-body-secondary ms-2 small"><%= locationData.symbol %><%= product.convertedPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></del>
+                                        <span class="text-success fw-bold ms-2 small"><%= product.discountPercentage %>% OFF</span>
                                     </div>
                                 </a>
                             </div>
@@ -251,13 +249,14 @@
                                     <% } %>
                                     <button type="button" class="btn-action" title="Add to Cart" data-bs-toggle="modal" data-bs-target="#productModal-<%= product.sku %>"><i class="bi bi-bag-plus"></i></button>
                                 </div>
-                            </div>
+                                </div>
                             <div class="product-card-body">
                                 <a href="/products/<%= product.sku %>" class="text-decoration-none">
                                     <div class="product-title"><%= product.name %></div>
                                     <div class="product-price">
                                         <% if (product.onSale) { %>
                                             <span class="fw-bold text-dark"><%= locationData.symbol %><%= product.convertedSalePrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></span>
+                                            <del class="text-body-secondary ms-2 small"><%= locationData.symbol %><%= product.convertedPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></del>
                                             <span class="text-success fw-bold ms-2 small"><%= product.discountPercentage %>% OFF</span>
                                         <% } else { %>
                                             <span class="fw-bold text-dark"><%= locationData.symbol %><%= product.convertedPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></span>
@@ -306,12 +305,18 @@
                                     <% } %>
                                      <button type="button" class="btn-action" title="Add to Cart" data-bs-toggle="modal" data-bs-target="#productModal-<%= product.sku %>"><i class="bi bi-bag-plus"></i></button>
                                 </div>
-                            </div>
+                                </div>
                             <div class="product-card-body">
                                 <a href="/products/<%= product.sku %>" class="text-decoration-none">
                                     <div class="product-title"><%= product.name %></div>
                                     <div class="product-price">
-                                        <span class="fw-bold text-dark"><%= locationData.symbol %><%= product.convertedPrice.toLocaleString() %></span>
+                                        <% if (product.onSale) { %>
+                                            <span class="fw-bold text-dark"><%= locationData.symbol %><%= product.convertedSalePrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></span>
+                                            <del class="text-body-secondary ms-2 small"><%= locationData.symbol %><%= product.convertedPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></del>
+                                            <span class="text-success fw-bold ms-2 small"><%= product.discountPercentage %>% OFF</span>
+                                        <% } else { %>
+                                            <span class="fw-bold text-dark"><%= locationData.symbol %><%= product.convertedPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></span>
+                                        <% } %>
                                     </div>
                                 </a>
                             </div>
@@ -356,12 +361,18 @@
                                     <% } %>
                                     <button type="button" class="btn-action" title="Add to Cart" data-bs-toggle="modal" data-bs-target="#productModal-<%= product.sku %>"><i class="bi bi-bag-plus"></i></button>
                                 </div>
-                            </div>
+                                </div>
                             <div class="product-card-body">
                                 <a href="/products/<%= product.sku %>" class="text-decoration-none">
                                     <div class="product-title"><%= product.name %></div>
                                     <div class="product-price">
-                                        <span class="fw-bold text-dark"><%= locationData.symbol %><%= product.convertedPrice.toLocaleString() %></span>
+                                        <% if (product.onSale) { %>
+                                            <span class="fw-bold text-dark"><%= locationData.symbol %><%= product.convertedSalePrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></span>
+                                            <del class="text-body-secondary ms-2 small"><%= locationData.symbol %><%= product.convertedPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></del>
+                                            <span class="text-success fw-bold ms-2 small"><%= product.discountPercentage %>% OFF</span>
+                                        <% } else { %>
+                                            <span class="fw-bold text-dark"><%= locationData.symbol %><%= product.convertedPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></span>
+                                        <% } %>
                                     </div>
                                 </a>
                             </div>
